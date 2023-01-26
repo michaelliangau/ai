@@ -5,10 +5,10 @@ import concurrent.futures
 import pandas as pd
 import IPython
 
-def get_suburb_data(s):
+def get_suburb_data(s, state):
     # Get HTML
     name = s.split("'>")[-1].split("</a>")[0]
-    postcode = s.split("/nsw/")[-1].split("-")[0]
+    postcode = s.split(f"/{state}/")[-1].split("-")[0]
     s = s.split("' class='", 1)[0]
     s = s.split("href='", 1)[-1]
     link = f"https://www.yourinvestmentpropertymag.com.au{s}"
@@ -111,20 +111,22 @@ def get_suburb_data(s):
 
 if __name__ == "__main__":
     total_data, suburb_list = [], []
-    num_workers = 1
-    data_file = "metadata/qld_suburbs.txt"
-    
+    num_workers = 20
+    state = "act"
+    data_file = f"metadata/{state}_suburbs.txt"
+
     # Create list from txt file where every entry is a new object
     with open(data_file, "r") as f:
         for line in f:
             line = line.replace("\n", "")
             suburb_list.append(line)
+    state_list = [state for i in range(len(suburb_list))]
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        _ = tqdm(executor.map(get_suburb_data, suburb_list), total=len(suburb_list))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+        _ = tqdm(executor.map(get_suburb_data, suburb_list, state_list), total=len(suburb_list))
     df = pd.DataFrame(total_data)
     
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(df)
     
-    df.to_csv("property_data_qld_2022_2016_census.tsv", sep="\t")
+    df.to_csv(f"property_data_{state}_2022_2016_census.tsv", sep="\t")
