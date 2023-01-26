@@ -110,15 +110,10 @@ def get_suburb_data(s):
     total_data.append(data)
 
 if __name__ == "__main__":
-    # Sample a random set of the suburbs for debugging purposes
-    # suburb_list = random.sample(suburb_list, 50)
-    #     suburb_list = [
-    #       "<a href='/top-suburbs/nsw/2582-nanima' class='hidden-item' data-id='2891'>Nanima</a>",
-    #     ]
-
     total_data, suburb_list = [], []
     num_workers = 1
-    data_file = "data/qld_suburbs.txt"
+    data_file = "metadata/qld_suburbs.txt"
+    
     # Create list from txt file where every entry is a new object
     with open(data_file, "r") as f:
         for line in f:
