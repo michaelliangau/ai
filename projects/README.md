@@ -15,3 +15,4 @@ All project specific code exists in the `projects` folder.
 - `gan_pickle` - CycleGAN to turn merge any picture with the cutest dog.
 - `stable_diffusion_2` - Stable diffusion 2 project.
 - `web_scrapers` - Various web scraping projects.
+- `micrograd` - Backpropagation and neural network primitives.
