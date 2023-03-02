@@ -459,7 +459,6 @@ def inference(
 
     # Forward pass
     for i in range(num_generate):
-
         # Get the latest prediction and latest hidden state
         output = outputs[-1]
         hidden_state = hidden_states[-1]
@@ -599,7 +598,12 @@ def forward_pass_lstm(
         b_logit,
     ) = params
 
-    x_s, z_s, f_s, i_s, = (
+    (
+        x_s,
+        z_s,
+        f_s,
+        i_s,
+    ) = (
         [],
         [],
         [],
@@ -706,7 +710,6 @@ def backward_pass_lstm(
     loss = 0
 
     for t in reversed(range(len(outputs))):
-
         loss += -np.mean(np.log(outputs[t]) * targets[t])
 
         C_prev = C_s[t - 1]

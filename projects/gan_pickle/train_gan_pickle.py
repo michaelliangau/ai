@@ -47,12 +47,15 @@ disc_raw = model.Discriminator().to(device)
 # Datasets
 class ImageDataset(Dataset):
     """Image dataset.
-    
+
     Loads images from a directory.
     """
-    def __init__(self, train_dir: str, test_dir: str, transforms: Optional[Callable] = None):
+
+    def __init__(
+        self, train_dir: str, test_dir: str, transforms: Optional[Callable] = None
+    ):
         """Initializes the ImageDataset.
-        
+
         Args:
             train_dir (str): Directory containing the raw training images.
             test_dir (str): Directory containing the raw training images.
@@ -72,24 +75,32 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         return len(self.train_dir)
+
+
 # Image Transforms
-transforms = transforms.Compose([
-    transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))
-])
+transforms = transforms.Compose(
+    [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+)
 # Create the dataset
-ds = ImageDataset(train_dir='data/photo_jpg/', test_dir='data/pickle_jpg/', transforms=transforms)
+ds = ImageDataset(
+    train_dir="data/photo_jpg/", test_dir="data/pickle_jpg/", transforms=transforms
+)
 
 # Create the data loader
-dataloader = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=4)        
+dataloader = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=4)
 
 
 # Optimizers
-opt_gen = torch.optim.Adam(list(gen_pickle.parameters()) + list(gen_raw.parameters()), lr=lr)
-opt_disc = torch.optim.Adam(list(disc_pickle.parameters()) + list(disc_raw.parameters()), lr=lr)
+opt_gen = torch.optim.Adam(
+    list(gen_pickle.parameters()) + list(gen_raw.parameters()), lr=lr
+)
+opt_disc = torch.optim.Adam(
+    list(disc_pickle.parameters()) + list(disc_raw.parameters()), lr=lr
+)
 
 # Loss
-L1 = nn.L1Loss() # Cycle consistency loss and identity loss
-mse = nn.MSELoss() # Adversarial loss
+L1 = nn.L1Loss()  # Cycle consistency loss and identity loss
+mse = nn.MSELoss()  # Adversarial loss
 
 step = 0
 # Training Loop
@@ -97,7 +108,7 @@ for epoch in range(num_epochs):
     for idx, (raw_img, pickle_img) in enumerate(tqdm(dataloader)):
         raw_img = raw_img.to(device)
         pickle_img = pickle_img.to(device)
-        
+
         # Train discriminators pickle and Raw
         fake_pickle = gen_pickle(raw_img)
         D_pickle_real = disc_pickle(pickle_img)
@@ -113,7 +124,7 @@ for epoch in range(num_epochs):
         D_raw_fake_loss = mse(D_raw_fake, torch.zeros_like(D_raw_fake))
         D_raw_loss = D_raw_real_loss + D_raw_fake_loss
 
-        D_loss = (D_pickle_loss + D_raw_loss)/2
+        D_loss = (D_pickle_loss + D_raw_loss) / 2
 
         opt_disc.zero_grad()
         D_loss.backward(retain_graph=True)
@@ -122,8 +133,10 @@ for epoch in range(num_epochs):
         # Train generators pickle and Raw
         D_pickle_fake = disc_pickle(fake_pickle)
         D_raw_fake = disc_raw(fake_raw)
-        loss_G_pickle = mse(D_pickle_fake, torch.ones_like(D_pickle_fake)) # Adversarial loss
-        loss_G_raw = mse(D_raw_fake, torch.ones_like(D_raw_fake)) # Adversarial loss
+        loss_G_pickle = mse(
+            D_pickle_fake, torch.ones_like(D_pickle_fake)
+        )  # Adversarial loss
+        loss_G_raw = mse(D_raw_fake, torch.ones_like(D_raw_fake))  # Adversarial loss
 
         # Cycle loss
         cycle_pickle = gen_pickle(fake_raw)
@@ -132,16 +145,18 @@ for epoch in range(num_epochs):
         cycle_raw_loss = L1(raw_img, cycle_raw)
 
         G_loss = (loss_G_pickle + loss_G_raw) + (cycle_pickle_loss + cycle_raw_loss)
-        
+
         opt_gen.zero_grad()
         G_loss.backward()
         opt_gen.step()
 
         step += 1
         if idx % 100 == 0:
-            print(f"Epoch [{epoch}/{num_epochs}] Batch {idx}/{len(dataloader)} \
-                  Loss D: {D_loss:.4f}, loss G: {G_loss:.4f}")
-            
+            print(
+                f"Epoch [{epoch}/{num_epochs}] Batch {idx}/{len(dataloader)} \
+                  Loss D: {D_loss:.4f}, loss G: {G_loss:.4f}"
+            )
+
             with torch.no_grad():
                 fake = gen_pickle(raw_img)
                 # Unnormalise the image
@@ -153,14 +168,13 @@ for epoch in range(num_epochs):
                 img_grid = torch.cat((raw_img, fake), dim=0)
                 # Save image
                 save_image(img_grid, f"outputs/pickle_{step}.png")
-       
 
     # Can we somehow see what the images look like as we train on tensorboard?
     # Save model
-    torch.save(gen_pickle.state_dict(), f'outputs/gen_pickle_{epoch}.pth')
-    torch.save(gen_raw.state_dict(), f'outputs/gen_raw_{epoch}.pth')
-    torch.save(disc_pickle.state_dict(), f'outputs/disc_pickle_{epoch}.pth')
-    torch.save(disc_raw.state_dict(), f'outputs/disc_raw_{epoch}.pth')
+    torch.save(gen_pickle.state_dict(), f"outputs/gen_pickle_{epoch}.pth")
+    torch.save(gen_raw.state_dict(), f"outputs/gen_raw_{epoch}.pth")
+    torch.save(disc_pickle.state_dict(), f"outputs/disc_pickle_{epoch}.pth")
+    torch.save(disc_raw.state_dict(), f"outputs/disc_raw_{epoch}.pth")
 
 # Build submission
 gen_pickle.eval()
@@ -178,4 +192,3 @@ for file in tqdm(sorted(glob.glob(os.path.join("data/photo_jpg/", "*.jpg")))):
 
 # Zip submission folder
 shutil.make_archive("images", "zip", "outputs/submission")
-

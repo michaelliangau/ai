@@ -1,5 +1,6 @@
 # Native imports.
 import sys
+
 sys.path.append("../..")
 import common.utils as common_utils
 
@@ -22,9 +23,9 @@ gen_pickle = model.Generator().to(device)
 gen_pickle.eval()
 
 # Image transforms
-transforms = transforms.Compose([
-    transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))
-])
+transforms = transforms.Compose(
+    [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+)
 
 # Load image
 image = transforms(Image.open("IMG_1164.jpg")).to(device)

@@ -39,11 +39,9 @@ logger = MetricLogger(save_dir)
 episodes = 100
 
 for e in range(episodes):
-
     state = env.reset()
 
     while True:
-
         env.render()
 
         action = mario.act(state)
