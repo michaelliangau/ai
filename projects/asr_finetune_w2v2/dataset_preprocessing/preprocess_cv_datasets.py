@@ -35,7 +35,6 @@ resample = torchaudio.transforms.Resample(48000, 16000)
 
 
 def preprocess(batch):
-
     audio = torch.from_numpy(batch["input_values"]["array"])
     label = batch["labels"]
 

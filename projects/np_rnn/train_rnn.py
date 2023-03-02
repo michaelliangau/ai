@@ -20,12 +20,10 @@ training_loss, validation_loss = [], []
 
 # Training loop.
 for i in range(num_epochs):
-
     epoch_training_loss = 0
     epoch_validation_loss = 0
 
     for inputs, targets in validation_set:
-
         inputs_one_hot = utils.one_hot_encode_sequence(inputs, vocab_size, word_to_idx)
         targets_one_hot = utils.one_hot_encode_sequence(
             targets, vocab_size, word_to_idx
@@ -44,7 +42,6 @@ for i in range(num_epochs):
         epoch_validation_loss += loss
 
     for inputs, targets in training_set:
-
         inputs_one_hot = utils.one_hot_encode_sequence(inputs, vocab_size, word_to_idx)
         targets_one_hot = utils.one_hot_encode_sequence(
             targets, vocab_size, word_to_idx

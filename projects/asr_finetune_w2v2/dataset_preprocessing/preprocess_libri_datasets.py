@@ -17,9 +17,9 @@ libri = libri.remove_columns(["speaker_id", "chapter_id", "id", "file"])
 libri = libri.rename_column("text", "labels")
 libri = libri.rename_column("audio", "input_values")
 
+
 # Preprocess
 def preprocess(batch):
-
     audio = np.array(batch["input_values"]["array"])
     audio = audio.astype("float32")
     label = batch["labels"]

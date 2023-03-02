@@ -150,7 +150,6 @@ for epoch in tqdm(range(n_epochs)):
     with torch.no_grad():
         val_loss = []
         for batch in val_dataloader:
-
             source, target = batch
             source = source.to(device)
             target = target.to(device)

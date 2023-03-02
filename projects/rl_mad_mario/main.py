@@ -48,12 +48,10 @@ episodes = 40000
 
 ### for Loop that train the model num_episodes times by playing the game
 for e in range(episodes):
-
     state = env.reset()
 
     # Play the game!
     while True:
-
         # 3. Show environment (the visual) [WIP]
         # env.render()
 
