@@ -17,3 +17,4 @@ All project specific code exists in the `projects` folder.
 - `web_scrapers` - Various web scraping projects.
 - `micrograd` - Backpropagation and neural network primitives.
 - `makemore` - Bigram and neural network language model primitive.
+- `gpt` - Transformer based character-level language model.
