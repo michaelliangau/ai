@@ -176,7 +176,7 @@ class BigramLanguageModel(nn.Module):
         return logits, loss
     
     def generate(self, idx, max_new_tokens):
-        for _ in range(max_new_tokens):
+        for _ in tqdm(range(max_new_tokens)):
             idx_cond = idx[:, -block_size:]# crop context so positioning embedding table doesn't error out
             logits, _ = self(idx_cond)
             logits = logits[:, -1, :]
@@ -215,7 +215,7 @@ print('final loss', loss.item())
 
 # Sample start input
 input = torch.zeros((1,1), dtype=torch.long).to(device)
-out = decode(m.generate(input, max_new_tokens=1000)[0].tolist()) # [0] is needed as we have a Batch dimension
+out = decode(m.generate(input, max_new_tokens=10000)[0].tolist()) # [0] is needed as we have a Batch dimension
 
 print(out)
 
