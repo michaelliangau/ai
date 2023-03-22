@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torchvision import datasets, transforms
+
+# Initialize the cuda device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define the CNN model
 class Net(nn.Module):
@@ -14,26 +18,26 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(128, 10)
 
     def forward(self, x):
-        x = self.pool(nn.functional.relu(self.conv1(x)))
-        x = self.pool(nn.functional.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 7*7*64)
-        x = nn.functional.relu(self.fc1(x))
+        x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        return nn.functional.log_softmax(x, dim=1)
+        return F.log_softmax(x, dim=1)
 
 # Define the training parameters
-batch_size = 64
-learning_rate = 0.01
+batch_size = 256
+learning_rate = 4e-3
 num_epochs = 10
 
 # Load the MNIST dataset
-train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('data', train=True, download=True,
+train_dataset = datasets.MNIST('data', train=True, download=True,
                    transform=transforms.Compose([
                        transforms.ToTensor(),
                        transforms.Normalize((0.1307,), (0.3081,))
-                   ])),
-    batch_size=batch_size, shuffle=True)
+                   ]))
+
+train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('data', train=False, transform=transforms.Compose([
@@ -43,15 +47,16 @@ test_loader = torch.utils.data.DataLoader(
     batch_size=batch_size, shuffle=True)
 
 # Initialize the model and optimizer
-model = Net()
+model = Net().to(device)
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
 
 # Train the model
 for epoch in range(num_epochs):
     for batch_idx, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
-        loss = nn.functional.nll_loss(output, target)
+        loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
 
@@ -65,8 +70,9 @@ for epoch in range(num_epochs):
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += nn.functional.nll_loss(output, target, reduction='sum').item()
+            test_loss += F.nll_loss(output, target, reduction='sum').item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
 
@@ -75,8 +81,3 @@ for epoch in range(num_epochs):
     print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
-    # Early stopping if test error is less than 1%
-    if 100. * correct / len(test_loader.dataset) > 99:
-        print('Test error less than 1%, stopping training')
-        break
