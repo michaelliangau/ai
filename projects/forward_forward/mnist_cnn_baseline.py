@@ -1,3 +1,6 @@
+"""Baseline CNN neural network with two convolution/linear/max pooling blocks achieves roughly 98.7% accuracy (1.3% test set error) on MNIST dataset.
+This result is reported in the original paper.
+"""
 import torch
 import torch.nn as nn
 import torch.optim as optim
