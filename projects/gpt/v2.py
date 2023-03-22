@@ -14,16 +14,23 @@ batch_size = 64
 block_size = 256 # We still train with all smaller context sizes but this is the maximum. 0 --> 1, 0,1 --> 2, 0,1,2 -->3 ... 0...n-1 --> n 
 max_iters = 5000
 learning_rate = 3e-4
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+if torch.backends.mps.is_available():
+    device = 'mps'
+elif torch.cuda.is_available():
+    device = 'cuda'
+else:
+    device = 'cpu'
+
 print('device', device)
+
 eval_iters = 200
-eval_interval = 1000
+eval_interval = 5000
 n_embd = 384
 num_sa_heads = 6
 dropout = 0.2
 n_heads = 6
 n_layers = 6
-
+# -----------------
 
 # Read the input file
 with open('./input.txt', 'r', encoding='utf-8') as f:
@@ -182,7 +189,8 @@ class BigramLanguageModel(nn.Module):
 
 model = BigramLanguageModel()
 m = model.to(device)
-print('model is on', next(m.parameters()).device)
+print(sum(p.numel() for p in m.parameters() if p.requires_grad))
+
 # Optimizer
 optimizer = torch.optim.AdamW(m.parameters(), lr=learning_rate)
 
@@ -207,10 +215,10 @@ print('final loss', loss.item())
 
 # Sample start input
 input = torch.zeros((1,1), dtype=torch.long).to(device)
-out = decode(m.generate(input, max_new_tokens=500)[0].tolist()) # [0] is needed as we have a Batch dimension
+out = decode(m.generate(input, max_new_tokens=1000)[0].tolist()) # [0] is needed as we have a Batch dimension
 
 print(out)
 
-
-
-
+# Save the output
+with open('output.txt', 'w') as f:
+    f.write(out)
