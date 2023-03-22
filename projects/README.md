@@ -18,3 +18,4 @@ All project specific code exists in the `projects` folder.
 - `micrograd` - Backpropagation and neural network primitives.
 - `makemore` - Bigram and neural network language model primitive.
 - `gpt` - Transformer based character-level language model.
+- `forward_forward` - Geoffrey Hinton's proposed forward forward neural network training algorithm.

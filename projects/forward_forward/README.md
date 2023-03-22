@@ -1,0 +1,8 @@
+# Forward forward 
+
+Forward forward is a backpropgation alternative proposed in [this paper](https://www.cs.toronto.edu/~hinton/FFA13.pdf) utilising 2 forward passes in a contrastive learning like scenario for training a neural network without the need to cache the entire computational graph like in backward propagation.
+
+This is a minimal implementation of the paper.
+
+## Resources
+- [The Forward-Forward Algorithm: Some Preliminary Investigations](https://www.cs.toronto.edu/~hinton/FFA13.pdf)
