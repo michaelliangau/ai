@@ -9,7 +9,7 @@ import torch
 import IPython
 import datasets
 
-hf_dataset_row = datasets.arrow_dataset.Example
+hf_dataset_row = datasets.arrow_dataset.Dataset
 
 
 def start_comet_ml_logging(project_name: str) -> Experiment:
