@@ -71,7 +71,7 @@ torch.manual_seed(42)
 # Hyperparameters
 lr = 1e-5
 batch_size = 64
-num_epoch = 10
+num_epoch = 100
 eval_save_interval = 10000
 
 
@@ -98,7 +98,6 @@ class ForwardForwardNet(nn.Module):
         logits_pos = self.output(cat_pos)
         train_target = x_pos[:, :10]
         loss = F.cross_entropy(logits_pos, train_target)
-
         self.output_optimizer.zero_grad()
         loss.backward()
         self.output_optimizer.step()
@@ -157,49 +156,51 @@ train_loader = torch.utils.data.DataLoader(
 train_neg_loader = torch.utils.data.DataLoader(
     train_neg_input, batch_size=batch_size, shuffle=True, drop_last=True
 )
-
-
-m = ForwardForwardNet()
-m.to(device)
-
-# Load checkpoint
-m.load_state_dict(torch.load("./final_checkpoint.pt"))
-
-# # Train the forward forward net
-# for epoch in range(num_epoch):
-#     for iter, (x_pos, x_neg) in tqdm(
-#         enumerate(zip(train_loader, train_neg_loader)), total=len(train_loader)
-#     ):
-#         x_pos = x_pos.view(batch_size, -1).float()
-#         x_neg = x_neg.view(batch_size, -1).float()
-
-#         loss = m(x_pos, x_neg)
-
-#     # print and save end of every epoch
-#     print(f"Epoch {epoch+1}: Loss {loss.item()}")
-#     # evaluate_model()
-#     torch.save(m.state_dict(), f"./output/ff_net_{epoch+1}.pt")
-
-
-# Evaluate
-m.eval()
 test_loader = torch.utils.data.DataLoader(
     test_input, batch_size=batch_size, shuffle=False, drop_last=True
 )
 test_target_loader = torch.utils.data.DataLoader(
     test_target, batch_size=batch_size, shuffle=False, drop_last=True
 )
-correct = 0
-total = 0
-with torch.no_grad():
-    for iter, (x, target) in tqdm(
-        enumerate(zip(test_loader, test_target_loader)), total=len(test_loader)
-    ):
-        x = x.view(batch_size, -1).float()
-        target = target.view(batch_size).long()
-        probs = m.inference(x)
-        _, pred = torch.max(probs, dim=1)
-        correct += (pred == target).sum().item()
-        total += target.shape[0]
 
-print(f"Accuracy: {correct/total}, Correct: {correct}, Total: {total}")
+
+def evaluate_model():
+    # Evaluate
+    m.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for iter, (x, target) in tqdm(
+            enumerate(zip(test_loader, test_target_loader)), total=len(test_loader)
+        ):
+            x = x.view(batch_size, -1).float()
+            # Change the first 10 values to 0.1 to void label information.
+            x[:, :10] = 0.1
+            target = target.view(batch_size).long()
+            probs = m.inference(x)
+            _, pred = torch.max(probs, dim=1)
+            correct += (pred == target).sum().item()
+            total += target.shape[0]
+
+    print(f"Accuracy: {correct/total}")
+    m.train()
+
+
+m = ForwardForwardNet()
+m.to(device)
+
+# Load checkpoint
+# m.load_state_dict(torch.load("./final_sup_checkpoint.pt"))
+
+# Train the forward forward net
+for epoch in range(num_epoch):
+    for iter, (x_pos, x_neg) in tqdm(
+        enumerate(zip(train_loader, train_neg_loader)), total=len(train_loader)
+    ):
+        x_pos = x_pos.view(batch_size, -1).float()
+        x_neg = x_neg.view(batch_size, -1).float()
+        loss = m(x_pos, x_neg)
+
+    # print and save end of every epoch
+    print(f"Epoch {epoch+1}: Loss {loss.item()}")
+    torch.save(m.state_dict(), f"./output/ff_net_{epoch+1}.pt")
+    evaluate_model()
