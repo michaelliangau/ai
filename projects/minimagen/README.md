@@ -1,12 +1,8 @@
-# GPT from scratch
+# Minimagen
 
-10M parameter decoder-only Transformer based character level language model. This replicates the pretraining phase of LM-based chatbots like ChatGPT and Claude.
-
-This implementation also follows the Attention Is All You Need paper.
-
-`input.txt` - 1M tokens of the collected works of Shakespeare
-`output.txt` - LM generated text from a model trained to produce Shakespeare-sounding text.
+Minimagen is a diffusion-based text-to-image released by Google in 2021. It is a generative model that takes a text description as input and generates an image as output. This is a minimal implementation of the model in PyTorch.
 
 ## Resources
-- [Let's build GPT: from scratch, in code, spelled out.](https://www.youtube.com/watch?v=kCc8FmEb1nY&list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ&index=7)
-- [Attention is All You Need](https://arxiv.org/pdf/1706.03762.pdf)
+- [MinImagen - Build Your Own Imagen Text-to-Image Model](https://www.assemblyai.com/blog/minimagen-build-your-own-imagen-text-to-image-model/)
+- [Introduction to Diffusion Models for Machine Learning](https://www.assemblyai.com/blog/diffusion-models-for-machine-learning-introduction/)
+- [Denoising Diffusion Probabilistic Models](https://arxiv.org/pdf/2006.11239.pdf)
