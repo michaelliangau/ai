@@ -23,8 +23,7 @@ All project specific code exists in the `projects` folder.
 - `makemore` - Bigram and neural network language model primitive.
 - `gpt` - Transformer based character-level language model.
 - `forward_forward` - Geoffrey Hinton's proposed forward forward neural network training algorithm.
-- `minimagen` - Google's diffusion model to text to image implementation.
-
+- `diffusion_model` - Vanilla image diffusion model on Stanford cars dataset.
 
 ## Common utils
 
