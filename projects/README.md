@@ -20,3 +20,4 @@ All project specific code exists in the `projects` folder.
 - `gpt` - Transformer based character-level language model.
 - `forward_forward` - Geoffrey Hinton's proposed forward forward neural network training algorithm.
 - `diffusion_model` - Vanilla image diffusion model on Stanford cars dataset.
+- `buffet_bot` - Real time context aware LLMs for equities investing.
