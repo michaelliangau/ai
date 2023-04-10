@@ -19,36 +19,48 @@ with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
     OPENAI_API_KEY = f.readline().strip()
     openai.api_key = OPENAI_API_KEY
 
-# loader = TextLoader("context_data/test_article.txt")
-# documents = loader.load()
-# text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separator="\n")
-# texts = text_splitter.split_documents(documents)
+loader = TextLoader("context_data/test_articles_one.txt")
+documents = loader.load()
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separator="\n")
+texts = text_splitter.split_documents(documents)
 
-# qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), chain_type="stuff")
+embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+docsearch = Chroma.from_documents(texts, embeddings)
 
-# IPython.embed()
+qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), chain_type="stuff", retriever=docsearch.as_retriever())
 
-# embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-# docsearch = Chroma.from_documents(texts, embeddings)
 
-# qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), chain_type="stuff", retriever=docsearch.as_retriever())
-
-# query = "What's happening in New York?"
-# response = qa.run(query)
-# print(response)
+while True:
+    test_prompt = input("Prompt: ")
+    context_response = qa.run(test_prompt)
+    print(context_response)
 
 
 
-prompt = "I am a value investor, can you give me a few leads on value stocks that I can look deeper into to invest myself?"
+exit()
+# Input loop
+# TODO increase context size for output
+context_prompt = "The user is a value investor looking for leads on value stocks to investigate for potential investments. Your task is to provide context and relevant information that will help another language model to recommend specific stocks. Please analyze the most recent news articles and financial data, and provide a summary of the following topics:\n1. Industry trends and recent news events that may impact the valuation of companies in those sectors, presenting opportunities for value investors.\n2. Any recent macroeconomic developments, regulatory changes, or market shifts that could create opportunities or risks for value investors.\n3. Notable management changes, strategic decisions, or company announcements that could influence the long-term prospects of potential value stocks.\nYour goal is not to select specific stocks but to provide the essential context that another language model can use to recommend undervalued investment opportunities for the user."
 
+context_response = qa.run(context_prompt)
+print("Context response:", context_response)
+
+# Final prompt
+# Input user_prompt
+user_prompt = input("Prompt: ")
+
+init_prompt = "You are a helpful financial assistant. Include a brief explanation for each stock recommendation, including the reasons why they are considered quality investments. Only include information about the stocks in bullet points. Include information about its price/earnings ratio if it exists and list your confidence on this stock pick."
+
+final_prompt = f"{user_prompt}\nContext on the macroeconomic environment:\n{context_response}"
 
 response = openai.ChatCompletion.create(
   model="gpt-3.5-turbo",
   messages=[
-        {"role": "system", "content": "You are a helpful financial planning assistant, your job is help users to increase their net worth with helpful advice."},
-        {"role": "user", "content": prompt},
+        {"role": "system", "content": init_prompt},
+        {"role": "user", "content": final_prompt},
     ]
 )
+print("Final response:", response)
 IPython.embed()
 
 
