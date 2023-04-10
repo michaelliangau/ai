@@ -20,14 +20,13 @@ from langchain.chains import RetrievalQA
 from langchain.document_loaders import TextLoader
 from langchain.vectorstores import Pinecone
 from langchain.chains.question_answering import load_qa_chain
+import anthropic
 
 # argparse flags
 parser = argparse.ArgumentParser()
 parser.add_argument("--llm", default="openai", required=True)
 args = parser.parse_args()
-
 llm = args.llm
-
 
 # Set Pinecone API Key
 with open('/Users/michael/Desktop/wip/pinecone_credentials.txt', 'r') as f:
@@ -35,10 +34,17 @@ with open('/Users/michael/Desktop/wip/pinecone_credentials.txt', 'r') as f:
     PINECONE_API_ENV = f.readline().strip()
     pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
-# Set OpenAI API Key
-with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
-    OPENAI_API_KEY = f.readline().strip()
-    openai.api_key = OPENAI_API_KEY
+if llm == "openai":
+    # Set OpenAI API Key
+    with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
+        OPENAI_API_KEY = f.readline().strip()
+        openai.api_key = OPENAI_API_KEY
+elif llm == "claude":
+    # Set Anthropic API Key
+    with open('/Users/michael/Desktop/wip/anthropic_credentials.txt', 'r') as f:
+        ANTHROPIC_API_KEY = f.readline().strip()
+    client = anthropic.Client(ANTHROPIC_API_KEY)
+
 
 # Load data
 loader = TextLoader("context_data/test_articles_one.txt")
@@ -66,7 +72,6 @@ while True:
     docs = pinecone_service.query(
         namespace='data',
         top_k=10,
-        # include_values=True,
         include_metadata=True,
         vector=query_embedding,
     )
@@ -91,6 +96,11 @@ while True:
                 {"role": "user", "content": final_prompt},
             ]
         )
-    else:
-        pass
+    elif llm == "claude":
+        response = client.completion(
+            prompt=final_prompt,
+            # stop_sequences = [anthropic.HUMAN_PROMPT],
+            model="claude-v1",
+            max_tokens_to_sample=100,
+        )
     print("Final response:", response)
