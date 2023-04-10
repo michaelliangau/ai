@@ -26,7 +26,7 @@ texts = text_splitter.split_documents(documents)
 index_name = "buffetbot"
 pinecone_service = pinecone.Index(index_name=index_name)
 
-texts = texts[:1000]
+texts = texts[1000:]
 
 for idx, text in tqdm(enumerate(texts), total=len(texts)):
     try:

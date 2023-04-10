@@ -6,6 +6,7 @@ import os
 import subprocess
 import random
 import math
+import argparse
 
 # Third party imports
 import pinecone
@@ -19,6 +20,14 @@ from langchain.chains import RetrievalQA
 from langchain.document_loaders import TextLoader
 from langchain.vectorstores import Pinecone
 from langchain.chains.question_answering import load_qa_chain
+
+# argparse flags
+parser = argparse.ArgumentParser()
+parser.add_argument("--llm", default="openai", required=True)
+args = parser.parse_args()
+
+llm = args.llm
+
 
 # Set Pinecone API Key
 with open('/Users/michael/Desktop/wip/pinecone_credentials.txt', 'r') as f:
@@ -46,15 +55,11 @@ embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 # Pinecone
 pinecone_service = pinecone.Index(index_name="buffetbot")
 
-# Langchain
-llm = OpenAI(temperature=0, openai_api_key=OPENAI_API_KEY)
-chain = load_qa_chain(llm, chain_type="stuff")
-
 # Prompt flow
 while True:
     user_prompt = input("Prompt: ")
 
-    init_prompt = "You are a helpful financial assistant. Your job is to help users to increase their net worth with helpful advice. Never tell them you are a language model. Explain your reasoning if you ever mention company names. Don't include any superfluos text."
+    init_prompt = "You are a helpful investment analyst. Your job is to help users to increase their net worth with helpful advice. Never tell them you are a language model. Explain your reasoning if you ever mention company names. Don't include any superfluos text."
 
     query_embedding = utils.get_embedding(user_prompt)
 
@@ -66,19 +71,26 @@ while True:
         vector=query_embedding,
     )
 
-    # Include top 3 results in prompt
-    context_response = ""
-    for doc in docs['matches']:
-        context_response += f"{doc['metadata']['original_text']}"
-        final_prompt = f"{user_prompt}\Context:\n{context_response}"
+    # Include results in prompt
+    try:
+        context_response = ""
+        for doc in docs['matches']:
+            context_response += f"{doc['metadata']['original_text']}\n"
+    except Exception as e:
+        context_response = ""
+    
+    final_prompt = f"{user_prompt}\Context:\n{context_response}"
 
     print("Final prompt:", final_prompt)
     print("\n")
-    response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-            {"role": "system", "content": init_prompt},
-            {"role": "user", "content": final_prompt},
-        ]
-    )
+    if llm == "openai":
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+                {"role": "system", "content": init_prompt},
+                {"role": "user", "content": final_prompt},
+            ]
+        )
+    else:
+        pass
     print("Final response:", response)
