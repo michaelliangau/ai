@@ -19,21 +19,44 @@ with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
     OPENAI_API_KEY = f.readline().strip()
     openai.api_key = OPENAI_API_KEY
 
-loader = TextLoader("context_data/test_article.txt")
-documents = loader.load()
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-texts = text_splitter.split_documents(documents)
+# loader = TextLoader("context_data/test_article.txt")
+# documents = loader.load()
+# text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separator="\n")
+# texts = text_splitter.split_documents(documents)
 
-embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-docsearch = Chroma.from_documents(texts, embeddings)
+# qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), chain_type="stuff")
 
-qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), chain_type="stuff", retriever=docsearch.as_retriever())
+# IPython.embed()
 
-query = "What's happening in New York?"
-response = qa.run(query)
-print(response)
+# embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+# docsearch = Chroma.from_documents(texts, embeddings)
+
+# qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), chain_type="stuff", retriever=docsearch.as_retriever())
+
+# query = "What's happening in New York?"
+# response = qa.run(query)
+# print(response)
 
 
+
+prompt = "I am a value investor, can you give me a few leads on value stocks that I can look deeper into to invest myself?"
+
+
+response = openai.ChatCompletion.create(
+  model="gpt-3.5-turbo",
+  messages=[
+        {"role": "system", "content": "You are a helpful financial planning assistant, your job is help users to increase their net worth with helpful advice."},
+        {"role": "user", "content": prompt},
+    ]
+)
+IPython.embed()
+
+
+
+########
+# Prompt: I am a value investor, can you give me a few leads on value stocks that I can look deeper into to invest myself? You are a helpful financial planning assistant, your job is help users to increase their net worth with helpful advice.
+# Response: Certainly! Here are a few value stocks that you might want to consider researching further:\n\n1. Berkshire Hathaway (BRK-A): Warren Buffet's legendary investment conglomerate that has a diverse portfolio of companies in areas such as insurance, energy, and manufacturing.\n\n2. JPMorgan Chase & Co. (JPM): One of the largest financial institutions in the world, JPMorgan has a strong balance sheet and generates significant free cash flow, making it an attractive value investment.\n\n3. Johnson & Johnson (JNJ): J&J is a well-established company with a diverse portfolio of consumer health products and pharmaceuticals. It has a strong history of steady growth and dividend payments.\n\n4. Walgreens Boots Alliance, Inc. (WBA): Walgreens is a major player in the retail pharmacy industry with a strong store network and distribution platform. The company is currently undergoing a transformation to enhance its digital capabilities.\n\nPlease note that any investment decision should be made after conducting thorough due diligence, analyzing the company\u2019s financials and business fundamentals, and considering your own investment objectives and risk tolerance.
+#########
 
 
 # PINCONE
