@@ -26,24 +26,22 @@ texts = text_splitter.split_documents(documents)
 index_name = "buffetbot"
 pinecone_service = pinecone.Index(index_name=index_name)
 
-vectors = []
+texts = texts[:1000]
 
 for idx, text in tqdm(enumerate(texts), total=len(texts)):
-    embeddings = get_embedding(text.page_content)
-    vector = {
-        'id': str(idx),
-        'values': embeddings,
-        'metadata': {
-            'category': 'news',
-            'original_text': text.page_content,
-        },
-    }
-    vectors.append(vector)
-
-
-upsert_response = pinecone_service.upsert(
-    vectors=vectors,
-    namespace='data',
-)
-
-IPython.embed()
+    try:
+        embeddings = get_embedding(text.page_content)
+        vector = {
+            'id': str(idx),
+            'values': embeddings,
+            'metadata': {
+                'category': 'news',
+                'original_text': text.page_content,
+            },
+        }
+        upsert_response = pinecone_service.upsert(
+            vectors=[vector],
+            namespace='data',
+        )
+    except Exception as e:
+        print(e)

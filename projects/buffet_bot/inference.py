@@ -1,10 +1,13 @@
+# Our imports
+import utils
+
 # Native imports
 import os
 import subprocess
 import random
 import math
 
-# # Third party imports
+# Third party imports
 import pinecone
 import openai
 import IPython
@@ -28,49 +31,49 @@ with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
     OPENAI_API_KEY = f.readline().strip()
     openai.api_key = OPENAI_API_KEY
 
-def get_embedding(text, model="text-embedding-ada-002"):
-   text = text.replace("\n", " ")
-   return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
-
+# Load data
 loader = TextLoader("context_data/test_articles_one.txt")
 documents = loader.load()
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separator="\n")
 texts = text_splitter.split_documents(documents)
 
+# OpenAI embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
 # Chroma for debug
 # docsearch = Chroma.from_documents(texts, embeddings)
 
+# Pinecone
 pinecone_service = pinecone.Index(index_name="buffetbot")
 
+# Langchain
 llm = OpenAI(temperature=0, openai_api_key=OPENAI_API_KEY)
 chain = load_qa_chain(llm, chain_type="stuff")
 
-query = "mets"
-query_embedding = get_embedding(query)
-
-docs = pinecone_service.query(
-    namespace='data',
-    top_k=3,
-    # include_values=True,
-    include_metadata=True,
-    vector=query_embedding,
-)
-
-# Include top 3 results in prompt
-context_response = ""
-for doc in docs['matches']:
-    context_response += f"{doc['metadata']['original_text']}"
-
-# Final prompt
+# Prompt flow
 while True:
     user_prompt = input("Prompt: ")
 
-    init_prompt = "You are a helpful financial assistant. Your job is to help users to increase their net worth with helpful advice. Telling them you are a language model is extremely unhelpful, do not do that."
+    init_prompt = "You are a helpful financial assistant. Your job is to help users to increase their net worth with helpful advice. Never tell them you are a language model. Explain your reasoning if you ever mention company names. Don't include any superfluos text."
 
-    final_prompt = f"{user_prompt}\nThis is context on the wider world:\n{context_response}"
+    query_embedding = utils.get_embedding(user_prompt)
 
+    docs = pinecone_service.query(
+        namespace='data',
+        top_k=10,
+        # include_values=True,
+        include_metadata=True,
+        vector=query_embedding,
+    )
+
+    # Include top 3 results in prompt
+    context_response = ""
+    for doc in docs['matches']:
+        context_response += f"{doc['metadata']['original_text']}"
+        final_prompt = f"{user_prompt}\Context:\n{context_response}"
+
+    print("Final prompt:", final_prompt)
+    print("\n")
     response = openai.ChatCompletion.create(
     model="gpt-3.5-turbo",
     messages=[
@@ -79,6 +82,3 @@ while True:
         ]
     )
     print("Final response:", response)
-
-
-IPython.embed()
