@@ -57,6 +57,7 @@ docs = pinecone_service.query(
     include_metadata=True,
     vector=query_embedding,
 )
+
 # Include top 3 results in prompt
 context_response = ""
 for doc in docs['matches']:

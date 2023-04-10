@@ -3,6 +3,7 @@ import pinecone
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import TextLoader
 import IPython
+from tqdm import tqdm
 
 with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
     OPENAI_API_KEY = f.readline().strip()
@@ -27,9 +28,7 @@ pinecone_service = pinecone.Index(index_name=index_name)
 
 vectors = []
 
-texts = texts[:10]
-
-for idx, text in enumerate(texts):
+for idx, text in tqdm(enumerate(texts), total=len(texts)):
     embeddings = get_embedding(text.page_content)
     vector = {
         'id': str(idx),
@@ -46,3 +45,5 @@ upsert_response = pinecone_service.upsert(
     vectors=vectors,
     namespace='data',
 )
+
+IPython.embed()
