@@ -1,6 +1,6 @@
-# Deep Learning
+# AI
 
-Monorepo for all deep learning related code intended purely for educational and experimental purposes.
+Monorepo for all AI/deep learning related code intended purely for educational and experimental purposes.
 
 ## Projects
 
