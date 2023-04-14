@@ -90,7 +90,7 @@ while True:
         response = client.completion(
             prompt=f"\n\nHuman: {final_prompt}\n\nAssistant:",
             stop_sequences = [anthropic.HUMAN_PROMPT],
-            model="claude-instant-v1",
-            max_tokens_to_sample=100,
+            model="claude-v1.3",
+            max_tokens_to_sample=1000,
         )
     print("Final response:", response)
