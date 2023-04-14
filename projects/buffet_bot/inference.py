@@ -34,29 +34,19 @@ with open('/Users/michael/Desktop/wip/pinecone_credentials.txt', 'r') as f:
     PINECONE_API_ENV = f.readline().strip()
     pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
-if llm == "openai":
-    # Set OpenAI API Key
-    with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
-        OPENAI_API_KEY = f.readline().strip()
-        openai.api_key = OPENAI_API_KEY
-elif llm == "claude":
-    # Set Anthropic API Key
-    with open('/Users/michael/Desktop/wip/anthropic_credentials.txt', 'r') as f:
-        ANTHROPIC_API_KEY = f.readline().strip()
-    client = anthropic.Client(ANTHROPIC_API_KEY)
-
-
-# Load data
-loader = TextLoader("context_data/test_articles_one.txt")
-documents = loader.load()
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separator="\n")
-texts = text_splitter.split_documents(documents)
+# Set OpenAI API Key
+with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
+    OPENAI_API_KEY = f.readline().strip()
+    openai.api_key = OPENAI_API_KEY
 
 # OpenAI embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
-# Chroma for debug
-# docsearch = Chroma.from_documents(texts, embeddings)
+if llm == "anthropic":
+    # Set Anthropic API Key
+    with open('/Users/michael/Desktop/wip/anthropic_credentials.txt', 'r') as f:
+        ANTHROPIC_API_KEY = f.readline().strip()
+    client = anthropic.Client(ANTHROPIC_API_KEY)
 
 # Pinecone
 pinecone_service = pinecone.Index(index_name="buffetbot")
@@ -96,11 +86,11 @@ while True:
                 {"role": "user", "content": final_prompt},
             ]
         )
-    elif llm == "claude":
+    elif llm == "anthropic":
         response = client.completion(
-            prompt=final_prompt,
-            # stop_sequences = [anthropic.HUMAN_PROMPT],
-            model="claude-v1",
+            prompt=f"\n\nHuman: {final_prompt}\n\nAssistant:",
+            stop_sequences = [anthropic.HUMAN_PROMPT],
+            model="claude-instant-v1",
             max_tokens_to_sample=100,
         )
     print("Final response:", response)
