@@ -24,7 +24,7 @@ import anthropic
 
 # argparse flags
 parser = argparse.ArgumentParser()
-parser.add_argument("--llm", default="openai", required=True)
+parser.add_argument("--llm", default="anthropic", choices=["anthropic", "openai"], required=False)
 args = parser.parse_args()
 llm = args.llm
 
@@ -51,11 +51,14 @@ if llm == "anthropic":
 # Pinecone
 pinecone_service = pinecone.Index(index_name="buffetbot")
 
+# Conversation history
+conversation_history = []
+
 # Prompt flow
 while True:
     user_prompt = input("Prompt: ")
 
-    init_prompt = "You are a helpful investment analyst. Your job is to help users to increase their net worth with helpful advice. Never tell them you are a language model. Explain your reasoning if you ever mention company names. Don't include any superfluos text."
+    init_prompt = "You are a helpful investment analyst. Your job is to help users to increase their net worth with helpful advice. Never tell them you are a language model. Do not include superfluous information."
 
     query_embedding = utils.get_embedding(user_prompt)
 
@@ -70,14 +73,12 @@ while True:
     try:
         context_response = ""
         for doc in docs['matches']:
-            context_response += f"{doc['metadata']['original_text']}\n"
+            context_response += f"{doc['metadata']['original_text']}"
     except Exception as e:
         context_response = ""
     
-    final_prompt = f"{user_prompt}\Context:\n{context_response}"
+    final_prompt = f"{user_prompt}\nContext: {context_response}"
 
-    print("Final prompt:", final_prompt)
-    print("\n")
     if llm == "openai":
         response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -87,10 +88,21 @@ while True:
             ]
         )
     elif llm == "anthropic":
+        anthropic_prompt = ""
+        for interaction in conversation_history:
+            if interaction['role'] == 'user':
+                anthropic_prompt += f"\n\nHuman: {interaction['content']}"
+            elif interaction['role'] == 'system':
+                anthropic_prompt += f"\n\nAssistant: {interaction['content']}"
+        anthropic_prompt += f"\n\nHuman: {user_prompt}\n\nAssistant:"
+
         response = client.completion(
-            prompt=f"\n\nHuman: {final_prompt}\n\nAssistant:",
+            prompt= anthropic_prompt,
             stop_sequences = [anthropic.HUMAN_PROMPT],
             model="claude-v1.3",
             max_tokens_to_sample=1000,
         )
+    conversation_history.append({'role': 'user', 'content':final_prompt})
+    conversation_history.append({'role': 'system', 'content':response['completion']})
+
     print("Final response:", response)
