@@ -2,13 +2,6 @@ import yfinance as yf
 import pandas as pd
 import datetime
 
-
-import yfinance as yf
-import pandas as pd
-import datetime
-import pytz
-
-
 class StockSimulator:
     def __init__(self):
         self.stock_data = {}
@@ -23,10 +16,6 @@ class StockSimulator:
 
     def get_price_at_time(self, ticker, date):
         return self.stock_data[ticker].loc[date]['Close']
-
-    def accelerate_time(self, ticker, date):
-        date = pd.Timestamp(date).tz_localize('UTC')
-        self.stock_data[ticker] = self.stock_data[ticker].truncate(after=date)
 
     def buy(self, ticker, date, shares):
         price = self.get_price_at_time(ticker, date)
@@ -83,9 +72,6 @@ apple_price = simulator.get_price_at_time('AAPL', '2020-02-03')
 microsoft_price = simulator.get_price_at_time('MSFT', '2020-02-03')
 print(f"AAPL price on 2020-02-03: ${apple_price:.2f}")
 print(f"MSFT price on 2020-02-03: ${microsoft_price:.2f}\n")
-
-# Accelerate time
-simulator.accelerate_time('AAPL', '2020-03-01')
 
 # Buy shares
 simulator.buy('AAPL', '2020-02-03', 10)
