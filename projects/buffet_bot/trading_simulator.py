@@ -5,40 +5,6 @@ import IPython
 
 class StockSimulator:
     """Stock simulator class for simulating stock trades and calculating profit/loss.
-    
-    Example usage:
-    
-    # Create a StockSimulator instance
-    simulator = StockSimulator()
-
-    # Fetch stock data for Apple and Microsoft
-    simulator.get_stock_data('AAPL', '2020-01-01', '2021-01-01')
-    simulator.get_stock_data('MSFT', '2020-01-01', '2021-01-01')
-
-    # Get and print stock prices at specific dates
-    apple_price = simulator.get_price_at_time('AAPL', '2020-02-03')
-    microsoft_price = simulator.get_price_at_time('MSFT', '2020-02-03')
-    print(f"AAPL price on 2020-02-03: ${apple_price:.2f}")
-    print(f"MSFT price on 2020-02-03: ${microsoft_price:.2f}\n")
-
-    # Buy shares
-    simulator.buy('AAPL', '2020-02-03', 10)
-    simulator.buy('MSFT', '2020-02-03', 20)
-
-    # Sell shares
-    simulator.sell('AAPL', '2020-02-28', 5)
-    simulator.sell('MSFT', '2020-02-28', 10)
-
-    # Calculate and print profit/loss
-    apple_profit_loss = simulator.profit_loss('AAPL', '2020-02-28')
-    microsoft_profit_loss = simulator.profit_loss('MSFT', '2020-02-28')
-    print(f"AAPL profit/loss on 2020-02-28: ${apple_profit_loss:.2f}")
-    print(f"MSFT profit/loss on 2020-02-28: ${microsoft_profit_loss:.2f}\n")
-
-    # Get and print portfolio position
-    portfolio_position = simulator.get_portfolio_position('2020-02-28')
-    print("Portfolio position on 2020-02-28:")
-    print(portfolio_position)
     """
     def __init__(self):
         self.stock_data = {}
@@ -59,13 +25,17 @@ class StockSimulator:
             current_date += datetime.timedelta(days=1)
         return current_date.strftime('%Y-%m-%d')
        
-    def update_holdings(self, stocks_dict, date):
+    def update_holdings(self, stocks_dict, date, initial_investment=100000):
         # Calculate the total portfolio value
         total_portfolio_value = 0
         for ticker, percentage in stocks_dict.items():
             if ticker in self.holdings:
                 current_price = self.get_price_at_time(ticker, date)
                 total_portfolio_value += current_price * self.holdings[ticker]
+
+        # If total_portfolio_value is 0, use the initial_investment value
+        if total_portfolio_value == 0:
+            total_portfolio_value = initial_investment
 
         # Update holdings based on the percentage of the total portfolio
         for ticker, percentage in stocks_dict.items():
@@ -80,7 +50,6 @@ class StockSimulator:
                 self.sell(ticker, date, self.holdings.get(ticker, 0) - target_shares)
             else:
                 continue
-
 
     def get_stock_data(self, ticker, start_date, end_date):
         stock = yf.Ticker(ticker)
@@ -125,10 +94,14 @@ class StockSimulator:
 
     def get_portfolio_position(self, date):
         portfolio_position = []
+        portfolio_value = 0
         for ticker in self.holdings:
             current_price = self.get_price_at_time(ticker, date)
             total_shares = self.holdings[ticker]
             position_value = total_shares * current_price
+            portfolio_value += position_value
             portfolio_position.append(f"Current position for {ticker}: {total_shares} shares at a market price of ${current_price:.2f} per share. Total position value: ${position_value:.2f}.")
+        portfolio_position.append(f"Total portfolio value: ${portfolio_value:.2f}.")
         return '\n'.join(portfolio_position)
+
 
