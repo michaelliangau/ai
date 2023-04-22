@@ -2,9 +2,13 @@
 import json
 
 # Our imports
+import sys
+sys.path.append("../..")
+import common.utils as common_utils
 from llm import BuffetBot
 from trading_simulator import StockSimulator
 import utils
+
 
 # Third party imports
 import IPython
@@ -17,9 +21,14 @@ def main():
     investment_schedule = 'monthly'
     num_simulated_months = 48
     num_simulations = 3
+    llm_additional_context = "news"
+    experiment_folder_path = 'output/experiments/news_context'
+
+    # Creates output folder if it doesn't exist
+    common_utils.create_folder(experiment_folder_path)
 
     # Init bots and simulator
-    bot = BuffetBot(llm="anthropic", vector_context=False, store_conversation_history=False)
+    bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
     simulator = StockSimulator(initial_investment)
 
     # Run simulation
@@ -54,7 +63,7 @@ def main():
                 print(e)
 
         # Save the results
-        with open(f'output/sim_{sim}.json', 'w') as f:
+        with open(f'{experiment_folder_path}/sim_{sim}.json', 'w') as f:
             json.dump(results, f)
 
         # Reset the context_window_date and simulator for the next simulation

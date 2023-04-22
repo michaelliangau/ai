@@ -16,7 +16,7 @@ import IPython
 common_utils.start_comet_ml_logging("michaelliang-dev")
 
 # Create clean output folder
-common_utils.create_outputs_folder()
+common_utils.create_folder('outputs')
 common_utils.delete_outputs_folder_contents()
 
 device = common_utils.get_device()

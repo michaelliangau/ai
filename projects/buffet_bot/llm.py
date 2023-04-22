@@ -1,3 +1,4 @@
+import IPython
 import os
 import openai
 import pinecone
@@ -5,26 +6,28 @@ import anthropic
 import utils
 
 class BuffetBot:
-    def __init__(self, llm="anthropic", vector_context=False, store_conversation_history=False):
+    def __init__(self, llm="anthropic", additional_context=None, store_conversation_history=False):
         """Initializes the BuffetBot class.
         
         Args:
             llm (str): The language model to use. Options are "openai" and "anthropic".
-            vector_context (bool): Whether to use vector context or not.
+            additional_context (str): Whether to use additional context. Options are "vector", "news" and None.
             store_conversation_history (bool): Whether to store the conversation history or not.
         """
         self.llm = llm
         self.conversation_history = []
-        self.vector_context = vector_context
+        self.additional_context = additional_context
         self.store_conversation_history = store_conversation_history
 
-        if self.vector_context:
+        if self.additional_context == 'vector':
             self.pinecone_service = pinecone.Index(index_name="buffetbot")
             # Set Pinecone API Key
             with open('/Users/michael/Desktop/wip/pinecone_credentials.txt', 'r') as f:
                 PINECONE_API_KEY = f.readline().strip()
                 PINECONE_API_ENV = f.readline().strip()
                 pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
+        elif self.additional_context == 'news':
+            self.context_dataset_path = 'context_data/huff_news_2012_2021.json'
 
         # Set OpenAI API Key
         with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
@@ -37,7 +40,7 @@ class BuffetBot:
                 ANTHROPIC_API_KEY = f.readline().strip()
             self.client = anthropic.Client(ANTHROPIC_API_KEY)
 
-    def get_response(self, user_prompt):
+    def get_response(self, user_prompt, context_window_date):
         """Gets a response from the language model.
         
         Args:
@@ -46,7 +49,7 @@ class BuffetBot:
         Returns:
             response (str): The response from the language model.
         """
-        if self.vector_context:
+        if self.additional_context == 'vector':
             query_embedding = utils.get_embedding(user_prompt)
             docs = self.pinecone_service.query(
                 namespace='data',
@@ -61,6 +64,10 @@ class BuffetBot:
             except Exception as e:
                 context_response = ""
             llm_prompt = f"{user_prompt}\nContext: {context_response}"
+        elif self.additional_context == 'news':
+            start_date = utils.subtract_one_month(context_window_date)
+            news_response = utils.get_headlines_between_dates(self.context_dataset_path, start_date, context_window_date)
+            llm_prompt = f"{user_prompt}\nNews headlines in the last month: {news_response}"
         else:
             llm_prompt = user_prompt
 
@@ -74,7 +81,7 @@ class BuffetBot:
                 ]
             )
         elif self.llm == "anthropic":
-            anthropic_prompt = ""           
+            anthropic_prompt = ""         
             for interaction in self.conversation_history:
                 if interaction['role'] == 'user':
                     anthropic_prompt += f"\n\nHuman: {interaction['content']}"

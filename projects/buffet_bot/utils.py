@@ -3,6 +3,8 @@ from dateutil.relativedelta import relativedelta
 import datetime
 import yfinance as yf
 import json
+from datetime import datetime
+import random
 
 def get_embedding(text, model="text-embedding-ada-002"):
    text = text.replace("\n", " ")
@@ -38,7 +40,7 @@ def get_llm_response(bot, investor_type, context_window_date, current_holdings):
    if investor_type == 'value':
       llm_prompt = f'You are Warren Buffett, one of the world\'s most successful value investors, with a deep understanding of the stock market and a long history of making well-informed investment decisions. As Warren Buffett, you have a portfolio to invest in any investment vehicle. Build your portfolio and in your recommendations, consider factors such as company financials, management quality, competitive advantages, and the margin of safety. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integers percentages) in JSON format with double quotes. Do not return any other text.'
 
-   response = bot.get_response(llm_prompt)
+   response = bot.get_response(llm_prompt, context_window_date)
    response['completion'] = response['completion'].replace("'", '"')
    updated_portfolio = json.loads(response['completion'])
 
@@ -58,9 +60,7 @@ def update_holdings(simulator, updated_portfolio, context_window_date, initial_i
       prev_updated_portfolio (dict): The previous updated portfolio.
    """
    updated_portfolio = {key.replace(".", "-"): value for key, value in updated_portfolio.items()}
-   context_window_date_obj = datetime.datetime.strptime(context_window_date, '%Y-%m-%d')
-   end_date_obj = context_window_date_obj + relativedelta(months=1)
-   end_date = end_date_obj.strftime('%Y-%m-%d')
+   end_date = add_one_month(context_window_date)
 
    for ticker in updated_portfolio.keys():
       simulator.get_stock_data(ticker, start_date=context_window_date, end_date=end_date)
@@ -85,7 +85,71 @@ def increment_time(investment_schedule, context_window_date):
    """
    if investment_schedule == 'monthly':
       # Increment context_start_date by 1 month
-      context_window_date_obj = datetime.datetime.strptime(context_window_date, '%Y-%m-%d')
-      context_window_date_obj = context_window_date_obj + relativedelta(months=1)
-      context_window_date = context_window_date_obj.strftime('%Y-%m-%d')
+      context_window_date = add_one_month(context_window_date)
    return context_window_date
+
+def get_headlines_between_dates(file_path, start_date, end_date):
+   """Gets the headlines between the given dates.
+   
+   Args:
+      file_path (str): The file path to the headlines.
+      start_date (str): The start date.
+      end_date (str): The end date.
+   
+   Returns:
+      headlines (str): The headlines between the given dates in a newline-separated format.
+   """
+   headlines_list = []
+
+   # Convert input dates to datetime objects
+   start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+   end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+
+   with open(file_path, 'r') as file:
+      for line in file:
+         # Load JSON object from the line
+         news_item = json.loads(line)
+
+         # Convert the 'date' field to a datetime object
+         date_obj = datetime.strptime(news_item['date'], "%Y-%m-%d")
+
+         # Check if the date is within the specified range
+         if start_date_obj <= date_obj < end_date_obj:
+               headlines_list.append(news_item['headline'])
+
+   # Randomly sample 100 headlines if there are more than 100
+   if len(headlines_list) > 100:
+      headlines_list = random.sample(headlines_list, 100)
+
+   # Convert the list of headlines into a newline-separated string
+   headlines = "\n".join(headlines_list)
+
+   return headlines
+
+def add_one_month(date_str):
+   """Adds one month to the given date.
+   
+   Args:
+      date_str (str): The date to add one month to.
+   
+   Returns:
+      end_date (str): The date after adding one month.
+   """
+   start_date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+   end_date_obj = start_date_obj + relativedelta(months=1)
+   end_date = end_date_obj.strftime('%Y-%m-%d')
+   return end_date
+
+def subtract_one_month(date_str):
+   """Subtracts one month from the given date.
+   
+   Args:
+      date_str (str): The date to subtract one month from.
+   
+   Returns:
+      end_date (str): The date after subtracting one month.
+   """
+   start_date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+   end_date_obj = start_date_obj - relativedelta(months=1)
+   end_date = end_date_obj.strftime('%Y-%m-%d')
+   return end_date
