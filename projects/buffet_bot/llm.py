@@ -5,10 +5,18 @@ import anthropic
 import utils
 
 class BuffetBot:
-    def __init__(self, llm="anthropic", vector_context=False):
+    def __init__(self, llm="anthropic", vector_context=False, store_conversation_history=True):
+        """Initializes the BuffetBot class.
+        
+        Args:
+            llm (str): The language model to use. Options are "openai" and "anthropic".
+            vector_context (bool): Whether to use vector context or not.
+            store_conversation_history (bool): Whether to store the conversation history or not.
+        """
         self.llm = llm
         self.conversation_history = []
         self.vector_context = vector_context
+        self.store_conversation_history = store_conversation_history
 
         if self.vector_context:
             self.pinecone_service = pinecone.Index(index_name="buffetbot")
@@ -71,10 +79,11 @@ class BuffetBot:
                 stop_sequences=[anthropic.HUMAN_PROMPT],
                 model="claude-v1.3",
                 max_tokens_to_sample=1000,
-                temperature=0
+                # temperature=0
             )
 
-        self.conversation_history.append({'role': 'user', 'content': llm_prompt})
-        self.conversation_history.append({'role': 'system', 'content': response['completion']})
+        if self.store_conversation_history:
+            self.conversation_history.append({'role': 'user', 'content': llm_prompt})
+            self.conversation_history.append({'role': 'system', 'content': response['completion']})
 
         return response

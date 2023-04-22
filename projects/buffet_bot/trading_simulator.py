@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import datetime
 import IPython
+from dateutil.relativedelta import relativedelta
 
 class StockSimulator:
     """Stock simulator class for simulating stock trades and calculating profit/loss.
@@ -18,7 +19,6 @@ class StockSimulator:
         stock = yf.Ticker(ticker)
         stock_df = stock.history(start=date_obj, end=date_obj + datetime.timedelta(days=1))
         return not stock_df.empty
-
 
     def find_next_trading_day(self, ticker, start_date):
         current_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
@@ -41,21 +41,21 @@ class StockSimulator:
         # Update holdings based on the percentage of the total portfolio
         print(f"Updating holdings on {date}...")
         for ticker, percentage in stocks_dict.items():
-            target_value = total_portfolio_value * (percentage / 100)
-            current_price = self.get_price_at_time(ticker, date)
-            current_value = current_price * self.holdings.get(ticker, 0)
-            target_shares = target_value / current_price
+                target_value = total_portfolio_value * (percentage / 100)
+                current_price = self.get_price_at_time(ticker, date)
+                current_value = current_price * self.holdings.get(ticker, 0)
+                target_shares = target_value / current_price
 
-            if target_value > current_value:
-                shares_to_buy = target_shares - self.holdings.get(ticker, 0)
-                self.buy(ticker, date, shares_to_buy)
-                print(f"Bought {shares_to_buy} shares of {ticker}.")
-            elif target_value < current_value:
-                shares_to_sell = self.holdings.get(ticker, 0) - target_shares
-                self.sell(ticker, date, shares_to_sell)
-                print(f"Sold {shares_to_sell} shares of {ticker}.")
-            else:
-                print(f"No change in holdings for {ticker}.")
+                if target_value > current_value:
+                    shares_to_buy = target_shares - self.holdings.get(ticker, 0)
+                    self.buy(ticker, date, shares_to_buy)
+                    print(f"Bought {shares_to_buy} shares of {ticker}.")
+                elif target_value < current_value:
+                    shares_to_sell = self.holdings.get(ticker, 0) - target_shares
+                    self.sell(ticker, date, shares_to_sell)
+                    print(f"Sold {shares_to_sell} shares of {ticker}.")
+                else:
+                    print(f"No change in holdings for {ticker}.")
 
     def get_stock_data(self, ticker, start_date, end_date):
         stock = yf.Ticker(ticker)
@@ -63,6 +63,13 @@ class StockSimulator:
         self.stock_data[ticker] = stock_df
 
     def get_price_at_time(self, ticker, date):
+        if date not in self.stock_data[ticker].index:
+            # get stock data
+            date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
+            end_date_obj = date_obj + relativedelta(months=1)
+            end_date = end_date_obj.strftime('%Y-%m-%d')
+            self.get_stock_data(ticker, date, end_date)
+
         return self.stock_data[ticker].loc[date]['Close']
 
     def buy(self, ticker, date, shares):
@@ -93,25 +100,24 @@ class StockSimulator:
         })
         self.holdings[ticker] = self.holdings.get(ticker, 0) - shares
 
-    def profit_loss(self, ticker, current_date):
-        current_price = self.get_price_at_time(ticker, current_date)
-        initial_investment = sum([trade['trade_value'] for trade in self.trades if trade['ticker'] == ticker])
-        return self.holdings[ticker] * current_price - initial_investment
-
     def get_portfolio_position(self, date):
         portfolio_position = {}
         portfolio_value = 0
 
         for ticker in self.holdings:
-            current_price = self.get_price_at_time(ticker, date)
-            total_shares = self.holdings[ticker]
-            position_value = total_shares * current_price
-            portfolio_value += position_value
-            portfolio_position[ticker] = {
-                'shares': total_shares,
-                'price': current_price,
-                'position_value': position_value
-            }
+            try:
+                current_price = self.get_price_at_time(ticker, date)
+                total_shares = self.holdings[ticker]
+                position_value = total_shares * current_price
+                portfolio_value += position_value
+                portfolio_position[ticker] = {
+                    'shares': total_shares,
+                    'price': current_price,
+                    'position_value': position_value
+                }
+            except Exception as e:
+                print(f"Error getting portfolio position for {ticker} on {date}: {e}")
+                IPython.embed()
 
         portfolio_position['total_portfolio_value'] = portfolio_value
         portfolio_position['cash_balance'] = self.balance

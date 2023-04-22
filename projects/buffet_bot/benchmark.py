@@ -8,7 +8,7 @@ import numpy as np
 
 # Read results from output folder
 results_list = []
-for filename in glob.glob('output/*.json'):
+for filename in glob.glob('output/no_temp_no_context/*.json'):
     with open(filename, 'r') as f:
         result = json.load(f)
         results_list.append(result)
@@ -48,10 +48,13 @@ ax.plot(average_dates, average_values_list, linestyle='--', linewidth=2, label='
 # Customize graph
 plt.xlabel('Dates')
 plt.ylabel('Total Values')
-plt.title('Line Graphs for Each Result with Average Line')
+plt.title('No Temperature with No Context')
 plt.legend([f'Result {i+1}' for i in range(len(results_list))] + ['Average'])
 plt.xticks(rotation=45)
 plt.tight_layout()
 
 # Show the graph
-plt.show()
+# plt.show()
+
+# Save the graph
+fig.savefig('output/no_temp_no_context/result.png')
