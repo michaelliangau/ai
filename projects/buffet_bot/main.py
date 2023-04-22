@@ -22,10 +22,10 @@ def main():
     context_window_date = "2018-01-01"
     investment_schedule = "monthly"
     num_simulated_months = 48
-    num_simulations = 1
+    num_simulations = 2
     llm_additional_context = "news"
     experiment_folder_path = "output/experiments/news_context_ss_200_filtered"
-    additional_context_dataset_path = "context_data/huff_news_2012_2021.json"
+    additional_context_dataset_path = "context_data/huff_news_with_impact_scores.json"
     additional_context_sample_size = (
         200  # Only used if llm_additional_context == "news"
     )

@@ -5,6 +5,7 @@ import yfinance as yf
 import json
 from datetime import datetime
 import random
+import IPython
 
 
 def get_embedding(text, model="text-embedding-ada-002"):
@@ -108,7 +109,7 @@ def increment_time(investment_schedule, context_window_date):
 
 
 def get_headlines_between_dates(
-    file_path, start_date, end_date, additional_context_sample_size
+    file_path, start_date, end_date, additional_context_sample_size, use_impact_score=True
 ):
     """Gets the headlines between the given dates.
 
@@ -117,6 +118,7 @@ def get_headlines_between_dates(
        start_date (str): The start date.
        end_date (str): The end date.
        additional_context_sample_size (int, optional): The sample size for headlines if there is too many.
+       use_impact_score (bool, optional): Use the highest impact scores for sampling if True.
 
     Returns:
        headlines (str): The headlines between the given dates in a newline-separated format.
@@ -137,16 +139,21 @@ def get_headlines_between_dates(
 
             # Check if the date is within the specified range
             if start_date_obj <= date_obj < end_date_obj:
-                headlines_list.append(news_item["headline"])
+                headlines_list.append(news_item)
 
-    # Randomly sample headlines
+    # Sample headlines based on impact score or randomly
     if len(headlines_list) > additional_context_sample_size:
-        headlines_list = random.sample(headlines_list, additional_context_sample_size)
+        if use_impact_score:
+            headlines_list = sorted(headlines_list, key=lambda x: x["impact_score"], reverse=True)
+            headlines_list = headlines_list[:additional_context_sample_size]
+        else:
+            headlines_list = random.sample(headlines_list, additional_context_sample_size)
 
     # Convert the list of headlines into a newline-separated string
-    headlines = "\n".join(headlines_list)
+    headlines = "\n".join([item["headline"] for item in headlines_list])
 
     return headlines
+
 
 
 def add_one_month(date_str):
