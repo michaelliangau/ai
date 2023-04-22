@@ -13,8 +13,9 @@ python main.py
 - Claude outperforms S&P500 in a backtracked test run between 2018-01-01 to 2022-01-01 but does not outperform the NASDAQ100. See `output/experiments/no_temp_no_context_4_year` for details.
 - Claude with news context has lower variance than without news context. See `output/experiments/news_context` for details.
 - Claude with more context has better results than Claude with less. See `output/experiments/news_context_ss_200` for details. Although it seems to have higher variance.
+- Using a filtered dataset on impactful world events seems to improve performance. See `output/experiments/news_context_ss_200_filtered` for details.
 
-![Results](output/experiments/news_context_ss_200/comparison_result_with_major_indices.png)
+![Results](output/comparison_result_with_major_indices.png)
 
 ## LLM behaviours
 
