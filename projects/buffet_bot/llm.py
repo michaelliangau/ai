@@ -13,6 +13,7 @@ class BuffetBot:
         additional_context=None,
         store_conversation_history=False,
         additional_context_sample_size=100,
+        additional_context_dataset_path="context_data/huff_news_2012_2021.json",
     ):
         """Initializes the BuffetBot class.
 
@@ -21,6 +22,7 @@ class BuffetBot:
             additional_context (str): Whether to use additional context. Options are "vector", "news" and None.
             store_conversation_history (bool): Whether to store the conversation history or not.
             additional_context_sample_size (int, optional): The sample size for the additional context. Defaults to 100.
+            additional_context_dataset_path (str, optional): The path to the additional context dataset. Defaults to None.
         """
         self.llm = llm
         self.conversation_history = []
@@ -35,7 +37,7 @@ class BuffetBot:
                 PINECONE_API_ENV = f.readline().strip()
                 pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
         elif self.additional_context == "news":
-            self.context_dataset_path = "context_data/huff_news_2012_2021.json"
+            self.context_dataset_path = additional_context_dataset_path
             self.additional_context_sample_size = additional_context_sample_size
 
         # Set OpenAI API Key

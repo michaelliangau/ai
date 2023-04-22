@@ -31,11 +31,15 @@ def get_average_values(folder):
 
 
 folders = [
+    "news_context_ss_200_filtered_growth",
+    "news_context_ss_200_filtered",
     "news_context_ss_200",
     "news_context",
     "no_temp_no_context_4_year",
 ]  # Add your folder names here
 folder_labels = [
+    "Claude Base With News Context SS200 Filtered DS Growth Investor",
+    "Claude Base With News Context SS200 Filtered DS",
     "Claude Base With News Context SS200",
     "Claude Base With News Context SS100",
     "Claude Base",
@@ -61,49 +65,63 @@ nasdaq100["Normalized"] = nasdaq100["Adj Close"] / nasdaq100["Adj Close"].iloc[0
 nasdaq100["Investment"] = nasdaq100["Normalized"] * initial_investment
 
 # Download DJIA data from Yahoo Finance
-djia_ticker = '^DJI'
+djia_ticker = "^DJI"
 djia = yf.download(djia_ticker, start=start_date, end=end_date)
 
 # Calculate DJIA investment performance
-djia['Normalized'] = djia['Adj Close'] / djia['Adj Close'].iloc[0]
-djia['Investment'] = djia['Normalized'] * initial_investment
+djia["Normalized"] = djia["Adj Close"] / djia["Adj Close"].iloc[0]
+djia["Investment"] = djia["Normalized"] * initial_investment
 
 # Download FTSE 100 data from Yahoo Finance
-ftse_ticker = '^FTSE'
+ftse_ticker = "^FTSE"
 ftse100 = yf.download(ftse_ticker, start=start_date, end=end_date)
 
 # Calculate FTSE 100 investment performance
-ftse100['Normalized'] = ftse100['Adj Close'] / ftse100['Adj Close'].iloc[0]
-ftse100['Investment'] = ftse100['Normalized'] * initial_investment
+ftse100["Normalized"] = ftse100["Adj Close"] / ftse100["Adj Close"].iloc[0]
+ftse100["Investment"] = ftse100["Normalized"] * initial_investment
 
 # Create a figure and axis for the line graph
 fig, ax = plt.subplots()
 
 # Configure the date format
-date_fmt = mdates.DateFormatter('%Y-%m-%d')
+date_fmt = mdates.DateFormatter("%Y-%m-%d")
 ax.xaxis.set_major_formatter(date_fmt)
 
 # Plot the average line graphs for each folder
 for folder, folder_label in zip(folders, folder_labels):
     average_dates, average_values_list = get_average_values(folder)
-    ax.plot(average_dates, average_values_list, linestyle='--', linewidth=2, label=folder_label)
+    ax.plot(
+        average_dates,
+        average_values_list,
+        linestyle="--",
+        linewidth=2,
+        label=folder_label,
+    )
 
 # Plot the S&P 500 investment performance
-ax.plot(sp500.index, sp500['Investment'], linestyle='-', linewidth=2, label='S&P 500')
+ax.plot(sp500.index, sp500["Investment"], linestyle="-", linewidth=2, label="S&P 500")
 
 # Plot the Nasdaq 100 investment performance
-ax.plot(nasdaq100.index, nasdaq100['Investment'], linestyle='-.', linewidth=2, label='Nasdaq 100')
+ax.plot(
+    nasdaq100.index,
+    nasdaq100["Investment"],
+    linestyle="-.",
+    linewidth=2,
+    label="Nasdaq 100",
+)
 
 # Plot the DJIA investment performance
-ax.plot(djia.index, djia['Investment'], linestyle=':', linewidth=2, label='DJIA')
+ax.plot(djia.index, djia["Investment"], linestyle=":", linewidth=2, label="DJIA")
 
 # Plot the FTSE 100 investment performance
-ax.plot(ftse100.index, ftse100['Investment'], linestyle='--', linewidth=1, label='FTSE 100')
+ax.plot(
+    ftse100.index, ftse100["Investment"], linestyle="--", linewidth=1, label="FTSE 100"
+)
 
 # Customize graph
-plt.xlabel('Dates')
-plt.ylabel('Total Values')
-plt.title('Comparison of Average Performances and Major Stock Indices')
+plt.xlabel("Dates")
+plt.ylabel("Total Values")
+plt.title("Comparison of Average Performances and Major Stock Indices")
 plt.legend()
 plt.xticks(rotation=45)
 plt.tight_layout()
@@ -112,4 +130,4 @@ plt.tight_layout()
 plt.show()
 
 # Save the graph
-fig.savefig(f'output/comparison_result_with_major_indices.png')
+fig.savefig(f"output/all_experiments_result_with_major_indices.png")

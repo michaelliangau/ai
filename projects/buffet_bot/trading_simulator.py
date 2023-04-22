@@ -49,9 +49,24 @@ class StockSimulator:
         # If total_portfolio_value is 0, use the initial_investment value
         if total_portfolio_value == 0:
             total_portfolio_value = initial_investment
+        else:
+            total_portfolio_value += self.balance
 
         # Update holdings based on the percentage of the total portfolio
         print(f"Updating holdings on {date}...")
+
+        # Sell first
+        for ticker, percentage in stocks_dict.items():
+            target_value = total_portfolio_value * (percentage / 100)
+            current_price = self.get_price_at_time(ticker, date)
+            current_value = current_price * self.holdings.get(ticker, 0)
+            target_shares = target_value / current_price
+
+            if target_value < current_value:
+                shares_to_sell = self.holdings.get(ticker, 0) - target_shares
+                self.sell(ticker, date, shares_to_sell)
+
+        # Buy second
         for ticker, percentage in stocks_dict.items():
             target_value = total_portfolio_value * (percentage / 100)
             current_price = self.get_price_at_time(ticker, date)
@@ -61,13 +76,6 @@ class StockSimulator:
             if target_value > current_value:
                 shares_to_buy = target_shares - self.holdings.get(ticker, 0)
                 self.buy(ticker, date, shares_to_buy)
-                print(f"Bought {shares_to_buy} shares of {ticker}.")
-            elif target_value < current_value:
-                shares_to_sell = self.holdings.get(ticker, 0) - target_shares
-                self.sell(ticker, date, shares_to_sell)
-                print(f"Sold {shares_to_sell} shares of {ticker}.")
-            else:
-                print(f"No change in holdings for {ticker}.")
 
     def get_stock_data(self, ticker, start_date, end_date):
         """Gets the stock data for the given ticker and date range."""
@@ -83,42 +91,61 @@ class StockSimulator:
             end_date_obj = date_obj + relativedelta(months=1)
             end_date = end_date_obj.strftime("%Y-%m-%d")
             self.get_stock_data(ticker, date, end_date)
-
-        return self.stock_data[ticker].loc[date]["Adj Close"]
+        return self.stock_data[ticker].loc[date]["Close"]
 
     def buy(self, ticker, date, shares):
         """Buys the given number of shares of the given ticker at the given date."""
         price = self.get_price_at_time(ticker, date)
         trade_value = price * shares
-        self.balance -= trade_value
-        self.trades.append(
-            {
-                "ticker": ticker,
-                "date": date,
-                "shares": shares,
-                "price": price,
-                "trade_value": trade_value,
-                "action": "buy",
-            }
-        )
-        self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
+        if self.balance - trade_value >= 0:
+            self.balance -= trade_value
+            self.trades.append(
+                {
+                    "ticker": ticker,
+                    "date": date,
+                    "shares": shares,
+                    "price": price,
+                    "trade_value": trade_value,
+                    "action": "buy",
+                }
+            )
+            self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
+        else:
+            shares = self.balance / price
+            trade_value = price * shares
+            self.balance -= trade_value
+            self.trades.append(
+                {
+                    "ticker": ticker,
+                    "date": date,
+                    "shares": shares,
+                    "price": price,
+                    "trade_value": trade_value,
+                    "action": "buy",
+                }
+            )
+            self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
+            print(f"Bought {shares} shares of {ticker} at {price} on {date}.")
 
     def sell(self, ticker, date, shares):
         """Sells the given number of shares of the given ticker at the given date."""
         price = self.get_price_at_time(ticker, date)
         trade_value = price * shares
-        self.balance += trade_value
-        self.trades.append(
-            {
-                "ticker": ticker,
-                "date": date,
-                "shares": -shares,
-                "price": price,
-                "trade_value": -trade_value,
-                "action": "sell",
-            }
-        )
-        self.holdings[ticker] = self.holdings.get(ticker, 0) - shares
+        if self.holdings.get(ticker, 0) >= shares:
+            self.balance += trade_value
+            self.trades.append(
+                {
+                    "ticker": ticker,
+                    "date": date,
+                    "shares": -shares,
+                    "price": price,
+                    "trade_value": -trade_value,
+                    "action": "sell",
+                }
+            )
+            self.holdings[ticker] = self.holdings.get(ticker, 0) - shares
+        else:
+            print(f"Not enough shares of {ticker} to sell {shares} on {date}.")
 
     def get_portfolio_position(self, date):
         """Returns the portfolio position for the given date."""
