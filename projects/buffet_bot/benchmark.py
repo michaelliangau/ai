@@ -6,9 +6,12 @@ import glob
 import IPython
 import numpy as np
 
+# Vars
+folder = 'no_temp_no_context_4_year'
+
 # Read results from output folder
 results_list = []
-for filename in glob.glob('output/experiments/no_temp_no_context_4_year/*.json'):
+for filename in glob.glob(f'output/experiments/{folder}/*.json'):
     with open(filename, 'r') as f:
         result = json.load(f)
         results_list.append(result)
@@ -57,4 +60,4 @@ plt.tight_layout()
 plt.show()
 
 # Save the graph
-fig.savefig('output/experiments/no_temp_no_context_4_year/result.png')
+fig.savefig(f'output/experiments/{folder}/result.png')
