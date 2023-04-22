@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 # Make output directory
 common_utils.delete_outputs_folder_contents()
-common_utils.create_outputs_folder()
+common_utils.create_folder("outputs")
 
 device = common_utils.get_device()
 lr = 3e-4

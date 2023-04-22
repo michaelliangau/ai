@@ -32,9 +32,13 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def create_outputs_folder():
-    """Creates the outputs folder if it does not exist."""
-    os.makedirs("outputs", exist_ok=True)
+def create_folder(folder_name: str):
+    """Creates a folder if it does not exist.
+
+    Args:
+        folder_name (str): The name of the folder to create.
+    """
+    os.makedirs(folder_name, exist_ok=True)
 
 
 def delete_outputs_folder_contents():
