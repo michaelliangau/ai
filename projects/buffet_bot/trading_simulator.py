@@ -117,7 +117,6 @@ class StockSimulator:
                 }
             except Exception as e:
                 print(f"Error getting portfolio position for {ticker} on {date}: {e}")
-                IPython.embed()
 
         portfolio_position['total_portfolio_value'] = portfolio_value
         portfolio_position['cash_balance'] = self.balance

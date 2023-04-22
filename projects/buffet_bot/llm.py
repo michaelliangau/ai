@@ -5,7 +5,7 @@ import anthropic
 import utils
 
 class BuffetBot:
-    def __init__(self, llm="anthropic", vector_context=False, store_conversation_history=True):
+    def __init__(self, llm="anthropic", vector_context=False, store_conversation_history=False):
         """Initializes the BuffetBot class.
         
         Args:
@@ -79,7 +79,7 @@ class BuffetBot:
                 stop_sequences=[anthropic.HUMAN_PROMPT],
                 model="claude-v1.3",
                 max_tokens_to_sample=1000,
-                # temperature=0
+                temperature=0
             )
 
         if self.store_conversation_history:
