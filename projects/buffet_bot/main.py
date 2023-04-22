@@ -68,7 +68,7 @@ def main():
 
         # Reset the context_window_date and simulator for the next simulation
         context_window_date = '2018-01-01'
-        simulator.reset()            
+        simulator.reset()
 
 if __name__ == '__main__':
     main()

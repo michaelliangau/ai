@@ -66,7 +66,7 @@ class BuffetBot:
             llm_prompt = f"{user_prompt}\nContext: {context_response}"
         elif self.additional_context == 'news':
             start_date = utils.subtract_one_month(context_window_date)
-            news_response = utils.get_headlines_between_dates(self.context_dataset_path, start_date, context_window_date)
+            news_response = utils.get_headlines_between_dates(self.context_dataset_path, start_date, context_window_date, sample_size=100)
             llm_prompt = f"{user_prompt}\nNews headlines in the last month: {news_response}"
         else:
             llm_prompt = user_prompt
