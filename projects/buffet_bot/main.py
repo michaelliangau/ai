@@ -17,14 +17,14 @@ import traceback
 
 def main():
     # Vars
-    investor_type = "value"
+    investor_type = "growth"
     initial_investment = 100_000
     context_window_date = "2018-01-01"
     investment_schedule = "monthly"
     num_simulated_months = 48
-    num_simulations = 2
+    num_simulations = 3
     llm_additional_context = "news"
-    experiment_folder_path = "output/experiments/news_context_ss_200_filtered"
+    experiment_folder_path = "output/experiments/news_context_ss_200_filtered_growth"
     additional_context_dataset_path = "context_data/huff_news_with_impact_scores.json"
     additional_context_sample_size = (
         200  # Only used if llm_additional_context == "news"
@@ -64,7 +64,7 @@ def main():
                 updated_portfolio = utils.get_llm_response(
                     bot, investor_type, context_window_date, current_holdings
                 )
-                print(updated_portfolio)
+                print('New allocation', updated_portfolio)
 
                 # If updated_portfolio is different from the previous one, update holdings
                 prev_updated_portfolio = utils.update_holdings(
@@ -80,10 +80,10 @@ def main():
                     context_window_date
                 )
                 results.append(portfolio_position)
-                print(portfolio_position)
-                print(
-                    f'Current portfolio value at {context_window_date}: {portfolio_position["total_value"]}'
-                )
+                print("Current date", context_window_date)
+                print("Current total value", portfolio_position['total_value'])
+                print("Current portfolio value", portfolio_position['total_portfolio_value'])
+                print("Current cash value", portfolio_position['cash_balance'])
 
                 # Increment time
                 context_window_date = utils.increment_time(
