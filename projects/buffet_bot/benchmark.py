@@ -29,8 +29,8 @@ def get_average_values(folder):
     return average_dates, average_values_list
 
 
-folders = ['news_context', 'no_temp_no_context_4_year']  # Add your folder names here
-folder_labels = ['Claude Base With News Context', 'Claude Base']  # Add your desired legend names for folders here
+folders = ['news_context_ss_200', 'news_context', 'no_temp_no_context_4_year']  # Add your folder names here
+folder_labels = ['Claude Base With News Context SS200', 'Claude Base With News Context SS100', 'Claude Base']  # Add your desired legend names for folders here
 
 # Download S&P 500 data from Yahoo Finance
 start_date = '2018-01-01'

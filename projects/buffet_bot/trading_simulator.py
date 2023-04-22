@@ -81,7 +81,7 @@ class StockSimulator:
             end_date = end_date_obj.strftime('%Y-%m-%d')
             self.get_stock_data(ticker, date, end_date)
 
-        return self.stock_data[ticker].loc[date]['Close']
+        return self.stock_data[ticker].loc[date]['Adj Close']
 
     def buy(self, ticker, date, shares):
         """Buys the given number of shares of the given ticker at the given date."""
