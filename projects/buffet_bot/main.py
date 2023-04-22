@@ -22,13 +22,17 @@ def main():
     num_simulated_months = 48
     num_simulations = 3
     llm_additional_context = "news"
-    experiment_folder_path = 'output/experiments/news_context'
+    experiment_folder_path = 'output/experiments/news_context_ss_200'
+    additional_context_sample_size = 200 # Only used if llm_additional_context == "news"
 
     # Creates output folder if it doesn't exist
     common_utils.create_folder(experiment_folder_path)
 
     # Init bots and simulator
-    bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
+    if llm_additional_context == "news":
+        bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context, additional_context_sample_size=additional_context_sample_size)
+    else:
+        bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
     simulator = StockSimulator(initial_investment)
 
     # Run simulation

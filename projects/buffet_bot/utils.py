@@ -88,14 +88,14 @@ def increment_time(investment_schedule, context_window_date):
       context_window_date = add_one_month(context_window_date)
    return context_window_date
 
-def get_headlines_between_dates(file_path, start_date, end_date, sample_size=100):
+def get_headlines_between_dates(file_path, start_date, end_date, additional_context_sample_size):
    """Gets the headlines between the given dates.
    
    Args:
       file_path (str): The file path to the headlines.
       start_date (str): The start date.
       end_date (str): The end date.
-      sample_size (int, optional): The sample size. Defaults to 100.
+      additional_context_sample_size (int, optional): The sample size for headlines if there is too many.
    
    Returns:
       headlines (str): The headlines between the given dates in a newline-separated format.
@@ -119,8 +119,8 @@ def get_headlines_between_dates(file_path, start_date, end_date, sample_size=100
                headlines_list.append(news_item['headline'])
 
    # Randomly sample headlines
-   if len(headlines_list) > sample_size:
-      headlines_list = random.sample(headlines_list, sample_size)
+   if len(headlines_list) > additional_context_sample_size:
+      headlines_list = random.sample(headlines_list, additional_context_sample_size)
 
    # Convert the list of headlines into a newline-separated string
    headlines = "\n".join(headlines_list)

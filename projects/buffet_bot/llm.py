@@ -6,13 +6,14 @@ import anthropic
 import utils
 
 class BuffetBot:
-    def __init__(self, llm="anthropic", additional_context=None, store_conversation_history=False):
+    def __init__(self, llm="anthropic", additional_context=None, store_conversation_history=False, additional_context_sample_size=100):
         """Initializes the BuffetBot class.
         
         Args:
             llm (str): The language model to use. Options are "openai" and "anthropic".
             additional_context (str): Whether to use additional context. Options are "vector", "news" and None.
             store_conversation_history (bool): Whether to store the conversation history or not.
+            additional_context_sample_size (int, optional): The sample size for the additional context. Defaults to 100.
         """
         self.llm = llm
         self.conversation_history = []
@@ -28,6 +29,7 @@ class BuffetBot:
                 pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
         elif self.additional_context == 'news':
             self.context_dataset_path = 'context_data/huff_news_2012_2021.json'
+            self.additional_context_sample_size = additional_context_sample_size
 
         # Set OpenAI API Key
         with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
@@ -45,6 +47,8 @@ class BuffetBot:
         
         Args:
             user_prompt (str): The user prompt to send to the language model.
+            context_window_date (str): The date to use as the context window.
+            additional_context_sample_size (int, optional): The sample size for the additional context. Defaults to None.
             
         Returns:
             response (str): The response from the language model.
@@ -66,7 +70,7 @@ class BuffetBot:
             llm_prompt = f"{user_prompt}\nContext: {context_response}"
         elif self.additional_context == 'news':
             start_date = utils.subtract_one_month(context_window_date)
-            news_response = utils.get_headlines_between_dates(self.context_dataset_path, start_date, context_window_date, sample_size=100)
+            news_response = utils.get_headlines_between_dates(self.context_dataset_path, start_date, context_window_date, additional_context_sample_size=self.additional_context_sample_size)
             llm_prompt = f"{user_prompt}\nNews headlines in the last month: {news_response}"
         else:
             llm_prompt = user_prompt
