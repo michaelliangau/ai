@@ -43,6 +43,14 @@ initial_investment = 100000
 sp500['Normalized'] = sp500['Adj Close'] / sp500['Adj Close'].iloc[0]
 sp500['Investment'] = sp500['Normalized'] * initial_investment
 
+# Download Nasdaq 100 data from Yahoo Finance
+nasdaq_ticker = '^NDX'
+nasdaq100 = yf.download(nasdaq_ticker, start=start_date, end=end_date)
+
+# Calculate Nasdaq 100 investment performance
+nasdaq100['Normalized'] = nasdaq100['Adj Close'] / nasdaq100['Adj Close'].iloc[0]
+nasdaq100['Investment'] = nasdaq100['Normalized'] * initial_investment
+
 # Create a figure and axis for the line graph
 fig, ax = plt.subplots()
 
@@ -58,10 +66,13 @@ for folder, folder_label in zip(folders, folder_labels):
 # Plot the S&P 500 investment performance
 ax.plot(sp500.index, sp500['Investment'], linestyle='-', linewidth=2, label='S&P 500')
 
+# Plot the Nasdaq 100 investment performance
+ax.plot(nasdaq100.index, nasdaq100['Investment'], linestyle='-.', linewidth=2, label='Nasdaq 100')
+
 # Customize graph
 plt.xlabel('Dates')
 plt.ylabel('Total Values')
-plt.title('Comparison of Average Performances and S&P 500')
+plt.title('Comparison of Average Performances, S&P 500, and Nasdaq 100')
 plt.legend()
 plt.xticks(rotation=45)
 plt.tight_layout()
@@ -70,4 +81,4 @@ plt.tight_layout()
 plt.show()
 
 # Save the graph
-fig.savefig(f'output/comparison_result_with_sp500.png')
+fig.savefig(f'output/comparison_result_with_sp500_nasdaq100.png')
