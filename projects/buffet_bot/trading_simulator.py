@@ -44,7 +44,7 @@ class StockSimulator:
             target_value = total_portfolio_value * (percentage / 100)
             current_price = self.get_price_at_time(ticker, date)
             current_value = current_price * self.holdings.get(ticker, 0)
-            target_shares = int(target_value / current_price)
+            target_shares = target_value / current_price
 
             if target_value > current_value:
                 shares_to_buy = target_shares - self.holdings.get(ticker, 0)

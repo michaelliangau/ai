@@ -62,7 +62,7 @@ def main():
     context_window_date = '2018-01-01'
     investment_schedule = 'monthly'
     num_simulated_months = 12
-    num_simulations = 10
+    num_simulations = 1
 
     # Init bots and simulator
     bot = BuffetBot(llm="anthropic", vector_context=False)
