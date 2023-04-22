@@ -14,7 +14,7 @@ python main.py
 - Claude with news context has lower variance than without news context. See `output/experiments/news_context` for details.
 - Claude with more context has better results than Claude with less. See `output/experiments/news_context_ss_200` for details. Although it seems to have higher variance.
 
-![Results](output/experiments/news_context_ss_200/comparison_result_with_sp500_nasdaq100.png)
+![Results](output/experiments/news_context_ss_200/comparison_result_with_major_indices.png)
 
 ## LLM behaviours
 

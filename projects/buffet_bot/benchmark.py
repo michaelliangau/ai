@@ -60,40 +60,50 @@ nasdaq100 = yf.download(nasdaq_ticker, start=start_date, end=end_date)
 nasdaq100["Normalized"] = nasdaq100["Adj Close"] / nasdaq100["Adj Close"].iloc[0]
 nasdaq100["Investment"] = nasdaq100["Normalized"] * initial_investment
 
+# Download DJIA data from Yahoo Finance
+djia_ticker = '^DJI'
+djia = yf.download(djia_ticker, start=start_date, end=end_date)
+
+# Calculate DJIA investment performance
+djia['Normalized'] = djia['Adj Close'] / djia['Adj Close'].iloc[0]
+djia['Investment'] = djia['Normalized'] * initial_investment
+
+# Download FTSE 100 data from Yahoo Finance
+ftse_ticker = '^FTSE'
+ftse100 = yf.download(ftse_ticker, start=start_date, end=end_date)
+
+# Calculate FTSE 100 investment performance
+ftse100['Normalized'] = ftse100['Adj Close'] / ftse100['Adj Close'].iloc[0]
+ftse100['Investment'] = ftse100['Normalized'] * initial_investment
+
 # Create a figure and axis for the line graph
 fig, ax = plt.subplots()
 
 # Configure the date format
-date_fmt = mdates.DateFormatter("%Y-%m-%d")
+date_fmt = mdates.DateFormatter('%Y-%m-%d')
 ax.xaxis.set_major_formatter(date_fmt)
 
 # Plot the average line graphs for each folder
 for folder, folder_label in zip(folders, folder_labels):
     average_dates, average_values_list = get_average_values(folder)
-    ax.plot(
-        average_dates,
-        average_values_list,
-        linestyle="--",
-        linewidth=2,
-        label=folder_label,
-    )
+    ax.plot(average_dates, average_values_list, linestyle='--', linewidth=2, label=folder_label)
 
 # Plot the S&P 500 investment performance
-ax.plot(sp500.index, sp500["Investment"], linestyle="-", linewidth=2, label="S&P 500")
+ax.plot(sp500.index, sp500['Investment'], linestyle='-', linewidth=2, label='S&P 500')
 
 # Plot the Nasdaq 100 investment performance
-ax.plot(
-    nasdaq100.index,
-    nasdaq100["Investment"],
-    linestyle="-.",
-    linewidth=2,
-    label="Nasdaq 100",
-)
+ax.plot(nasdaq100.index, nasdaq100['Investment'], linestyle='-.', linewidth=2, label='Nasdaq 100')
+
+# Plot the DJIA investment performance
+ax.plot(djia.index, djia['Investment'], linestyle=':', linewidth=2, label='DJIA')
+
+# Plot the FTSE 100 investment performance
+ax.plot(ftse100.index, ftse100['Investment'], linestyle='--', linewidth=1, label='FTSE 100')
 
 # Customize graph
-plt.xlabel("Dates")
-plt.ylabel("Total Values")
-plt.title("Comparison of Average Performances, S&P 500, and Nasdaq 100")
+plt.xlabel('Dates')
+plt.ylabel('Total Values')
+plt.title('Comparison of Average Performances and Major Stock Indices')
 plt.legend()
 plt.xticks(rotation=45)
 plt.tight_layout()
@@ -102,4 +112,4 @@ plt.tight_layout()
 plt.show()
 
 # Save the graph
-fig.savefig(f"output/comparison_result_with_sp500_nasdaq100.png")
+fig.savefig(f'output/comparison_result_with_major_indices.png')
