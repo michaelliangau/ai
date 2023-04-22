@@ -24,7 +24,8 @@ def main():
     num_simulated_months = 48
     num_simulations = 1
     llm_additional_context = "news"
-    experiment_folder_path = "output/experiments/news_context_ss_200"
+    experiment_folder_path = "output/experiments/news_context_ss_200_filtered"
+    additional_context_dataset_path = "context_data/huff_news_2012_2021.json"
     additional_context_sample_size = (
         200  # Only used if llm_additional_context == "news"
     )
@@ -39,6 +40,7 @@ def main():
             llm="anthropic",
             additional_context=llm_additional_context,
             additional_context_sample_size=additional_context_sample_size,
+            additional_context_dataset_path=additional_context_dataset_path
         )
     else:
         bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
