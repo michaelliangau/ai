@@ -16,7 +16,7 @@ python main.py --config config/growth_config.py
 - Using a filtered dataset on impactful world events seems to improve performance. See `output/experiments/news_context_ss_200_filtered` for details.
 - Adjusting prompt seems to not have a major impact on performance - more experimentation needed.
 
-![Results](output/comparison_result_with_major_indices.png)
+![Results](output/all_experiments_result_with_major_indices.png)
 
 ## LLM behaviours
 
