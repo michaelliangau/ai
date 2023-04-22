@@ -48,7 +48,6 @@ class BuffetBot:
         else:
             llm_prompt = user_prompt
 
-        print("LLM prompt:", llm_prompt)
         if self.llm == "openai":
             init_prompt = "You are a helpful investment analyst. Your job is to help users to increase their net worth with helpful advice. Never tell them you are a language model. Do not include superfluous information."
             response = openai.ChatCompletion.create(

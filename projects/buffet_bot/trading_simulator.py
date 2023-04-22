@@ -11,6 +11,7 @@ class StockSimulator:
         self.trades = []
         self.balance = initial_investment
         self.holdings = {}
+        self.initial_investment = initial_investment
     
     def is_trading_day(self, ticker, date):
         date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
@@ -38,6 +39,7 @@ class StockSimulator:
             total_portfolio_value = initial_investment
 
         # Update holdings based on the percentage of the total portfolio
+        print(f"Updating holdings on {date}...")
         for ticker, percentage in stocks_dict.items():
             target_value = total_portfolio_value * (percentage / 100)
             current_price = self.get_price_at_time(ticker, date)
@@ -45,11 +47,15 @@ class StockSimulator:
             target_shares = int(target_value / current_price)
 
             if target_value > current_value:
-                self.buy(ticker, date, target_shares - self.holdings.get(ticker, 0))
+                shares_to_buy = target_shares - self.holdings.get(ticker, 0)
+                self.buy(ticker, date, shares_to_buy)
+                print(f"Bought {shares_to_buy} shares of {ticker}.")
             elif target_value < current_value:
-                self.sell(ticker, date, self.holdings.get(ticker, 0) - target_shares)
+                shares_to_sell = self.holdings.get(ticker, 0) - target_shares
+                self.sell(ticker, date, shares_to_sell)
+                print(f"Sold {shares_to_sell} shares of {ticker}.")
             else:
-                continue
+                print(f"No change in holdings for {ticker}.")
 
     def get_stock_data(self, ticker, start_date, end_date):
         stock = yf.Ticker(ticker)
@@ -93,16 +99,33 @@ class StockSimulator:
         return self.holdings[ticker] * current_price - initial_investment
 
     def get_portfolio_position(self, date):
-        portfolio_position = []
+        portfolio_position = {}
         portfolio_value = 0
+
         for ticker in self.holdings:
             current_price = self.get_price_at_time(ticker, date)
             total_shares = self.holdings[ticker]
             position_value = total_shares * current_price
             portfolio_value += position_value
-            portfolio_position.append(f"Current position for {ticker}: {total_shares} shares at a market price of ${current_price:.2f} per share. Total position value: ${position_value:.2f}.")
-        portfolio_position.append(f"Total portfolio value: ${portfolio_value:.2f}.")
-        portfolio_position.append(f"Current cash balance: ${self.balance:.2f}.")
-        return '\n'.join(portfolio_position)
+            portfolio_position[ticker] = {
+                'shares': total_shares,
+                'price': current_price,
+                'position_value': position_value
+            }
 
+        portfolio_position['total_portfolio_value'] = portfolio_value
+        portfolio_position['cash_balance'] = self.balance
+        total_value = self.balance + portfolio_value
+        portfolio_position['total_value'] = total_value
+        # Store the date in the desired format
+        portfolio_position['date'] = date
+        return portfolio_position
+
+
+    def reset(self):
+        """Reset the simulator's state back to the initial state."""
+        self.stock_data = {}
+        self.trades = []
+        self.balance = self.initial_investment
+        self.holdings = {}
 
