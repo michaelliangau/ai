@@ -15,18 +15,27 @@ class StockSimulator:
         self.initial_investment = initial_investment
     
     def is_trading_day(self, ticker, date):
+        """Returns True if the stock market is open on the given date."""
         date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
         stock = yf.Ticker(ticker)
         stock_df = stock.history(start=date_obj, end=date_obj + datetime.timedelta(days=1))
         return not stock_df.empty
 
     def find_next_trading_day(self, ticker, start_date):
+        """Returns the next trading day for the given ticker and start date."""
         current_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
         while not self.is_trading_day(ticker, current_date.strftime('%Y-%m-%d')):
             current_date += datetime.timedelta(days=1)
         return current_date.strftime('%Y-%m-%d')
        
     def update_holdings(self, stocks_dict, date, initial_investment=100000):
+        """Updates the holdings based on the given stocks_dict and date.
+        
+        Args:
+            stocks_dict (dict): A dictionary of stocks and their percentages.
+            date (str): The date to update the holdings.
+            initial_investment (int, optional): The initial investment. Defaults to 100000.
+        """
         # Calculate the total portfolio value
         total_portfolio_value = 0
         for ticker, percentage in stocks_dict.items():
@@ -58,11 +67,13 @@ class StockSimulator:
                     print(f"No change in holdings for {ticker}.")
 
     def get_stock_data(self, ticker, start_date, end_date):
+        """Gets the stock data for the given ticker and date range."""
         stock = yf.Ticker(ticker)
         stock_df = stock.history(start=start_date, end=end_date)
         self.stock_data[ticker] = stock_df
 
     def get_price_at_time(self, ticker, date):
+        """Gets the price of the given ticker at the given date."""
         if date not in self.stock_data[ticker].index:
             # get stock data
             date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -73,6 +84,7 @@ class StockSimulator:
         return self.stock_data[ticker].loc[date]['Close']
 
     def buy(self, ticker, date, shares):
+        """Buys the given number of shares of the given ticker at the given date."""
         price = self.get_price_at_time(ticker, date)
         trade_value = price * shares
         self.balance -= trade_value
@@ -87,6 +99,7 @@ class StockSimulator:
         self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
 
     def sell(self, ticker, date, shares):
+        """Sells the given number of shares of the given ticker at the given date."""
         price = self.get_price_at_time(ticker, date)
         trade_value = price * shares
         self.balance += trade_value
@@ -101,6 +114,7 @@ class StockSimulator:
         self.holdings[ticker] = self.holdings.get(ticker, 0) - shares
 
     def get_portfolio_position(self, date):
+        """Returns the portfolio position for the given date."""
         portfolio_position = {}
         portfolio_value = 0
 

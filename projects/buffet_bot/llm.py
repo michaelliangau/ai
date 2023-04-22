@@ -38,6 +38,14 @@ class BuffetBot:
             self.client = anthropic.Client(ANTHROPIC_API_KEY)
 
     def get_response(self, user_prompt):
+        """Gets a response from the language model.
+        
+        Args:
+            user_prompt (str): The user prompt to send to the language model.
+            
+        Returns:
+            response (str): The response from the language model.
+        """
         if self.vector_context:
             query_embedding = utils.get_embedding(user_prompt)
             docs = self.pinecone_service.query(
