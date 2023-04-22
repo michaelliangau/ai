@@ -112,7 +112,22 @@ class StockSimulator:
             )
             self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
         else:
-            print(f"Not enough cash to buy {shares} shares of {ticker} at {price} on {date}.")
+            shares = self.balance / price
+            trade_value = price * shares
+            self.balance -= trade_value
+            self.trades.append(
+                {
+                    "ticker": ticker,
+                    "date": date,
+                    "shares": shares,
+                    "price": price,
+                    "trade_value": trade_value,
+                    "action": "buy",
+                }
+            )
+            self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
+            print(f"Bought {shares} shares of {ticker} at {price} on {date}.")
+
 
     def sell(self, ticker, date, shares):
         """Sells the given number of shares of the given ticker at the given date."""
