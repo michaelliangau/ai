@@ -8,7 +8,7 @@ import numpy as np
 
 # Read results from output folder
 results_list = []
-for filename in glob.glob('output/no_temp_no_context/*.json'):
+for filename in glob.glob('output/*.json'):
     with open(filename, 'r') as f:
         result = json.load(f)
         results_list.append(result)
@@ -54,7 +54,7 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 
 # Show the graph
-# plt.show()
+plt.show()
 
 # Save the graph
-fig.savefig('output/no_temp_no_context/result.png')
+# fig.savefig('output/result.png')

@@ -9,7 +9,7 @@ python main.py
 ```
 
 ## Findings
-- LLMs without previous context deliver better stock picks. LLMs with no temperature sampling have less variance between simulations.
+- LLMs without previous context deliver better stock picks. LLMs with no temperature sampling have less variance between simulations. See `output/experiments` for details.
 
 ## LLM behaviours
 

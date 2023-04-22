@@ -61,8 +61,8 @@ def main():
     initial_investment = 100_000
     context_window_date = '2018-01-01'
     investment_schedule = 'monthly'
-    num_simulated_months = 12
-    num_simulations = 1
+    num_simulated_months = 48
+    num_simulations = 3
 
     # Init bots and simulator
     bot = BuffetBot(llm="anthropic", vector_context=False, store_conversation_history=False)
@@ -102,7 +102,7 @@ def main():
                 print(e)
 
         # Save the results
-        with open(f'output/sim_2_results_default_temp_no_context.json', 'w') as f:
+        with open(f'output/sim_{sim}.json', 'w') as f:
             json.dump(results, f)
 
         # Reset the context_window_date and simulator for the next simulation
