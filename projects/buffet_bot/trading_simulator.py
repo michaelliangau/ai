@@ -6,10 +6,10 @@ import IPython
 class StockSimulator:
     """Stock simulator class for simulating stock trades and calculating profit/loss.
     """
-    def __init__(self):
+    def __init__(self, initial_investment):
         self.stock_data = {}
         self.trades = []
-        self.balance = 0
+        self.balance = initial_investment
         self.holdings = {}
     
     def is_trading_day(self, ticker, date):
@@ -102,6 +102,7 @@ class StockSimulator:
             portfolio_value += position_value
             portfolio_position.append(f"Current position for {ticker}: {total_shares} shares at a market price of ${current_price:.2f} per share. Total position value: ${position_value:.2f}.")
         portfolio_position.append(f"Total portfolio value: ${portfolio_value:.2f}.")
+        portfolio_position.append(f"Current cash balance: ${self.balance:.2f}.")
         return '\n'.join(portfolio_position)
 
 

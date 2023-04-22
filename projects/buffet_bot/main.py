@@ -21,7 +21,7 @@ def main():
 
     # Init bots and simulator
     bot = BuffetBot(llm="anthropic", vector_context=False)
-    simulator = StockSimulator()
+    simulator = StockSimulator(initial_investment)
     for _ in range(1):
         current_holdings = simulator.holdings
 
