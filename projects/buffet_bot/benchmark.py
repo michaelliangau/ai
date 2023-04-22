@@ -31,12 +31,14 @@ def get_average_values(folder):
 
 
 folders = [
+    "news_context_ss_200_filtered_growth",
     "news_context_ss_200_filtered",
     "news_context_ss_200",
     "news_context",
     "no_temp_no_context_4_year",
 ]  # Add your folder names here
 folder_labels = [
+    "Claude Base With News Context SS200 Filtered DS Growth Investor",
     "Claude Base With News Context SS200 Filtered DS",
     "Claude Base With News Context SS200",
     "Claude Base With News Context SS100",
@@ -114,4 +116,4 @@ plt.tight_layout()
 plt.show()
 
 # Save the graph
-fig.savefig(f'output/comparison_result_with_major_indices.png')
+fig.savefig(f'output/all_experiments_result_with_major_indices.png')

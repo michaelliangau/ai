@@ -1,9 +1,9 @@
 # Native imports
 import json
+import argparse
 
 # Our imports
 import sys
-
 sys.path.append("../..")
 import common.utils as common_utils
 from llm import BuffetBot
@@ -13,23 +13,34 @@ import utils
 # Third party imports
 import IPython
 import traceback
+import importlib.util
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, default="config/growth_config.py",
+                    help="Path to the configuration file.")
+args = parser.parse_args()
 
 
-def main():
-    # Vars
-    investor_type = "growth"
-    initial_investment = 100_000
-    context_window_date = "2018-01-01"
-    investment_schedule = "monthly"
-    num_simulated_months = 48
-    num_simulations = 3
-    llm_additional_context = "news"
-    experiment_folder_path = "output/experiments/news_context_ss_200_filtered_growth"
-    additional_context_dataset_path = "context_data/huff_news_with_impact_scores.json"
-    additional_context_sample_size = (
-        200  # Only used if llm_additional_context == "news"
-    )
-    transaction_cost = 0.0001  # TODO implement
+def main(config_path: str):
+    # Init configs
+    spec = importlib.util.spec_from_file_location("config", config_path)
+    config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config)
+    config = config.get_config()
+
+    # Init vars
+    investor_type = config.investor_type
+    initial_investment = config.initial_investment
+    context_window_date = config.context_window_date
+    investment_schedule = config.investment_schedule
+    num_simulated_months = config.num_simulated_months
+    num_simulations = config.num_simulations
+    llm_additional_context = config.llm_additional_context
+    experiment_folder_path = config.experiment_folder_path
+    additional_context_dataset_path = config.additional_context_dataset_path
+    additional_context_sample_size = config.additional_context_sample_size
+    transaction_cost = config.transaction_cost
 
     # Creates output folder if it doesn't exist
     common_utils.create_folder(experiment_folder_path)
@@ -105,4 +116,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(args.config)

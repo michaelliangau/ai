@@ -5,7 +5,7 @@ LLMs for AI enhanced stock research and investing for the value investor.
 ## Usage
 
 ```bash
-python main.py
+python main.py --config config/growth_config.py
 ```
 
 ## Findings
@@ -14,6 +14,7 @@ python main.py
 - Claude with news context has lower variance than without news context. See `output/experiments/news_context` for details.
 - Claude with more context has better results than Claude with less. See `output/experiments/news_context_ss_200` for details. Although it seems to have higher variance.
 - Using a filtered dataset on impactful world events seems to improve performance. See `output/experiments/news_context_ss_200_filtered` for details.
+- Adjusting prompt seems to not have a major impact on performance - more experimentation needed.
 
 ![Results](output/comparison_result_with_major_indices.png)
 
