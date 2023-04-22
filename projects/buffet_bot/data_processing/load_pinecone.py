@@ -5,18 +5,20 @@ from langchain.document_loaders import TextLoader
 import IPython
 from tqdm import tqdm
 
-with open('/Users/michael/Desktop/wip/openai_credentials.txt', 'r') as f:
+with open("/Users/michael/Desktop/wip/openai_credentials.txt", "r") as f:
     OPENAI_API_KEY = f.readline().strip()
     openai.api_key = OPENAI_API_KEY
 
-with open('/Users/michael/Desktop/wip/pinecone_credentials.txt', 'r') as f:
+with open("/Users/michael/Desktop/wip/pinecone_credentials.txt", "r") as f:
     PINECONE_API_KEY = f.readline().strip()
     PINECONE_API_ENV = f.readline().strip()
     pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
+
 def get_embedding(text, model="text-embedding-ada-002"):
-   text = text.replace("\n", " ")
-   return openai.Embedding.create(input = [text], model=model)['data'][0]['embedding']
+    text = text.replace("\n", " ")
+    return openai.Embedding.create(input=[text], model=model)["data"][0]["embedding"]
+
 
 loader = TextLoader("../context_data/test_articles_clean.txt")
 documents = loader.load()
@@ -32,16 +34,16 @@ for idx, text in tqdm(enumerate(texts), total=len(texts)):
     try:
         embeddings = get_embedding(text.page_content)
         vector = {
-            'id': str(idx),
-            'values': embeddings,
-            'metadata': {
-                'category': 'news',
-                'original_text': text.page_content,
+            "id": str(idx),
+            "values": embeddings,
+            "metadata": {
+                "category": "news",
+                "original_text": text.page_content,
             },
         }
         upsert_response = pinecone_service.upsert(
             vectors=[vector],
-            namespace='data',
+            namespace="data",
         )
     except Exception as e:
         print(e)
