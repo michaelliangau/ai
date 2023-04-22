@@ -2,20 +2,68 @@ import re
 import json
 from tqdm import tqdm
 
+
 def analyze_impact(news_item):
     impact_keywords = [
-        "stock", "market", "economy", "recession", "inflation", "interest rate", "unemployment",
-        "GDP", "gross domestic product", "economic growth", "trade", "import", "export",
-        "financial", "crisis", "central bank", "stimulus", "quantitative easing", "debt",
-        "bankrupt", "default", "rating downgrade", "investment", "monetary policy", "fiscal policy",
-        "business", "industry", "consumer", "technology", "energy", "oil", "commodity",
-        "currency", "exchange rate", "regulation", "employment", "earnings", "profit",
-        "merger", "acquisition", "IPO", "initial public offering", "real estate", "housing", "U.S.", "US",
+        "stock",
+        "market",
+        "economy",
+        "recession",
+        "inflation",
+        "interest rate",
+        "unemployment",
+        "GDP",
+        "gross domestic product",
+        "economic growth",
+        "trade",
+        "import",
+        "export",
+        "financial",
+        "crisis",
+        "central bank",
+        "stimulus",
+        "quantitative easing",
+        "debt",
+        "bankrupt",
+        "default",
+        "rating downgrade",
+        "investment",
+        "monetary policy",
+        "fiscal policy",
+        "business",
+        "industry",
+        "consumer",
+        "technology",
+        "energy",
+        "oil",
+        "commodity",
+        "currency",
+        "exchange rate",
+        "regulation",
+        "employment",
+        "earnings",
+        "profit",
+        "merger",
+        "acquisition",
+        "IPO",
+        "initial public offering",
+        "real estate",
+        "housing",
+        "U.S.",
+        "US",
     ]
 
     categories_to_include = [
-        'THE WORLDPOST', 'POLITICS', 'BUSINESS', 'WORLDPOST',
-        'WORLD NEWS', 'U.S. NEWS', 'TECH', 'SCIENCE', 'MONEY', 'MEDIA'
+        "THE WORLDPOST",
+        "POLITICS",
+        "BUSINESS",
+        "WORLDPOST",
+        "WORLD NEWS",
+        "U.S. NEWS",
+        "TECH",
+        "SCIENCE",
+        "MONEY",
+        "MEDIA",
     ]
 
     headline = news_item["headline"].lower()
@@ -31,10 +79,11 @@ def analyze_impact(news_item):
         impact_score += 1
 
     for keyword in impact_keywords:
-        if re.search(r'\b' + keyword.lower() + r'\b', text):
+        if re.search(r"\b" + keyword.lower() + r"\b", text):
             impact_score += 1
 
     return impact_score
+
 
 file_path = "../context_data/huff_news_2012_2021.json"
 output_path = "../context_data/huff_news_with_impact_scores.json"

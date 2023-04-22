@@ -77,7 +77,6 @@ class StockSimulator:
                 shares_to_buy = target_shares - self.holdings.get(ticker, 0)
                 self.buy(ticker, date, shares_to_buy)
 
-
     def get_stock_data(self, ticker, start_date, end_date):
         """Gets the stock data for the given ticker and date range."""
         stock = yf.Ticker(ticker)
@@ -127,7 +126,6 @@ class StockSimulator:
             )
             self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
             print(f"Bought {shares} shares of {ticker} at {price} on {date}.")
-
 
     def sell(self, ticker, date, shares):
         """Sells the given number of shares of the given ticker at the given date."""

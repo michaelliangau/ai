@@ -29,6 +29,7 @@ def find_next_trading_day(context_window_date, simulator, ticker="MSFT"):
         )
     return context_window_date
 
+
 def rebalance_portfolio(portfolio):
     """Rebalances the portfolio to ensure the sum of all values is 100.
 
@@ -44,10 +45,16 @@ def rebalance_portfolio(portfolio):
     # Check if the total allocation is greater than 100
     if total_allocation > 100:
         # Normalize the allocation values to add up to 100
-        rebalanced_portfolio = {ticker: allocation / total_allocation * 100 for ticker, allocation in portfolio.items()}
+        rebalanced_portfolio = {
+            ticker: allocation / total_allocation * 100
+            for ticker, allocation in portfolio.items()
+        }
     else:
         # Scale the allocation values to add up to 100
-        rebalanced_portfolio = {ticker: allocation * (100 / total_allocation) for ticker, allocation in portfolio.items()}
+        rebalanced_portfolio = {
+            ticker: allocation * (100 / total_allocation)
+            for ticker, allocation in portfolio.items()
+        }
     return rebalanced_portfolio
 
 
@@ -74,7 +81,9 @@ def get_llm_response(bot, investor_type, context_window_date, current_holdings):
         # Change FB to META
         response["completion"] = response["completion"].replace("FB", "META")
         # Fix output in case it doesn't just return JSON.
-        response['completion'] = re.search(r'\{[^}]*\}', response['completion'], re.DOTALL).group()
+        response["completion"] = re.search(
+            r"\{[^}]*\}", response["completion"], re.DOTALL
+        ).group()
         updated_portfolio = json.loads(response["completion"])
         updated_portfolio = rebalance_portfolio(updated_portfolio)
 
@@ -144,7 +153,11 @@ def increment_time(investment_schedule, context_window_date):
 
 
 def get_headlines_between_dates(
-    file_path, start_date, end_date, additional_context_sample_size, use_impact_score=True
+    file_path,
+    start_date,
+    end_date,
+    additional_context_sample_size,
+    use_impact_score=True,
 ):
     """Gets the headlines between the given dates.
 
@@ -179,15 +192,20 @@ def get_headlines_between_dates(
     # Sample headlines based on impact score or randomly
     if len(headlines_list) > additional_context_sample_size:
         if use_impact_score:
-            headlines_list = sorted(headlines_list, key=lambda x: x["impact_score"], reverse=True)
+            headlines_list = sorted(
+                headlines_list, key=lambda x: x["impact_score"], reverse=True
+            )
             headlines_list = headlines_list[:additional_context_sample_size]
         else:
-            headlines_list = random.sample(headlines_list, additional_context_sample_size)
+            headlines_list = random.sample(
+                headlines_list, additional_context_sample_size
+            )
 
     # Convert the list of headlines into a newline-separated string
     headlines = "\n".join([item["headline"] for item in headlines_list])
 
     return headlines
+
 
 def set_day_to_first(date_str):
     """Sets the day to the first day of the month.
@@ -202,6 +220,7 @@ def set_day_to_first(date_str):
     first_day_obj = date_obj.replace(day=1)
     first_day = first_day_obj.strftime("%Y-%m-%d")
     return first_day
+
 
 def add_one_month(date_str):
     """Adds one month to the given date.
