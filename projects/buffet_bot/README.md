@@ -1,6 +1,6 @@
 # Buffet Bot
 
-LLMs for AI enhanced stock research and investing for the value investor.
+LLMs for AI enhanced algorithmic trading.
 
 ## Usage
 
