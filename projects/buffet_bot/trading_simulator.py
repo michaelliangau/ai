@@ -43,8 +43,12 @@ class StockSimulator:
         total_portfolio_value = 0
         for ticker, percentage in stocks_dict.items():
             if ticker in self.holdings:
-                current_price = self.get_price_at_time(ticker, date)
-                total_portfolio_value += current_price * self.holdings[ticker]
+                try:
+                    current_price = self.get_price_at_time(ticker, date)
+                    total_portfolio_value += current_price * self.holdings[ticker]
+                except ValueError:
+                    print(f"Ticker {ticker} not found. Skipping...")
+                    continue
 
         # If total_portfolio_value is 0, use the initial_investment value
         if total_portfolio_value == 0:
@@ -57,25 +61,33 @@ class StockSimulator:
 
         # Sell first
         for ticker, percentage in stocks_dict.items():
-            target_value = total_portfolio_value * (percentage / 100)
-            current_price = self.get_price_at_time(ticker, date)
-            current_value = current_price * self.holdings.get(ticker, 0)
-            target_shares = target_value / current_price
+            try:
+                target_value = total_portfolio_value * (percentage / 100)
+                current_price = self.get_price_at_time(ticker, date)
+                current_value = current_price * self.holdings.get(ticker, 0)
+                target_shares = target_value / current_price
 
-            if target_value < current_value:
-                shares_to_sell = self.holdings.get(ticker, 0) - target_shares
-                self.sell(ticker, date, shares_to_sell)
+                if target_value < current_value:
+                    shares_to_sell = self.holdings.get(ticker, 0) - target_shares
+                    self.sell(ticker, date, shares_to_sell)
+            except ValueError:
+                print(f"Ticker {ticker} not found. Skipping sell...")
+                continue
 
         # Buy second
         for ticker, percentage in stocks_dict.items():
-            target_value = total_portfolio_value * (percentage / 100)
-            current_price = self.get_price_at_time(ticker, date)
-            current_value = current_price * self.holdings.get(ticker, 0)
-            target_shares = target_value / current_price
+            try:
+                target_value = total_portfolio_value * (percentage / 100)
+                current_price = self.get_price_at_time(ticker, date)
+                current_value = current_price * self.holdings.get(ticker, 0)
+                target_shares = target_value / current_price
 
-            if target_value > current_value:
-                shares_to_buy = target_shares - self.holdings.get(ticker, 0)
-                self.buy(ticker, date, shares_to_buy)
+                if target_value > current_value:
+                    shares_to_buy = target_shares - self.holdings.get(ticker, 0)
+                    self.buy(ticker, date, shares_to_buy)
+            except ValueError:
+                print(f"Ticker {ticker} not found. Skipping buy...")
+                continue
 
     def get_stock_data(self, ticker, start_date, end_date):
         """Gets the stock data for the given ticker and date range."""

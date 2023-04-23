@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 import random
 import IPython
-
+import yfinance as yf
 
 def get_embedding(text, model="text-embedding-ada-002"):
     text = text.replace("\n", " ")
@@ -29,32 +29,92 @@ def find_next_trading_day(context_window_date, simulator, ticker="MSFT"):
         )
     return context_window_date
 
+valid_tickers_cache = set()
+invalid_tickers_cache = {'DOW'}
 
-def rebalance_portfolio(portfolio):
-    """Rebalances the portfolio to ensure the sum of all values is 100.
+def check_tickers_exist(tickers):
+    """Checks if the given tickers exist.
+
+    Args:
+        tickers (list): The list of tickers to check.
+
+    Returns:
+        valid_tickers (list): A list of tickers that exist.
+    """
+    global valid_tickers_cache, invalid_tickers_cache
+
+    # Filter tickers that are not in the valid or invalid cache
+    tickers_to_check = [ticker for ticker in tickers if ticker not in valid_tickers_cache and ticker not in invalid_tickers_cache]
+
+    if tickers_to_check:
+        tickers_string = ' '.join(tickers_to_check)
+        stock_data = yf.download(tickers_string, period='1d', start='2018-01-01', end='2022-01-01')
+
+        for ticker in tickers_to_check:
+            if stock_data['Adj Close'][ticker].isna().all():
+                invalid_tickers_cache.add(ticker)
+            else:
+                valid_tickers_cache.add(ticker)
+
+    valid_tickers = [ticker for ticker in tickers if ticker in valid_tickers_cache]
+
+    return valid_tickers
+
+def clean_portfolio(portfolio):
+    """Cleans the portfolio by removing tickers that don't exist.
 
     Args:
         portfolio (dict): The portfolio with ticker symbols as keys and allocation percentages as values.
 
     Returns:
-        rebalanced_portfolio (dict): The rebalanced portfolio with the sum of all values equal to 100.
+        cleaned_portfolio (dict): The cleaned portfolio.
+    """
+    # Replace periods with hyphens in all tickers
+    portfolio = {ticker.replace('.', '-'): percentage for ticker, percentage in portfolio.items()}
+    
+    tickers = list(portfolio.keys())
+    valid_tickers = check_tickers_exist(tickers)
+
+    cleaned_portfolio = {}
+    for ticker, percentage in portfolio.items():
+        if ticker in valid_tickers:
+            cleaned_portfolio[ticker] = percentage
+
+    return rebalance_portfolio(cleaned_portfolio)
+
+
+
+def rebalance_portfolio(portfolio, original_total_allocation=None):
+    """Rebalances the portfolio to ensure the sum of all values is equal to the original total allocation or 100.
+
+    Args:
+        portfolio (dict): The portfolio with ticker symbols as keys and allocation percentages as values.
+        original_total_allocation (float): The original total allocation before cleaning the portfolio.
+
+    Returns:
+        rebalanced_portfolio (dict): The rebalanced portfolio with the sum of all values equal to the original total allocation or 100.
     """
     # Calculate the total allocation
     total_allocation = sum(portfolio.values())
 
-    # Check if the total allocation is greater than 100
-    if total_allocation > 100:
-        # Normalize the allocation values to add up to 100
-        rebalanced_portfolio = {
-            ticker: allocation / total_allocation * 100
-            for ticker, allocation in portfolio.items()
-        }
-    else:
+    if original_total_allocation is None:
+        original_total_allocation = total_allocation
+
+    # Scale the allocation values to add up to the original total allocation
+    rebalanced_portfolio = {
+        ticker: allocation * (original_total_allocation / total_allocation)
+        for ticker, allocation in portfolio.items()
+    }
+
+    # Check if the new total allocation is above 100
+    new_total_allocation = sum(rebalanced_portfolio.values())
+    if new_total_allocation > 100:
         # Scale the allocation values to add up to 100
         rebalanced_portfolio = {
-            ticker: allocation * (100 / total_allocation)
-            for ticker, allocation in portfolio.items()
+            ticker: allocation * (100 / new_total_allocation)
+            for ticker, allocation in rebalanced_portfolio.items()
         }
+
     return rebalanced_portfolio
 
 
@@ -91,7 +151,7 @@ def get_llm_response(bot, investor_type, context_window_date, current_holdings):
             r"\{[^}]*\}", response["completion"], re.DOTALL
         ).group()
         updated_portfolio = json.loads(response["completion"])
-        updated_portfolio = rebalance_portfolio(updated_portfolio)
+        updated_portfolio = clean_portfolio(updated_portfolio)
 
         return updated_portfolio
 
@@ -119,9 +179,6 @@ def update_holdings(
     Returns:
        prev_updated_portfolio (dict): The previous updated portfolio.
     """
-    updated_portfolio = {
-        key.replace(".", "-"): value for key, value in updated_portfolio.items()
-    }
     end_date = add_one_month(context_window_date)
 
     for ticker in updated_portfolio.keys():

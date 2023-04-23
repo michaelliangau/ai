@@ -15,6 +15,7 @@ import utils
 import IPython
 import traceback
 import importlib.util
+from tqdm import tqdm
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
@@ -67,7 +68,7 @@ def main(config_path: str):
         results = []
         prev_updated_portfolio = None
 
-        for _ in range(num_simulated_months):
+        for _ in tqdm(range(num_simulated_months), total=num_simulated_months):
             try:
                 current_holdings = simulator.holdings
 
