@@ -88,7 +88,6 @@ def check_tickers_exist(tickers):
         for ticker in tickers
         if ticker not in valid_tickers_cache and ticker not in invalid_tickers_cache
     ]
-
     if tickers_to_check:
         tickers_string = " ".join(tickers_to_check)
         stock_data = yf.download(
@@ -226,13 +225,7 @@ def update_holdings(
     Returns:
        prev_updated_portfolio (dict): The previous updated portfolio.
     """
-    end_date = add_one_month(context_window_date)
-
-    for ticker in updated_portfolio.keys():
-        simulator.get_stock_data(
-            ticker, start_date=context_window_date, end_date=end_date
-        )
-
+    # Update holdings
     if updated_portfolio != prev_updated_portfolio:
         simulator.update_holdings(
             updated_portfolio, context_window_date, initial_investment, transaction_cost

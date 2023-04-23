@@ -76,15 +76,15 @@ def main(config_path: str):
             utils.update_holdings(
                 simulator,
                 updated_portfolio,
-                context_window_date,
+                today,
                 initial_investment,
                 None,
-                None,
+                transaction_cost,
             )
 
             # Print current portfolio position
-            portfolio_position = simulator.get_portfolio_position(context_window_date)
-            print("Current date", context_window_date)
+            portfolio_position = simulator.get_portfolio_position(today)
+            print("Current date", today)
             print("Current total value", portfolio_position["total_value"])
             print("Current portfolio value", portfolio_position["total_portfolio_value"])
             print("Current cash value", portfolio_position["cash_balance"])

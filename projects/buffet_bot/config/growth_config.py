@@ -20,5 +20,5 @@ def get_config():
     config.additional_context_sample_size = (
         200  # Only used if llm_additional_context == "news"
     )
-    config.transaction_cost = 0.0001  # TODO implement
+    config.transaction_cost = 0.0001
     return config
