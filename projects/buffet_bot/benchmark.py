@@ -32,14 +32,14 @@ def get_average_values(folder):
 
 folders = [
     "news_context_ss_200_filtered_growth",
-    "news_context_ss_200_filtered",
+    "news_context_ss_200_filtered_value",
     "news_context_ss_200",
     "news_context",
     "no_temp_no_context_4_year",
 ]  # Add your folder names here
 folder_labels = [
     "Claude Base With News Context SS200 Filtered DS Growth Investor",
-    "Claude Base With News Context SS200 Filtered DS",
+    "Claude Base With News Context SS200 Filtered DS Value Investor",
     "Claude Base With News Context SS200",
     "Claude Base With News Context SS100",
     "Claude Base",
