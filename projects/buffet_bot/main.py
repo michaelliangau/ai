@@ -15,6 +15,7 @@ import utils
 import IPython
 import traceback
 import importlib.util
+from tqdm import tqdm
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
@@ -35,6 +36,7 @@ def main(config_path: str):
     config = config.get_config()
 
     # Init vars
+    real_trading = config.real_trading
     investor_type = config.investor_type
     initial_investment = config.initial_investment
     context_window_date = config.context_window_date
@@ -60,14 +62,14 @@ def main(config_path: str):
         )
     else:
         bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
-    simulator = StockSimulator(initial_investment)
+    simulator = StockSimulator(initial_investment, real_trading)
 
     # Run simulation
     for sim in range(num_simulations):
         results = []
         prev_updated_portfolio = None
 
-        for _ in range(num_simulated_months):
+        for _ in tqdm(range(num_simulated_months), total=num_simulated_months):
             try:
                 current_holdings = simulator.holdings
 
@@ -89,6 +91,7 @@ def main(config_path: str):
                     context_window_date,
                     initial_investment,
                     prev_updated_portfolio,
+                    transaction_cost,
                 )
 
                 # Print current portfolio position

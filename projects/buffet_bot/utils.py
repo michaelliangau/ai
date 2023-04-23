@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 import random
 import IPython
+import yfinance as yf
 
 
 def get_embedding(text, model="text-embedding-ada-002"):
@@ -30,31 +31,101 @@ def find_next_trading_day(context_window_date, simulator, ticker="MSFT"):
     return context_window_date
 
 
-def rebalance_portfolio(portfolio):
-    """Rebalances the portfolio to ensure the sum of all values is 100.
+valid_tickers_cache = set()
+invalid_tickers_cache = {"DOW"}
+
+
+def check_tickers_exist(tickers):
+    """Checks if the given tickers exist.
+
+    Args:
+        tickers (list): The list of tickers to check.
+
+    Returns:
+        valid_tickers (list): A list of tickers that exist.
+    """
+    global valid_tickers_cache, invalid_tickers_cache
+
+    # Filter tickers that are not in the valid or invalid cache
+    tickers_to_check = [
+        ticker
+        for ticker in tickers
+        if ticker not in valid_tickers_cache and ticker not in invalid_tickers_cache
+    ]
+
+    if tickers_to_check:
+        tickers_string = " ".join(tickers_to_check)
+        stock_data = yf.download(
+            tickers_string, period="1d", start="2018-01-01", end="2022-01-01"
+        )
+
+        for ticker in tickers_to_check:
+            if stock_data["Adj Close"][ticker].isna().all():
+                invalid_tickers_cache.add(ticker)
+            else:
+                valid_tickers_cache.add(ticker)
+
+    valid_tickers = [ticker for ticker in tickers if ticker in valid_tickers_cache]
+
+    return valid_tickers
+
+
+def clean_portfolio(portfolio):
+    """Cleans the portfolio by removing tickers that don't exist.
 
     Args:
         portfolio (dict): The portfolio with ticker symbols as keys and allocation percentages as values.
 
     Returns:
-        rebalanced_portfolio (dict): The rebalanced portfolio with the sum of all values equal to 100.
+        cleaned_portfolio (dict): The cleaned portfolio.
+    """
+    # Replace periods with hyphens in all tickers
+    portfolio = {
+        ticker.replace(".", "-"): percentage for ticker, percentage in portfolio.items()
+    }
+
+    tickers = list(portfolio.keys())
+    valid_tickers = check_tickers_exist(tickers)
+
+    cleaned_portfolio = {}
+    for ticker, percentage in portfolio.items():
+        if ticker in valid_tickers:
+            cleaned_portfolio[ticker] = percentage
+
+    return rebalance_portfolio(cleaned_portfolio)
+
+
+def rebalance_portfolio(portfolio, original_total_allocation=None):
+    """Rebalances the portfolio to ensure the sum of all values is equal to the original total allocation or 100.
+
+    Args:
+        portfolio (dict): The portfolio with ticker symbols as keys and allocation percentages as values.
+        original_total_allocation (float): The original total allocation before cleaning the portfolio.
+
+    Returns:
+        rebalanced_portfolio (dict): The rebalanced portfolio with the sum of all values equal to the original total allocation or 100.
     """
     # Calculate the total allocation
     total_allocation = sum(portfolio.values())
 
-    # Check if the total allocation is greater than 100
-    if total_allocation > 100:
-        # Normalize the allocation values to add up to 100
-        rebalanced_portfolio = {
-            ticker: allocation / total_allocation * 100
-            for ticker, allocation in portfolio.items()
-        }
-    else:
+    if original_total_allocation is None:
+        original_total_allocation = total_allocation
+
+    # Scale the allocation values to add up to the original total allocation
+    rebalanced_portfolio = {
+        ticker: allocation * (original_total_allocation / total_allocation)
+        for ticker, allocation in portfolio.items()
+    }
+
+    # Check if the new total allocation is above 100
+    new_total_allocation = sum(rebalanced_portfolio.values())
+    if new_total_allocation > 100:
         # Scale the allocation values to add up to 100
         rebalanced_portfolio = {
-            ticker: allocation * (100 / total_allocation)
-            for ticker, allocation in portfolio.items()
+            ticker: allocation * (100 / new_total_allocation)
+            for ticker, allocation in rebalanced_portfolio.items()
         }
+
     return rebalanced_portfolio
 
 
@@ -70,12 +141,18 @@ def get_llm_response(bot, investor_type, context_window_date, current_holdings):
     Returns:
        updated_portfolio (dict): The updated portfolio.
     """
-    try:
-        if investor_type == "value":
-            llm_prompt = f"You are Warren Buffett, one of the world's most successful value investors, with a deep understanding of the stock market and a long history of making well-informed investment decisions. As Warren Buffett, you have a portfolio to invest in any investment vehicle. Build your portfolio and in your recommendations, consider factors such as company financials, management quality, competitive advantages, and the margin of safety. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
-        elif investor_type == "growth":
-            llm_prompt = f"You are Peter Lynch, a proficient growth investor with a deep understanding of the stock market and a long history of making well-informed investment decisions. Your goal is to build a portfolio that focuses on companies with strong financials, high-quality management, competitive advantages, and a reasonable margin of safety. As Peter Lynch, you prioritize long-term capital appreciation over short-term gains. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
+    if investor_type == "value":
+        llm_prompt = f"You are Warren Buffett, one of the world's most successful value investors, with a deep understanding of the stock market and a long history of making well-informed investment decisions. As Warren Buffett, you have a portfolio to invest in any investment vehicle. Build your portfolio and in your recommendations, consider factors such as company financials, management quality, competitive advantages, and the margin of safety. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
+    elif investor_type == "growth":
+        llm_prompt = f"You are Peter Lynch, a proficient growth investor with a deep understanding of the stock market and a long history of making well-informed investment decisions. Your goal is to build a portfolio that focuses on companies with strong financials, high-quality management, competitive advantages, and a reasonable margin of safety. As Peter Lynch, you prioritize long-term capital appreciation over short-term gains. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
+    elif investor_type == "value_large":
+        llm_prompt = f"You are Warren Buffett, one of the world's most successful value investors, with a deep understanding of the stock market and a long history of making well-informed investment decisions. As Warren Buffett, you have a portfolio to invest in any investment vehicle. Build your portfolio and in your recommendations, consider factors such as company financials, management quality, competitive advantages, and the margin of safety. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format, aim to diversify between 10 to 30 companies. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
+    elif investor_type == "value_x_large":
+        llm_prompt = f"You are Warren Buffett, one of the world's most successful value investors, with a deep understanding of the stock market and a long history of making well-informed investment decisions. As Warren Buffett, you have a portfolio to invest in any investment vehicle. Build your portfolio and in your recommendations, consider factors such as company financials, management quality, competitive advantages, and the margin of safety. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format, aim to diversify between 30 to 100 companies. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
+    elif investor_type == "sharpe":
+        llm_prompt = f"You are Ray Dalio, one of the world's most successful investors, with a deep understanding of the stock market and a long history of making well-informed investment decisions. As Ray Dalio, you have a portfolio with high Sharpe Ratio to invest in any investment vehicle. Build your high Sharpe Ratio portfolio and in your recommendations, consider factors such as company financials, management quality, competitive advantages, and the margin of safety. You do not have knowledge of events after {context_window_date}. Your current portfolio holdings in JSON format are: {current_holdings}. Always return only the ticker symbols of your investments and the percentage holding (integer percentages) in JSON format. Your percentage holdings should not exceed 100%. Just return the JSON object, this is very important."
 
+    try:
         response = bot.get_response(llm_prompt, context_window_date)
         response["completion"] = response["completion"].replace("'", '"')
         # Change FB to META
@@ -85,13 +162,11 @@ def get_llm_response(bot, investor_type, context_window_date, current_holdings):
             r"\{[^}]*\}", response["completion"], re.DOTALL
         ).group()
         updated_portfolio = json.loads(response["completion"])
-        updated_portfolio = rebalance_portfolio(updated_portfolio)
-
+        updated_portfolio = clean_portfolio(updated_portfolio)
         return updated_portfolio
-
     except Exception as e:
-        print(e)
-        IPython.embed()
+        print("LLM response failed, feeding in current holdings", e)
+        return current_holdings
 
 
 def update_holdings(
@@ -113,9 +188,6 @@ def update_holdings(
     Returns:
        prev_updated_portfolio (dict): The previous updated portfolio.
     """
-    updated_portfolio = {
-        key.replace(".", "-"): value for key, value in updated_portfolio.items()
-    }
     end_date = add_one_month(context_window_date)
 
     for ticker in updated_portfolio.keys():

@@ -4,7 +4,7 @@ from ml_collections import ConfigDict
 def get_config():
     config = ConfigDict()
     config.real_trading = False
-    config.investor_type = "growth"
+    config.investor_type = "sharpe"
     config.initial_investment = 100_000
     config.context_window_date = "2018-01-01"
     config.investment_schedule = "monthly"
@@ -12,7 +12,7 @@ def get_config():
     config.num_simulations = 10
     config.llm_additional_context = "news"
     config.experiment_folder_path = (
-        "output/experiments/news_context_ss_200_filtered_growth_10_sim"
+        "output/experiments/news_context_ss_200_filtered_sharpe"
     )
     config.additional_context_dataset_path = (
         "context_data/huff_news_with_impact_scores.json"
