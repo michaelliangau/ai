@@ -5,7 +5,7 @@ def get_config():
     config = ConfigDict()
     config.real_trading = True
     config.investor_type = "value"
-    config.initial_investment = 100_000
+    config.initial_investment = 10000
     config.context_window_date = None
     config.investment_schedule = "monthly"
     config.num_simulated_months = 48
@@ -20,5 +20,5 @@ def get_config():
     config.additional_context_sample_size = (
         200  # Only used if llm_additional_context == "news"
     )
-    config.transaction_cost = 0
+    config.transaction_cost = 0 # Alpaca doesn't charge transaction fees
     return config

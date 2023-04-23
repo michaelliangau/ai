@@ -3,10 +3,8 @@ import utils
 
 # Third party imports
 import yfinance as yf
-import pandas as pd
 import datetime
 import IPython
-from dateutil.relativedelta import relativedelta
 import alpaca_trade_api as tradeapi
 
 class StockSimulator:
@@ -96,7 +94,7 @@ class StockSimulator:
 
         if self.real_trading:
             try:
-                self.alpaca.submit_order(
+                order = self.alpaca.submit_order(
                     symbol=ticker,
                     qty=shares,
                     side=action,
@@ -106,6 +104,33 @@ class StockSimulator:
                 print(f"{action.capitalize()} {shares} shares of {ticker}.")
             except Exception as e:
                 print(f"Error {action}ing {shares} shares of {ticker}: {e}")
+                return
+
+            # Get order status
+            order_status = self.alpaca.get_order(order.id).status
+
+            if order_status == 'accepted':
+                # Update holdings, balance, and trades for real trading
+                if action == "buy":
+                    if self.balance - trade_value - cost >= 0:
+                        self.balance -= (trade_value + cost)
+                elif action == "sell":
+                    if self.holdings.get(ticker, 0) >= shares:
+                        self.balance += (trade_value - cost)
+
+                self.trades.append(
+                    {
+                        "ticker": ticker,
+                        "date": date,
+                        "shares": shares if action == "buy" else -shares,
+                        "price": current_price,
+                        "trade_value": trade_value if action == "buy" else -trade_value,
+                        "action": action,
+                        "cost": cost,
+                    }
+                )
+                self.holdings[ticker] = self.holdings.get(ticker, 0) + (shares if action == "buy" else -shares)
+        
         else:
             # Simulated trading logic
             if action == "buy":
