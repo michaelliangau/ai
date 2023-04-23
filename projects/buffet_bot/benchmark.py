@@ -10,6 +10,15 @@ from fredapi import Fred
 
 
 def get_average_values(folder):
+    """Get the average values for each date from a folder of experiments.
+    
+    Args:
+        folder (str): The folder name.
+    
+    Returns:
+        average_dates (list): A list of datetime objects.
+        average_values_list (list): A list of average values.
+    """
     results_list = []
     for filename in glob.glob(f"output/experiments/{folder}/*.json"):
         with open(filename, "r") as f:
@@ -31,12 +40,20 @@ def get_average_values(folder):
 
     return average_dates, average_values_list
 
-
 def calculate_sharpe_ratio(returns, risk_free_rate):
+    """Calculate the Sharpe ratio of a list of returns.
+
+    Sharpe ratio is scaled by the square root of the sample size.
+    
+    Args:
+        returns (list): A list of returns.
+        risk_free_rate (float): The risk-free rate.
+    """
     excess_returns = returns - risk_free_rate
+    n = len(excess_returns)
     # Ensure there are enough data points for calculation
-    if len(excess_returns) > 0:
-        sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns)
+    if n > 0:
+        sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns) * np.sqrt(n)
     else:
         sharpe_ratio = 0
     return sharpe_ratio
