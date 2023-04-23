@@ -36,6 +36,7 @@ def main(config_path: str):
     config = config.get_config()
 
     # Init vars
+    real_trading = config.real_trading
     investor_type = config.investor_type
     initial_investment = config.initial_investment
     context_window_date = config.context_window_date
@@ -61,7 +62,7 @@ def main(config_path: str):
         )
     else:
         bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
-    simulator = StockSimulator(initial_investment)
+    simulator = StockSimulator(initial_investment, real_trading)
 
     # Run simulation
     for sim in range(num_simulations):
