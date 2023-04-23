@@ -141,8 +141,12 @@ class StockSimulator:
         else:
             # Simulated trading logic
             if action == "buy":
-                if self.balance - trade_value - cost >= 0:
-                    self.balance -= trade_value + cost
+                max_shares_to_buy = int((self.balance / (1 + transaction_cost)) / current_price)
+                if max_shares_to_buy < shares:
+                    shares = max_shares_to_buy
+
+                if self.balance - (shares * current_price) * (1 + transaction_cost) >= 0:
+                    self.balance -= (shares * current_price) * (1 + transaction_cost)
                 else:
                     print(
                         f"Not enough cash to buy {shares} shares of {ticker} at {current_price} on {date}."
@@ -264,6 +268,8 @@ class StockSimulator:
 
         for ticker in self.holdings:
             try:
+                end_date = utils.add_one_month(date)
+                self.get_stock_data(ticker, start_date=date, end_date=end_date)
                 current_price = self.get_price_at_time(ticker, date)
                 total_shares = self.holdings[ticker]
                 position_value = total_shares * current_price

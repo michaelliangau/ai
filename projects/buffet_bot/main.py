@@ -61,7 +61,7 @@ def main(config_path: str):
 
     # Create output folder
     common_utils.create_folder(config.experiment_folder_path)
-    
+
     if real_trading:
         today = utils.get_nyse_date()
         print("Today (NYSE) is", today)
@@ -134,12 +134,9 @@ def main(config_path: str):
                     results.append(portfolio_position)
                     print("Current date", context_window_date)
                     print("Current total value", portfolio_position["total_value"])
-                    print(
-                        "Current portfolio value",
-                        portfolio_position["total_portfolio_value"],
-                    )
                     print("Current cash value", portfolio_position["cash_balance"])
-
+                    print("Current portfolio value", portfolio_position["total_portfolio_value"])
+                    print()
                     # Increment time
                     context_window_date = utils.increment_time(
                         investment_schedule, context_window_date

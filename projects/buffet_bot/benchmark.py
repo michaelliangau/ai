@@ -60,7 +60,11 @@ def calculate_sharpe_ratio(returns, risk_free_rate):
 
 
 folders = [
+    "value_no_news_context",
+    "growth_no_news_context",
+    "news_context_ss_200_filtered_sharpe",
     "news_context_ss_200_filtered_growth",
+    "news_context_ss_200_filtered_value_x_large",
     "news_context_ss_200_filtered_value_large",
     "news_context_ss_200_filtered_value",
     "news_context_ss_200",
@@ -68,11 +72,15 @@ folders = [
     "no_temp_no_context_4_year",
 ]  # Add your folder names here
 folder_labels = [
-    "Claude Base With News Context SS200 Filtered DS Growth Investor",
-    "Claude Base With News Context SS200 Filtered DS Value Large Investor",
-    "Claude Base With News Context SS200 Filtered DS Value Investor",
-    "Claude Base With News Context SS200",
-    "Claude Base With News Context SS100",
+    "Claude Value No News Context",
+    "Claude Growth No News Context",
+    "Claude With News Context SS200 Filtered DS High Sharpe",
+    "Claude With News Context SS200 Filtered DS Growth Investor",
+    "Claude With News Context SS200 Filtered DS Value Extra Large Investor",
+    "Claude With News Context SS200 Filtered DS Value Large Investor",
+    "Claude With News Context SS200 Filtered DS Value Investor",
+    "Claude With News Context SS200",
+    "Claude With News Context SS100",
     "Claude Base",
 ]  # Add your desired legend names for folders here
 

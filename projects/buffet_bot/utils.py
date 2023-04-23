@@ -95,11 +95,16 @@ def check_tickers_exist(tickers):
             tickers_string, period="1d", start="2018-01-01", end="2022-01-01"
         )
 
-        for ticker in tickers_to_check:
-            if stock_data["Adj Close"][ticker].isna().all():
-                invalid_tickers_cache.add(ticker)
-            else:
-                valid_tickers_cache.add(ticker)
+    for ticker in tickers_to_check:
+        data_to_check = (
+            stock_data["Adj Close"][ticker]
+            if len(tickers_to_check) > 1
+            else stock_data["Adj Close"]
+        )
+        if data_to_check.isna().all():
+            invalid_tickers_cache.add(ticker)
+        else:
+            valid_tickers_cache.add(ticker)
 
     valid_tickers = [ticker for ticker in tickers if ticker in valid_tickers_cache]
 
