@@ -90,6 +90,7 @@ def main(config_path: str):
                     context_window_date,
                     initial_investment,
                     prev_updated_portfolio,
+                    transaction_cost,
                 )
 
                 # Print current portfolio position

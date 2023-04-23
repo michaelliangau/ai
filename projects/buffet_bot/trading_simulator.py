@@ -31,13 +31,30 @@ class StockSimulator:
             current_date += datetime.timedelta(days=1)
         return current_date.strftime("%Y-%m-%d")
 
-    def update_holdings(self, stocks_dict, date, initial_investment=100000):
+    def get_stock_data(self, ticker, start_date, end_date):
+        """Gets the stock data for the given ticker and date range."""
+        stock = yf.Ticker(ticker)
+        stock_df = stock.history(start=start_date, end=end_date)
+        self.stock_data[ticker] = stock_df
+
+    def get_price_at_time(self, ticker, date):
+        """Gets the price of the given ticker at the given date."""
+        if date not in self.stock_data[ticker].index:
+            # get stock data
+            date_obj = datetime.datetime.strptime(date, "%Y-%m-%d")
+            end_date_obj = date_obj + relativedelta(months=1)
+            end_date = end_date_obj.strftime("%Y-%m-%d")
+            self.get_stock_data(ticker, date, end_date)
+        return self.stock_data[ticker].loc[date]["Close"]
+    
+    def update_holdings(self, stocks_dict, date, initial_investment=100000, transaction_cost=0.0001):
         """Updates the holdings based on the given stocks_dict and date.
 
         Args:
             stocks_dict (dict): A dictionary of stocks and their percentages.
             date (str): The date to update the holdings.
             initial_investment (int, optional): The initial investment. Defaults to 100000.
+            transaction_cost (float, optional): The transaction cost as a percentage. Defaults to 0.0001.
         """
         # Calculate the total portfolio value
         total_portfolio_value = 0
@@ -69,7 +86,10 @@ class StockSimulator:
 
                 if target_value < current_value:
                     shares_to_sell = self.holdings.get(ticker, 0) - target_shares
+                    trade_value = current_price * shares_to_sell
+                    trade_cost = trade_value * transaction_cost
                     self.sell(ticker, date, shares_to_sell)
+                    self.balance += trade_cost
             except ValueError:
                 print(f"Ticker {ticker} not found. Skipping sell...")
                 continue
@@ -84,26 +104,17 @@ class StockSimulator:
 
                 if target_value > current_value:
                     shares_to_buy = target_shares - self.holdings.get(ticker, 0)
-                    self.buy(ticker, date, shares_to_buy)
+                    trade_value = current_price * shares_to_buy
+                    trade_cost = trade_value * transaction_cost
+                    if self.balance - trade_value - trade_cost >= 0:
+                        self.buy(ticker, date, shares_to_buy)
+                        self.balance -= trade_value + trade_cost
+                    else:
+                        print(f"Not enough cash to buy {shares_to_buy} shares of {ticker} at {current_price} on {date}.")
             except ValueError:
                 print(f"Ticker {ticker} not found. Skipping buy...")
                 continue
 
-    def get_stock_data(self, ticker, start_date, end_date):
-        """Gets the stock data for the given ticker and date range."""
-        stock = yf.Ticker(ticker)
-        stock_df = stock.history(start=start_date, end=end_date)
-        self.stock_data[ticker] = stock_df
-
-    def get_price_at_time(self, ticker, date):
-        """Gets the price of the given ticker at the given date."""
-        if date not in self.stock_data[ticker].index:
-            # get stock data
-            date_obj = datetime.datetime.strptime(date, "%Y-%m-%d")
-            end_date_obj = date_obj + relativedelta(months=1)
-            end_date = end_date_obj.strftime("%Y-%m-%d")
-            self.get_stock_data(ticker, date, end_date)
-        return self.stock_data[ticker].loc[date]["Close"]
 
     def buy(self, ticker, date, shares):
         """Buys the given number of shares of the given ticker at the given date."""
