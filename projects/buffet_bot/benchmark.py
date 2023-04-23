@@ -5,7 +5,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import yfinance as yf
-import os
+import IPython
 from fredapi import Fred
 
 
@@ -34,7 +34,11 @@ def get_average_values(folder):
 
 def calculate_sharpe_ratio(returns, risk_free_rate):
     excess_returns = returns - risk_free_rate
-    sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns)
+    # Ensure there are enough data points for calculation
+    if len(excess_returns) > 0:
+        sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns)
+    else:
+        sharpe_ratio = 0
     return sharpe_ratio
 
 
@@ -55,40 +59,79 @@ folder_labels = [
     "Claude Base",
 ]  # Add your desired legend names for folders here
 
-# Download S&P 500 data from Yahoo Finance
+# Vars
 start_date = "2018-01-01"
 end_date = "2022-01-01"
-ticker = "^GSPC"
-sp500 = yf.download(ticker, start=start_date, end=end_date)
+initial_investment = 100000
 
 # Calculate S&P 500 investment performance
-initial_investment = 100000
-sp500["Normalized"] = sp500["Adj Close"] / sp500["Adj Close"].iloc[0]
-sp500["Investment"] = sp500["Normalized"] * initial_investment
+ticker = "^GSPC"
+sp500 = yf.download(ticker, start=start_date, end=end_date)
 
 # Download Nasdaq 100 data from Yahoo Finance
 nasdaq_ticker = "^NDX"
 nasdaq100 = yf.download(nasdaq_ticker, start=start_date, end=end_date)
 
-# Calculate Nasdaq 100 investment performance
-nasdaq100["Normalized"] = nasdaq100["Adj Close"] / nasdaq100["Adj Close"].iloc[0]
-nasdaq100["Investment"] = nasdaq100["Normalized"] * initial_investment
-
 # Download DJIA data from Yahoo Finance
 djia_ticker = "^DJI"
 djia = yf.download(djia_ticker, start=start_date, end=end_date)
-
-# Calculate DJIA investment performance
-djia["Normalized"] = djia["Adj Close"] / djia["Adj Close"].iloc[0]
-djia["Investment"] = djia["Normalized"] * initial_investment
 
 # Download FTSE 100 data from Yahoo Finance
 ftse_ticker = "^FTSE"
 ftse100 = yf.download(ftse_ticker, start=start_date, end=end_date)
 
-# Calculate FTSE 100 investment performance
-ftse100["Normalized"] = ftse100["Adj Close"] / ftse100["Adj Close"].iloc[0]
-ftse100["Investment"] = ftse100["Normalized"] * initial_investment
+# Resample index data to monthly frequency
+sp500_monthly = sp500.resample("M").ffill()
+nasdaq100_monthly = nasdaq100.resample("M").ffill()
+djia_monthly = djia.resample("M").ffill()
+ftse100_monthly = ftse100.resample("M").ffill()
+
+# Calculate investment performance
+sp500_monthly["Normalized"] = (
+    sp500_monthly["Adj Close"] / sp500_monthly["Adj Close"].iloc[0]
+)
+sp500_monthly["Investment"] = sp500_monthly["Normalized"] * initial_investment
+
+nasdaq100_monthly["Normalized"] = (
+    nasdaq100_monthly["Adj Close"] / nasdaq100_monthly["Adj Close"].iloc[0]
+)
+nasdaq100_monthly["Investment"] = nasdaq100_monthly["Normalized"] * initial_investment
+
+djia_monthly["Normalized"] = (
+    djia_monthly["Adj Close"] / djia_monthly["Adj Close"].iloc[0]
+)
+djia_monthly["Investment"] = djia_monthly["Normalized"] * initial_investment
+
+ftse100_monthly["Normalized"] = (
+    ftse100_monthly["Adj Close"] / ftse100_monthly["Adj Close"].iloc[0]
+)
+ftse100_monthly["Investment"] = ftse100_monthly["Normalized"] * initial_investment
+
+# Calculate returns
+sp500_returns = (
+    np.diff(sp500_monthly["Investment"].dropna())
+    / sp500_monthly["Investment"].dropna()[:-1]
+)
+nasdaq100_returns = (
+    np.diff(nasdaq100_monthly["Investment"].dropna())
+    / nasdaq100_monthly["Investment"].dropna()[:-1]
+)
+djia_returns = (
+    np.diff(djia_monthly["Investment"].dropna())
+    / djia_monthly["Investment"].dropna()[:-1]
+)
+ftse100_returns = (
+    np.diff(ftse100_monthly["Investment"].dropna())
+    / ftse100_monthly["Investment"].dropna()[:-1]
+)
+
+# Calculate Sharpe ratios for the indices
+index_returns = {
+    "S&P 500": sp500_returns,
+    "Nasdaq 100": nasdaq100_returns,
+    "DJIA": djia_returns,
+    "FTSE 100": ftse100_returns,
+}
 
 # Create a figure and axis for the line graph
 fig, ax = plt.subplots()
@@ -109,23 +152,39 @@ for folder, folder_label in zip(folders, folder_labels):
     )
 
 # Plot the S&P 500 investment performance
-ax.plot(sp500.index, sp500["Investment"], linestyle="-", linewidth=2, label="S&P 500")
+ax.plot(
+    sp500_monthly.index,
+    sp500_monthly["Investment"],
+    linestyle="-",
+    linewidth=2,
+    label="S&P 500",
+)
 
 # Plot the Nasdaq 100 investment performance
 ax.plot(
-    nasdaq100.index,
-    nasdaq100["Investment"],
+    nasdaq100_monthly.index,
+    nasdaq100_monthly["Investment"],
     linestyle="-.",
     linewidth=2,
     label="Nasdaq 100",
 )
 
 # Plot the DJIA investment performance
-ax.plot(djia.index, djia["Investment"], linestyle=":", linewidth=2, label="DJIA")
+ax.plot(
+    djia_monthly.index,
+    djia_monthly["Investment"],
+    linestyle=":",
+    linewidth=2,
+    label="DJIA",
+)
 
 # Plot the FTSE 100 investment performance
 ax.plot(
-    ftse100.index, ftse100["Investment"], linestyle="--", linewidth=1, label="FTSE 100"
+    ftse100_monthly.index,
+    ftse100_monthly["Investment"],
+    linestyle="--",
+    linewidth=1,
+    label="FTSE 100",
 )
 
 # Sharpe Ratio
@@ -152,14 +211,6 @@ for folder, folder_label in zip(folders, folder_labels):
     returns = np.diff(average_values_list) / average_values_list[:-1]
     sharpe_ratio = calculate_sharpe_ratio(returns, risk_free_rate)
     sharpe_ratios.append((folder_label, sharpe_ratio))
-
-# Calculate Sharpe ratios for the indices
-index_returns = {
-    "S&P 500": np.diff(sp500["Investment"]) / sp500["Investment"][:-1],
-    "Nasdaq 100": np.diff(nasdaq100["Investment"]) / nasdaq100["Investment"][:-1],
-    "DJIA": np.diff(djia["Investment"]) / djia["Investment"][:-1],
-    "FTSE 100": np.diff(ftse100["Investment"]) / ftse100["Investment"][:-1],
-}
 
 index_sharpe_ratios = []
 for index_name, index_return in index_returns.items():
