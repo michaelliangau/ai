@@ -205,20 +205,10 @@ ax.plot(
 )
 
 # Sharpe Ratio
-# Add your FRED API key
-with open("/Users/michael/Desktop/wip/fredapi_credentials.txt", "r") as f:
-    FRED_API_KEY = f.readline().strip()
-
-# Initialize the FRED API
-fred = Fred(api_key=FRED_API_KEY)
-
-# Get the 3-month Treasury Bill rate for the period of 2018-01-01 to 2022-01-01
-risk_free_data = fred.get_series("TB3MS", start_date, end_date)
-
 # Calculate the average risk-free rate for the period
-average_risk_free_rate_annual = np.mean(risk_free_data) / 100
-risk_free_rate = (
-    average_risk_free_rate_annual / 12
+risk_free_rate_annual = 0.03  # 3%
+risk_free_rate_monthly = (
+    risk_free_rate_annual / 12
 )  # Convert the annual rate to a monthly rate
 
 sharpe_ratios = []
@@ -226,12 +216,12 @@ sharpe_ratios = []
 for folder, folder_label in zip(folders, folder_labels):
     average_dates, average_values_list = get_average_values(folder)
     returns = np.diff(average_values_list) / average_values_list[:-1]
-    sharpe_ratio = calculate_sharpe_ratio(returns, risk_free_rate)
+    sharpe_ratio = calculate_sharpe_ratio(returns, risk_free_rate_monthly)
     sharpe_ratios.append((folder_label, sharpe_ratio))
 
 index_sharpe_ratios = []
 for index_name, index_return in index_returns.items():
-    sharpe_ratio = calculate_sharpe_ratio(index_return, risk_free_rate)
+    sharpe_ratio = calculate_sharpe_ratio(index_return, risk_free_rate_monthly)
     index_sharpe_ratios.append((index_name, sharpe_ratio))
 
 # Create the Sharpe ratios text
