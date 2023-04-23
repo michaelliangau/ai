@@ -7,6 +7,42 @@ from datetime import datetime
 import random
 import IPython
 import yfinance as yf
+import pandas_market_calendars as mcal
+import pandas as pd
+import pytz
+
+def get_nyse_date():
+    """
+    Get the current date in the NYSE timezone (America/New_York).
+
+    Returns:
+        str: The current date in the format "YYYY-MM-DD".
+    """
+    # Get current datetime in UTC
+    now_utc = datetime.now(pytz.utc)
+
+    # Convert current datetime to NYSE timezone (America/New_York)
+    nyse_timezone = pytz.timezone("America/New_York")
+    now_nyse = now_utc.astimezone(nyse_timezone)
+
+    # Format the date as a string
+    today_nyse = now_nyse.strftime("%Y-%m-%d")
+
+    return today_nyse
+
+def is_nyse_trading_day(date: str) -> bool:
+    """Checks if the given date is a trading day on the NYSE.
+    
+    Args:
+        date (str): The date to check in the format 'YYYY-MM-DD'.
+    
+    Returns:
+        bool: True if the given date is a trading day on the NYSE, False otherwise."""
+    nyse = mcal.get_calendar("NYSE")
+    trading_days = nyse.valid_days(start_date=date, end_date=date)
+
+    return not trading_days.empty
+
 
 
 def get_embedding(text, model="text-embedding-ada-002"):
@@ -175,6 +211,7 @@ def update_holdings(
     context_window_date,
     initial_investment,
     prev_updated_portfolio,
+    transaction_cost
 ):
     """Updates the holdings in the simulator based on the updated portfolio.
 
@@ -184,6 +221,7 @@ def update_holdings(
        context_window_date (str): The date to use as the context window.
        initial_investment (int): The initial investment.
        prev_updated_portfolio (dict): The previous updated portfolio.
+       transaction_cost (float): The transaction cost.
 
     Returns:
        prev_updated_portfolio (dict): The previous updated portfolio.
@@ -197,7 +235,7 @@ def update_holdings(
 
     if updated_portfolio != prev_updated_portfolio:
         simulator.update_holdings(
-            updated_portfolio, context_window_date, initial_investment
+            updated_portfolio, context_window_date, initial_investment, transaction_cost
         )
 
     # Update prev_updated_portfolio

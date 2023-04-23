@@ -137,7 +137,6 @@ class StockSimulator:
                 continue
 
     def buy(self, ticker, date, shares):
-        shares = int(shares)
         if self.real_trading:
             try:
                 self.alpaca.submit_order(
@@ -173,7 +172,6 @@ class StockSimulator:
                 )
 
     def sell(self, ticker, date, shares):
-        shares = int(shares)
         if self.real_trading:
             try:
                 self.alpaca.submit_order(
