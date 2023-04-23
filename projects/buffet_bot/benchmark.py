@@ -11,10 +11,10 @@ from fredapi import Fred
 
 def get_average_values(folder):
     """Get the average values for each date from a folder of experiments.
-    
+
     Args:
         folder (str): The folder name.
-    
+
     Returns:
         average_dates (list): A list of datetime objects.
         average_values_list (list): A list of average values.
@@ -40,11 +40,12 @@ def get_average_values(folder):
 
     return average_dates, average_values_list
 
+
 def calculate_sharpe_ratio(returns, risk_free_rate):
     """Calculate the Sharpe ratio of a list of returns.
 
     Sharpe ratio is scaled by the square root of the sample size.
-    
+
     Args:
         returns (list): A list of returns.
         risk_free_rate (float): The risk-free rate.

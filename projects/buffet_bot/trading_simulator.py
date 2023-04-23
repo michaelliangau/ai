@@ -141,11 +141,16 @@ class StockSimulator:
         else:
             # Simulated trading logic
             if action == "buy":
-                max_shares_to_buy = int((self.balance / (1 + transaction_cost)) / current_price)
+                max_shares_to_buy = int(
+                    (self.balance / (1 + transaction_cost)) / current_price
+                )
                 if max_shares_to_buy < shares:
                     shares = max_shares_to_buy
 
-                if self.balance - (shares * current_price) * (1 + transaction_cost) >= 0:
+                if (
+                    self.balance - (shares * current_price) * (1 + transaction_cost)
+                    >= 0
+                ):
                     self.balance -= (shares * current_price) * (1 + transaction_cost)
                 else:
                     print(

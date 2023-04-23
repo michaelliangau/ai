@@ -11,9 +11,7 @@ def get_config():
     config.num_simulated_months = 48
     config.num_simulations = 10
     config.llm_additional_context = None
-    config.experiment_folder_path = (
-        "output/experiments/growth_no_news_context"
-    )
+    config.experiment_folder_path = "output/experiments/growth_no_news_context"
     config.additional_context_dataset_path = None
     config.additional_context_sample_size = None
     config.transaction_cost = 0.0001

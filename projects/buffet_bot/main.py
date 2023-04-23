@@ -135,7 +135,10 @@ def main(config_path: str):
                     print("Current date", context_window_date)
                     print("Current total value", portfolio_position["total_value"])
                     print("Current cash value", portfolio_position["cash_balance"])
-                    print("Current portfolio value", portfolio_position["total_portfolio_value"])
+                    print(
+                        "Current portfolio value",
+                        portfolio_position["total_portfolio_value"],
+                    )
                     print()
                     # Increment time
                     context_window_date = utils.increment_time(
