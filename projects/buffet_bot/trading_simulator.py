@@ -7,6 +7,7 @@ import datetime
 import IPython
 import alpaca_trade_api as tradeapi
 
+
 class StockSimulator:
     """Stock simulator class for simulating stock trades and calculating profit/loss."""
 
@@ -65,7 +66,9 @@ class StockSimulator:
             # Use the original method for simulated trading
             return self.stock_data[ticker].loc[date].Close
 
-    def _calculate_target_shares(self, ticker, date, stocks_dict, total_portfolio_value):
+    def _calculate_target_shares(
+        self, ticker, date, stocks_dict, total_portfolio_value
+    ):
         """Calculates the target shares for the given ticker."""
         percentage = stocks_dict[ticker]
         target_value = total_portfolio_value * (percentage / 100)
@@ -73,10 +76,12 @@ class StockSimulator:
         current_value = current_price * self.holdings.get(ticker, 0)
         target_shares = target_value / current_price
         return target_shares, current_value, current_price, target_value
-   
-    def _execute_trade(self, action, ticker, date, shares, current_price, transaction_cost):
+
+    def _execute_trade(
+        self, action, ticker, date, shares, current_price, transaction_cost
+    ):
         """Executes a trade.
-        
+
         Args:
             action: The action to take. Must be "buy" or "sell".
             ticker: The ticker of the stock to trade.
@@ -109,14 +114,14 @@ class StockSimulator:
             # Get order status
             order_status = self.alpaca.get_order(order.id).status
 
-            if order_status == 'accepted':
+            if order_status == "accepted":
                 # Update holdings, balance, and trades for real trading
                 if action == "buy":
                     if self.balance - trade_value - cost >= 0:
-                        self.balance -= (trade_value + cost)
+                        self.balance -= trade_value + cost
                 elif action == "sell":
                     if self.holdings.get(ticker, 0) >= shares:
-                        self.balance += (trade_value - cost)
+                        self.balance += trade_value - cost
 
                 self.trades.append(
                     {
@@ -129,19 +134,23 @@ class StockSimulator:
                         "cost": cost,
                     }
                 )
-                self.holdings[ticker] = self.holdings.get(ticker, 0) + (shares if action == "buy" else -shares)
-        
+                self.holdings[ticker] = self.holdings.get(ticker, 0) + (
+                    shares if action == "buy" else -shares
+                )
+
         else:
             # Simulated trading logic
             if action == "buy":
                 if self.balance - trade_value - cost >= 0:
-                    self.balance -= (trade_value + cost)
+                    self.balance -= trade_value + cost
                 else:
-                    print(f"Not enough cash to buy {shares} shares of {ticker} at {current_price} on {date}.")
+                    print(
+                        f"Not enough cash to buy {shares} shares of {ticker} at {current_price} on {date}."
+                    )
                     return
             elif action == "sell":
                 if self.holdings.get(ticker, 0) >= shares:
-                    self.balance += (trade_value - cost)
+                    self.balance += trade_value - cost
                 else:
                     print(f"Not enough shares of {ticker} to sell {shares} on {date}.")
                     return
@@ -157,8 +166,9 @@ class StockSimulator:
                     "cost": cost,
                 }
             )
-            self.holdings[ticker] = self.holdings.get(ticker, 0) + (shares if action == "buy" else -shares)
-
+            self.holdings[ticker] = self.holdings.get(ticker, 0) + (
+                shares if action == "buy" else -shares
+            )
 
     def update_holdings(
         self, stocks_dict, date, initial_investment=100000, transaction_cost=0.0001
@@ -175,9 +185,7 @@ class StockSimulator:
         if not self.real_trading:
             end_date = utils.add_one_month(date)
             for ticker in stocks_dict.keys():
-                self.get_stock_data(
-                    ticker, start_date=date, end_date=end_date
-                )     
+                self.get_stock_data(ticker, start_date=date, end_date=end_date)
 
         # Calculate the total portfolio value
         total_portfolio_value = 0
@@ -202,10 +210,24 @@ class StockSimulator:
         # Sell first
         for ticker, _ in stocks_dict.items():
             try:
-                target_shares, current_value, current_price, target_value = self._calculate_target_shares(ticker, date, stocks_dict, total_portfolio_value)
+                (
+                    target_shares,
+                    current_value,
+                    current_price,
+                    target_value,
+                ) = self._calculate_target_shares(
+                    ticker, date, stocks_dict, total_portfolio_value
+                )
                 if current_value > target_value:
                     shares_to_sell = self.holdings.get(ticker, 0) - target_shares
-                    self._execute_trade("sell", ticker, date, shares_to_sell, current_price, transaction_cost)
+                    self._execute_trade(
+                        "sell",
+                        ticker,
+                        date,
+                        shares_to_sell,
+                        current_price,
+                        transaction_cost,
+                    )
             except ValueError:
                 print(f"Ticker {ticker} not found. Skipping sell...")
                 continue
@@ -213,10 +235,24 @@ class StockSimulator:
         # Buy second
         for ticker, _ in stocks_dict.items():
             try:
-                target_shares, current_value, current_price, target_value = self._calculate_target_shares(ticker, date, stocks_dict, total_portfolio_value)
+                (
+                    target_shares,
+                    current_value,
+                    current_price,
+                    target_value,
+                ) = self._calculate_target_shares(
+                    ticker, date, stocks_dict, total_portfolio_value
+                )
                 if current_value < target_value:
                     shares_to_buy = target_shares - self.holdings.get(ticker, 0)
-                    self._execute_trade("buy", ticker, date, shares_to_buy, current_price, transaction_cost)
+                    self._execute_trade(
+                        "buy",
+                        ticker,
+                        date,
+                        shares_to_buy,
+                        current_price,
+                        transaction_cost,
+                    )
             except ValueError:
                 print(f"Ticker {ticker} not found. Skipping buy...")
                 continue

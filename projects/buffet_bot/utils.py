@@ -11,6 +11,7 @@ import pandas_market_calendars as mcal
 import pandas as pd
 import pytz
 
+
 def get_nyse_date():
     """
     Get the current date in the NYSE timezone (America/New_York).
@@ -30,19 +31,19 @@ def get_nyse_date():
 
     return today_nyse
 
+
 def is_nyse_trading_day(date: str) -> bool:
     """Checks if the given date is a trading day on the NYSE.
-    
+
     Args:
         date (str): The date to check in the format 'YYYY-MM-DD'.
-    
+
     Returns:
         bool: True if the given date is a trading day on the NYSE, False otherwise."""
     nyse = mcal.get_calendar("NYSE")
     trading_days = nyse.valid_days(start_date=date, end_date=date)
 
     return not trading_days.empty
-
 
 
 def get_embedding(text, model="text-embedding-ada-002"):
@@ -210,7 +211,7 @@ def update_holdings(
     context_window_date,
     initial_investment,
     prev_updated_portfolio,
-    transaction_cost
+    transaction_cost,
 ):
     """Updates the holdings in the simulator based on the updated portfolio.
 

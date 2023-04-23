@@ -10,7 +10,7 @@ def get_config():
     config.investment_schedule = "monthly"
     config.num_simulated_months = 48
     config.num_simulations = 1
-    config.llm_additional_context = None # TODO implement
+    config.llm_additional_context = None  # TODO implement
     config.experiment_folder_path = (
         "output/experiments/news_context_ss_200_filtered_growth_10_sim"
     )
@@ -20,5 +20,5 @@ def get_config():
     config.additional_context_sample_size = (
         200  # Only used if llm_additional_context == "news"
     )
-    config.transaction_cost = 0 # Alpaca doesn't charge transaction fees
+    config.transaction_cost = 0  # Alpaca doesn't charge transaction fees
     return config

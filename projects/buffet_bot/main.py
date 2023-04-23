@@ -61,7 +61,7 @@ def main(config_path: str):
 
     if real_trading:
         today = utils.get_nyse_date()
-        print('Today (NYSE) is', today)
+        print("Today (NYSE) is", today)
 
         if not utils.is_nyse_trading_day(today):
             current_holdings = simulator.holdings
@@ -86,7 +86,9 @@ def main(config_path: str):
             portfolio_position = simulator.get_portfolio_position(today)
             print("Current date", today)
             print("Current total value", portfolio_position["total_value"])
-            print("Current portfolio value", portfolio_position["total_portfolio_value"])
+            print(
+                "Current portfolio value", portfolio_position["total_portfolio_value"]
+            )
             print("Current cash value", portfolio_position["cash_balance"])
         else:
             print("Not a trading day. No action taken.")
@@ -152,6 +154,7 @@ def main(config_path: str):
             # Reset the context_window_date and simulator for the next simulation
             context_window_date = "2018-01-01"
             simulator.reset()
+
 
 if __name__ == "__main__":
     main(args.config)
