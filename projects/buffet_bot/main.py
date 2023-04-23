@@ -59,6 +59,9 @@ def main(config_path: str):
         bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
     simulator = StockSimulator(initial_investment, real_trading)
 
+    # Create output folder
+    common_utils.create_folder(config.experiment_folder_path)
+    
     if real_trading:
         today = utils.get_nyse_date()
         print("Today (NYSE) is", today)
