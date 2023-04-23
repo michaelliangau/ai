@@ -8,6 +8,7 @@ import random
 import IPython
 import yfinance as yf
 
+
 def get_embedding(text, model="text-embedding-ada-002"):
     text = text.replace("\n", " ")
     return openai.Embedding.create(input=[text], model=model)["data"][0]["embedding"]
@@ -29,8 +30,10 @@ def find_next_trading_day(context_window_date, simulator, ticker="MSFT"):
         )
     return context_window_date
 
+
 valid_tickers_cache = set()
-invalid_tickers_cache = {'DOW'}
+invalid_tickers_cache = {"DOW"}
+
 
 def check_tickers_exist(tickers):
     """Checks if the given tickers exist.
@@ -44,14 +47,20 @@ def check_tickers_exist(tickers):
     global valid_tickers_cache, invalid_tickers_cache
 
     # Filter tickers that are not in the valid or invalid cache
-    tickers_to_check = [ticker for ticker in tickers if ticker not in valid_tickers_cache and ticker not in invalid_tickers_cache]
+    tickers_to_check = [
+        ticker
+        for ticker in tickers
+        if ticker not in valid_tickers_cache and ticker not in invalid_tickers_cache
+    ]
 
     if tickers_to_check:
-        tickers_string = ' '.join(tickers_to_check)
-        stock_data = yf.download(tickers_string, period='1d', start='2018-01-01', end='2022-01-01')
+        tickers_string = " ".join(tickers_to_check)
+        stock_data = yf.download(
+            tickers_string, period="1d", start="2018-01-01", end="2022-01-01"
+        )
 
         for ticker in tickers_to_check:
-            if stock_data['Adj Close'][ticker].isna().all():
+            if stock_data["Adj Close"][ticker].isna().all():
                 invalid_tickers_cache.add(ticker)
             else:
                 valid_tickers_cache.add(ticker)
@@ -59,6 +68,7 @@ def check_tickers_exist(tickers):
     valid_tickers = [ticker for ticker in tickers if ticker in valid_tickers_cache]
 
     return valid_tickers
+
 
 def clean_portfolio(portfolio):
     """Cleans the portfolio by removing tickers that don't exist.
@@ -70,8 +80,10 @@ def clean_portfolio(portfolio):
         cleaned_portfolio (dict): The cleaned portfolio.
     """
     # Replace periods with hyphens in all tickers
-    portfolio = {ticker.replace('.', '-'): percentage for ticker, percentage in portfolio.items()}
-    
+    portfolio = {
+        ticker.replace(".", "-"): percentage for ticker, percentage in portfolio.items()
+    }
+
     tickers = list(portfolio.keys())
     valid_tickers = check_tickers_exist(tickers)
 
@@ -81,7 +93,6 @@ def clean_portfolio(portfolio):
             cleaned_portfolio[ticker] = percentage
 
     return rebalance_portfolio(cleaned_portfolio)
-
 
 
 def rebalance_portfolio(portfolio, original_total_allocation=None):
@@ -154,7 +165,7 @@ def get_llm_response(bot, investor_type, context_window_date, current_holdings):
         updated_portfolio = clean_portfolio(updated_portfolio)
         return updated_portfolio
     except Exception as e:
-        print('LLM response failed, feeding in current holdings', e)
+        print("LLM response failed, feeding in current holdings", e)
         return current_holdings
 
 

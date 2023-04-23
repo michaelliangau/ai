@@ -11,7 +11,7 @@ class StockSimulator:
 
     def __init__(self, initial_investment, real_trading=False):
         """Initializes the stock simulator.
-        
+
         Args:
             initial_investment: The initial investment amount.
             real_trading: Whether to use real trading or simulated trading.
@@ -27,8 +27,10 @@ class StockSimulator:
             with open("/Users/michael/Desktop/wip/alpaca_credentials.txt", "r") as f:
                 ALPACA_API_KEY = f.readline().strip()
                 ALPACA_API_SECRET = f.readline().strip()
-                BASE_URL = 'https://paper-api.alpaca.markets'  # Use the paper trading endpoint for testing
-            self.alpaca = tradeapi.REST(ALPACA_API_KEY, ALPACA_API_SECRET, BASE_URL, api_version='v2')
+                BASE_URL = "https://paper-api.alpaca.markets"  # Use the paper trading endpoint for testing
+            self.alpaca = tradeapi.REST(
+                ALPACA_API_KEY, ALPACA_API_SECRET, BASE_URL, api_version="v2"
+            )
 
     def is_trading_day(self, ticker, date):
         """Returns True if the stock market is open on the given date."""
@@ -61,8 +63,10 @@ class StockSimulator:
             end_date = end_date_obj.strftime("%Y-%m-%d")
             self.get_stock_data(ticker, date, end_date)
         return self.stock_data[ticker].loc[date]["Close"]
-    
-    def update_holdings(self, stocks_dict, date, initial_investment=100000, transaction_cost=0.0001):
+
+    def update_holdings(
+        self, stocks_dict, date, initial_investment=100000, transaction_cost=0.0001
+    ):
         """Updates the holdings based on the given stocks_dict and date.
 
         Args:
@@ -125,7 +129,9 @@ class StockSimulator:
                         self.buy(ticker, date, shares_to_buy)
                         self.balance -= trade_value + trade_cost
                     else:
-                        print(f"Not enough cash to buy {shares_to_buy} shares of {ticker} at {current_price} on {date}.")
+                        print(
+                            f"Not enough cash to buy {shares_to_buy} shares of {ticker} at {current_price} on {date}."
+                        )
             except ValueError:
                 print(f"Ticker {ticker} not found. Skipping buy...")
                 continue
@@ -137,9 +143,9 @@ class StockSimulator:
                 self.alpaca.submit_order(
                     symbol=ticker,
                     qty=shares,
-                    side='buy',
-                    type='market',
-                    time_in_force='gtc'
+                    side="buy",
+                    type="market",
+                    time_in_force="gtc",
                 )
                 print(f"Bought {shares} shares of {ticker}.")
             except Exception as e:
@@ -162,8 +168,9 @@ class StockSimulator:
                 )
                 self.holdings[ticker] = self.holdings.get(ticker, 0) + shares
             else:
-                print(f"Not enough cash to buy {shares} shares of {ticker} at {price} on {date}.")
-
+                print(
+                    f"Not enough cash to buy {shares} shares of {ticker} at {price} on {date}."
+                )
 
     def sell(self, ticker, date, shares):
         shares = int(shares)
@@ -172,9 +179,9 @@ class StockSimulator:
                 self.alpaca.submit_order(
                     symbol=ticker,
                     qty=shares,
-                    side='sell',
-                    type='market',
-                    time_in_force='gtc'
+                    side="sell",
+                    type="market",
+                    time_in_force="gtc",
                 )
                 print(f"Sold {shares} shares of {ticker}.")
             except Exception as e:
@@ -198,7 +205,6 @@ class StockSimulator:
                 self.holdings[ticker] = self.holdings.get(ticker, 0) - shares
             else:
                 print(f"Not enough shares of {ticker} to sell {shares} on {date}.")
-
 
     def get_portfolio_position(self, date):
         """Returns the portfolio position for the given date."""

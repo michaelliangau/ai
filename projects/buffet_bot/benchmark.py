@@ -8,6 +8,7 @@ import yfinance as yf
 import os
 from fredapi import Fred
 
+
 def get_average_values(folder):
     results_list = []
     for filename in glob.glob(f"output/experiments/{folder}/*.json"):
@@ -30,10 +31,12 @@ def get_average_values(folder):
 
     return average_dates, average_values_list
 
+
 def calculate_sharpe_ratio(returns, risk_free_rate):
     excess_returns = returns - risk_free_rate
     sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns)
     return sharpe_ratio
+
 
 folders = [
     "news_context_ss_200_filtered_growth",
@@ -138,7 +141,9 @@ risk_free_data = fred.get_series("TB3MS", start_date, end_date)
 
 # Calculate the average risk-free rate for the period
 average_risk_free_rate_annual = np.mean(risk_free_data) / 100
-risk_free_rate = average_risk_free_rate_annual / 12  # Convert the annual rate to a monthly rate
+risk_free_rate = (
+    average_risk_free_rate_annual / 12
+)  # Convert the annual rate to a monthly rate
 
 sharpe_ratios = []
 
