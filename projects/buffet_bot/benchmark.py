@@ -37,6 +37,7 @@ def calculate_sharpe_ratio(returns, risk_free_rate):
 
 folders = [
     "news_context_ss_200_filtered_growth",
+    "news_context_ss_200_filtered_value_large",
     "news_context_ss_200_filtered_value",
     "news_context_ss_200",
     "news_context",
@@ -44,6 +45,7 @@ folders = [
 ]  # Add your folder names here
 folder_labels = [
     "Claude Base With News Context SS200 Filtered DS Growth Investor",
+    "Claude Base With News Context SS200 Filtered DS Value Large Investor",
     "Claude Base With News Context SS200 Filtered DS Value Investor",
     "Claude Base With News Context SS200",
     "Claude Base With News Context SS100",
