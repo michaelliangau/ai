@@ -10,15 +10,9 @@ def get_config():
     config.investment_schedule = "monthly"
     config.num_simulated_months = 48
     config.num_simulations = 10
-    config.llm_additional_context = "news"
-    config.experiment_folder_path = (
-        "output/experiments/news_context_ss_200_filtered_growth_10_sim"
-    )
-    config.additional_context_dataset_path = (
-        "context_data/huff_news_with_impact_scores.json"
-    )
-    config.additional_context_sample_size = (
-        200  # Only used if llm_additional_context == "news"
-    )
+    config.llm_additional_context = None
+    config.experiment_folder_path = "output/experiments/growth_no_news_context"
+    config.additional_context_dataset_path = None
+    config.additional_context_sample_size = None
     config.transaction_cost = 0.0001
     return config

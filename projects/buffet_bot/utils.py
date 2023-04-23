@@ -7,6 +7,43 @@ from datetime import datetime
 import random
 import IPython
 import yfinance as yf
+import pandas_market_calendars as mcal
+import pandas as pd
+import pytz
+
+
+def get_nyse_date():
+    """
+    Get the current date in the NYSE timezone (America/New_York).
+
+    Returns:
+        str: The current date in the format "YYYY-MM-DD".
+    """
+    # Get current datetime in UTC
+    now_utc = datetime.now(pytz.utc)
+
+    # Convert current datetime to NYSE timezone (America/New_York)
+    nyse_timezone = pytz.timezone("America/New_York")
+    now_nyse = now_utc.astimezone(nyse_timezone)
+
+    # Format the date as a string
+    today_nyse = now_nyse.strftime("%Y-%m-%d")
+
+    return today_nyse
+
+
+def is_nyse_trading_day(date: str) -> bool:
+    """Checks if the given date is a trading day on the NYSE.
+
+    Args:
+        date (str): The date to check in the format 'YYYY-MM-DD'.
+
+    Returns:
+        bool: True if the given date is a trading day on the NYSE, False otherwise."""
+    nyse = mcal.get_calendar("NYSE")
+    trading_days = nyse.valid_days(start_date=date, end_date=date)
+
+    return not trading_days.empty
 
 
 def get_embedding(text, model="text-embedding-ada-002"):
@@ -52,18 +89,22 @@ def check_tickers_exist(tickers):
         for ticker in tickers
         if ticker not in valid_tickers_cache and ticker not in invalid_tickers_cache
     ]
-
     if tickers_to_check:
         tickers_string = " ".join(tickers_to_check)
         stock_data = yf.download(
             tickers_string, period="1d", start="2018-01-01", end="2022-01-01"
         )
 
-        for ticker in tickers_to_check:
-            if stock_data["Adj Close"][ticker].isna().all():
-                invalid_tickers_cache.add(ticker)
-            else:
-                valid_tickers_cache.add(ticker)
+    for ticker in tickers_to_check:
+        data_to_check = (
+            stock_data["Adj Close"][ticker]
+            if len(tickers_to_check) > 1
+            else stock_data["Adj Close"]
+        )
+        if data_to_check.isna().all():
+            invalid_tickers_cache.add(ticker)
+        else:
+            valid_tickers_cache.add(ticker)
 
     valid_tickers = [ticker for ticker in tickers if ticker in valid_tickers_cache]
 
@@ -175,6 +216,7 @@ def update_holdings(
     context_window_date,
     initial_investment,
     prev_updated_portfolio,
+    transaction_cost,
 ):
     """Updates the holdings in the simulator based on the updated portfolio.
 
@@ -184,20 +226,15 @@ def update_holdings(
        context_window_date (str): The date to use as the context window.
        initial_investment (int): The initial investment.
        prev_updated_portfolio (dict): The previous updated portfolio.
+       transaction_cost (float): The transaction cost.
 
     Returns:
        prev_updated_portfolio (dict): The previous updated portfolio.
     """
-    end_date = add_one_month(context_window_date)
-
-    for ticker in updated_portfolio.keys():
-        simulator.get_stock_data(
-            ticker, start_date=context_window_date, end_date=end_date
-        )
-
+    # Update holdings
     if updated_portfolio != prev_updated_portfolio:
         simulator.update_holdings(
-            updated_portfolio, context_window_date, initial_investment
+            updated_portfolio, context_window_date, initial_investment, transaction_cost
         )
 
     # Update prev_updated_portfolio

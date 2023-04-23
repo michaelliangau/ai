@@ -1,6 +1,7 @@
 # Native imports
 import json
 import argparse
+import datetime
 
 # Our imports
 import sys
@@ -44,86 +45,118 @@ def main(config_path: str):
     num_simulated_months = config.num_simulated_months
     num_simulations = config.num_simulations
     llm_additional_context = config.llm_additional_context
-    experiment_folder_path = config.experiment_folder_path
-    additional_context_dataset_path = config.additional_context_dataset_path
-    additional_context_sample_size = config.additional_context_sample_size
     transaction_cost = config.transaction_cost
-
-    # Creates output folder if it doesn't exist
-    common_utils.create_folder(experiment_folder_path)
 
     # Init bots and simulator
     if llm_additional_context == "news":
         bot = BuffetBot(
             llm="anthropic",
             additional_context=llm_additional_context,
-            additional_context_sample_size=additional_context_sample_size,
-            additional_context_dataset_path=additional_context_dataset_path,
+            additional_context_sample_size=config.additional_context_sample_size,
+            additional_context_dataset_path=config.additional_context_dataset_path,
         )
     else:
         bot = BuffetBot(llm="anthropic", additional_context=llm_additional_context)
     simulator = StockSimulator(initial_investment, real_trading)
 
-    # Run simulation
-    for sim in range(num_simulations):
-        results = []
-        prev_updated_portfolio = None
+    # Create output folder
+    common_utils.create_folder(config.experiment_folder_path)
 
-        for _ in tqdm(range(num_simulated_months), total=num_simulated_months):
-            try:
-                current_holdings = simulator.holdings
+    if real_trading:
+        today = utils.get_nyse_date()
+        print("Today (NYSE) is", today)
 
-                # Find next trading day
-                context_window_date = utils.find_next_trading_day(
-                    context_window_date, simulator
-                )
+        if not utils.is_nyse_trading_day(today):
+            current_holdings = simulator.holdings
 
-                # Get response from LLM
-                updated_portfolio = utils.get_llm_response(
-                    bot, investor_type, context_window_date, current_holdings
-                )
-                print("New allocation", updated_portfolio)
+            # Get response from LLM
+            updated_portfolio = utils.get_llm_response(
+                bot, investor_type, today, current_holdings
+            )
+            print("New allocation", updated_portfolio)
 
-                # If updated_portfolio is different from the previous one, update holdings
-                prev_updated_portfolio = utils.update_holdings(
-                    simulator,
-                    updated_portfolio,
-                    context_window_date,
-                    initial_investment,
-                    prev_updated_portfolio,
-                    transaction_cost,
-                )
+            # Update holdings
+            utils.update_holdings(
+                simulator,
+                updated_portfolio,
+                today,
+                initial_investment,
+                None,
+                transaction_cost,
+            )
 
-                # Print current portfolio position
-                portfolio_position = simulator.get_portfolio_position(
-                    context_window_date
-                )
-                results.append(portfolio_position)
-                print("Current date", context_window_date)
-                print("Current total value", portfolio_position["total_value"])
-                print(
-                    "Current portfolio value",
-                    portfolio_position["total_portfolio_value"],
-                )
-                print("Current cash value", portfolio_position["cash_balance"])
+            # Print current portfolio position
+            portfolio_position = simulator.get_portfolio_position(today)
+            print("Current date", today)
+            print("Current total value", portfolio_position["total_value"])
+            print(
+                "Current portfolio value", portfolio_position["total_portfolio_value"]
+            )
+            print("Current cash value", portfolio_position["cash_balance"])
+        else:
+            print("Not a trading day. No action taken.")
 
-                # Increment time
-                context_window_date = utils.increment_time(
-                    investment_schedule, context_window_date
-                )
+    else:
+        # Run simulation
+        for sim in range(num_simulations):
+            results = []
+            prev_updated_portfolio = None
 
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                traceback.print_exc()  # This line prints the full stack trac
-                IPython.embed()
+            for _ in tqdm(range(num_simulated_months), total=num_simulated_months):
+                try:
+                    current_holdings = simulator.holdings
 
-        # Save the results
-        with open(f"{experiment_folder_path}/sim_{sim}.json", "w") as f:
-            json.dump(results, f)
+                    # Find next trading day
+                    context_window_date = utils.find_next_trading_day(
+                        context_window_date, simulator
+                    )
 
-        # Reset the context_window_date and simulator for the next simulation
-        context_window_date = "2018-01-01"
-        simulator.reset()
+                    # Get response from LLM
+                    updated_portfolio = utils.get_llm_response(
+                        bot, investor_type, context_window_date, current_holdings
+                    )
+                    print("New allocation", updated_portfolio)
+
+                    # If updated_portfolio is different from the previous one, update holdings
+                    prev_updated_portfolio = utils.update_holdings(
+                        simulator,
+                        updated_portfolio,
+                        context_window_date,
+                        initial_investment,
+                        prev_updated_portfolio,
+                        transaction_cost,
+                    )
+
+                    # Print current portfolio position
+                    portfolio_position = simulator.get_portfolio_position(
+                        context_window_date
+                    )
+                    results.append(portfolio_position)
+                    print("Current date", context_window_date)
+                    print("Current total value", portfolio_position["total_value"])
+                    print("Current cash value", portfolio_position["cash_balance"])
+                    print(
+                        "Current portfolio value",
+                        portfolio_position["total_portfolio_value"],
+                    )
+                    print()
+                    # Increment time
+                    context_window_date = utils.increment_time(
+                        investment_schedule, context_window_date
+                    )
+
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    traceback.print_exc()  # This line prints the full stack trace
+                    IPython.embed()
+
+            # Save the results
+            with open(f"{config.experiment_folder_path}/sim_{sim}.json", "w") as f:
+                json.dump(results, f)
+
+            # Reset the context_window_date and simulator for the next simulation
+            context_window_date = "2018-01-01"
+            simulator.reset()
 
 
 if __name__ == "__main__":
