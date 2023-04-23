@@ -1,5 +1,4 @@
 import IPython
-import os
 import openai
 import pinecone
 import anthropic

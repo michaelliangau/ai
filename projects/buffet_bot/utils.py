@@ -8,7 +8,6 @@ import random
 import IPython
 import yfinance as yf
 import pandas_market_calendars as mcal
-import pandas as pd
 import pytz
 
 
