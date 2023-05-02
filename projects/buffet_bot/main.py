@@ -1,7 +1,6 @@
 # Native imports
 import json
 import argparse
-import datetime
 
 # Our imports
 import sys
