@@ -1,6 +1,6 @@
-# Deep Learning
+# AI
 
-Monorepo for all deep learning related code intended purely for educational and experimental purposes.
+Monorepo for all AI/deep learning related code intended purely for educational and experimental purposes.
 
 ## Projects
 
@@ -25,6 +25,7 @@ All project specific code exists in the `projects` folder.
 - `forward_forward` - Geoffrey Hinton's proposed forward forward neural network training algorithm.
 - `diffusion_model` - Vanilla image diffusion model on Stanford cars dataset.
 - `rnnt` - Recurrent neural network transducer architecture for seq2seq problems.
+- `buffet_bot` - Algorithmic investing using LLMs
 
 ## Common utils
 
