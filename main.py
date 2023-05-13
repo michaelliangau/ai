@@ -1,7 +1,5 @@
 import contextgpt
 
-# Get api from txt file
-
 API_KEY = "your_api_key_here"
 bot = contextgpt.ContextGPT(API_KEY)
 
