@@ -4,7 +4,7 @@ Monorepo for all AI/deep learning related code intended purely for educational a
 
 ## Projects
 
-All project specific code exists in the `projects` folder.
+All project specific code exists in the `projects` folder. These projects are ordered in chronologically.
 - `audio_classification_freesound` - Freesound audio classification Kaggle challenge 2019.
 - `asr_finetune_w2v2` - English ASR by finetuning Meta's Wav2Vec2 on various datasets.
 - `tts_tacotron2` - Text to speech TacoTron 2.
