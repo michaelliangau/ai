@@ -1,3 +1,4 @@
+# Native imports
 import json
 
 # Third party imports
@@ -38,11 +39,18 @@ class ContextGPT:
         chatbot = config["chatbot"]
         database = config["database"]
 
+        # Inject context into prompt
+        with open("./tests/data/test.txt", "r") as f:
+            context = f.readlines()
+        prompt_context = f"{prompt}\nAdditional context you may consider: {context}"
+
         # Get response
+        init_prompt = "You are a helpful chatbot that helps users query their data in natural language. You are given a prompt and a context. You must return the response to the prompt based on the context."
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "user", "content": prompt},
+                {"role": "system", "content": init_prompt},
+                {"role": "user", "content": prompt_context},
             ],
         )
 
@@ -50,6 +58,18 @@ class ContextGPT:
         formatted_response = self._extract_response_content(response)
 
         return formatted_response
+
+    def upload_data(self, data_file_path: str) -> str:
+        """Upload a data file to the ContextGPT database.
+
+        Args:
+            data_file_path (str): The path to the data file to upload.
+
+        Returns:
+            str: The ID of the uploaded data file.
+        """
+        # TODO not implemented.
+        pass
 
     def _extract_response_content(self, response):
         return response["choices"][0]["message"]["content"]
