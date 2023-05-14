@@ -5,7 +5,7 @@ bot = contextgpt.ContextGPT(API_KEY)
 
 # Upload data
 data_file_path = "./tests/data/test.txt"
-data_file_id = bot.upload_data(data_file_path)
+data_file_id = bot.add_to_database(data_file_path)
 
 prompt = "Who is Michael Liang?"
 
