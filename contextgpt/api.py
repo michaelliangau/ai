@@ -1,5 +1,6 @@
 # Native imports
 import json
+from typing import Union, List
 
 # Third party imports
 import IPython
@@ -68,14 +69,19 @@ class ContextGPT:
 
         return formatted_response
 
-    def add_to_database(self, data_file_path: str, index_name: str):
+    def upload_data(self, data_file_path: Union[str, List[str]], index_name: str) -> None:
         """
-        Segment the text from the provided file, create vectors in OpenAI, and insert them into the Pinecone database.
+        Segment the text from the provided file or list of values,
+        create vectors in OpenAI, and insert them into the Pinecone database.
 
         Args:
-            data_file_path (str): The path to the data file to process.
+            data_file_path (Union[str, List[str]]): The path to the data file or a list of values to process.
             index_name (str): The name of the Pinecone index to insert the vectors into.
         """
+        # Convert single string object to a list
+        if isinstance(data_file_path, str):
+            data_file_path = [data_file_path]
+
         # Load the documents
         loader = TextLoader(data_file_path)
         documents = loader.load()
@@ -98,11 +104,10 @@ class ContextGPT:
                     "id": str(idx),
                     "values": embeddings,
                     "metadata": {
-                        "category": "news",
                         "original_text": text.page_content,
                     },
                 }
-                break
+
                 # Insert the vector into Pinecone
                 _ = pinecone_service.upsert(
                     vectors=[vector],
@@ -110,6 +115,7 @@ class ContextGPT:
                 )
             except Exception as e:
                 print(e)
+
 
     def _get_embedding(self, text, model="text-embedding-ada-002"):
         """
