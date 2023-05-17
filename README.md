@@ -16,3 +16,7 @@ import sys
 sys.path.append("../..")
 import common.utils as common_utils
 ```
+
+## Note
+- pgvector = postgres
+- redis vector database = in memory vector db for  caching purposes
