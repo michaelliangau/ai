@@ -12,6 +12,9 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import TextLoader
 from tqdm import tqdm
 
+# Our imports
+import silicron.common.utils as utils
+
 # Display logging messages in the terminal
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -53,17 +56,17 @@ class Silicron:
             str: The formatted response from the chatbot.
         """
         # Set default config
-        if config is None or config["chatbot"] is None:
-            config = {"chatbot": "chatgpt3.5-turbo", "database": None}
+        config = utils.set_config(config)
 
         # Extract variables from config
         chatbot = config["chatbot"]
         database = config["database"]
 
         # Inject context into prompt
-        with open("./tests/data/test.txt", "r") as f:
-            context = f.readlines()
-        prompt_context = f"{prompt}\nAdditional context you may consider: {context}"
+        context = utils.get_context(prompt, database)
+        prompt_context = f"{prompt}\nAdditional context for you: {context}"
+
+        prompt_context = utils.trim_input(prompt_context)
 
         # Get response
         init_prompt = "You are a helpful chatbot that helps users query their data in natural language. You are given a prompt and a context. You must return the response to the prompt based on the context."
@@ -76,7 +79,7 @@ class Silicron:
         )
 
         # Format response
-        formatted_response = self._extract_response_content(response)
+        formatted_response = utils.extract_response_content(response)
 
         return formatted_response
 
@@ -106,7 +109,7 @@ class Silicron:
             # Iterate through the chunks and add them to Pinecone
             try:
                 # Create the embeddings using OpenAI
-                embeddings = self._get_embedding(text)
+                embeddings = utils.get_embedding(text)
 
                 # Create the vector to be inserted into Pinecone
                 vector = {
@@ -127,22 +130,3 @@ class Silicron:
                 )
             except Exception as e:
                 print(e)
-
-    def _get_embedding(self, text, model="text-embedding-ada-002"):
-        """
-        Get embeddings for the given text using the specified OpenAI model.
-
-        Args:
-            text (str): The text to get embeddings for.
-            model (str, optional): The name of the OpenAI model to use. Defaults to "text-embedding-ada-002".
-
-        Returns:
-            list: The embeddings for the given text.
-        """
-        text = text.replace("\n", " ")
-        return openai.Embedding.create(input=[text], model=model)["data"][0][
-            "embedding"
-        ]
-
-    def _extract_response_content(self, response):
-        return response["choices"][0]["message"]["content"]
