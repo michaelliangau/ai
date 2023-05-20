@@ -10,6 +10,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import TextLoader
 from tqdm import tqdm
 
+
 class Silicron:
     def __init__(self, api_key: str):
         """Initialize the Silicron class.
@@ -23,7 +24,7 @@ class Silicron:
         with open("/Users/michael/Desktop/wip/openai_credentials.txt", "r") as f:
             OPENAI_API_KEY = f.readline().strip()
             openai.api_key = OPENAI_API_KEY
-        
+
         # Pinecone
         with open("/Users/michael/Desktop/wip/pinecone_credentials.txt", "r") as f:
             PINECONE_API_KEY = f.readline().strip()
@@ -69,7 +70,9 @@ class Silicron:
 
         return formatted_response
 
-    def upload_data(self, data_file_path: Union[str, List[str]], index_name: str) -> None:
+    def upload_data(
+        self, data_file_path: Union[str, List[str]], index_name: str
+    ) -> None:
         """
         Segment the text from the provided file or list of values,
         create vectors in OpenAI, and insert them into the Pinecone database.
@@ -78,17 +81,10 @@ class Silicron:
             data_file_path (Union[str, List[str]]): The path to the data file or a list of values to process.
             index_name (str): The name of the Pinecone index to insert the vectors into.
         """
-        # Convert single string object to a list
-        if isinstance(data_file_path, str):
-            data_file_path = [data_file_path]
-
-        # Load the documents
-        loader = TextLoader(data_file_path)
-        documents = loader.load()
-
-        # Segment the documents into chunks
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separator="\n")
-        texts = text_splitter.split_documents(documents)
+        # open the text file in a single str object
+        with open(data_file_path, "r") as f:
+            texts = f.read()
+            texts = [texts]
 
         # Initialize Pinecone service
         pinecone_service = pinecone.Index(index_name=index_name)
@@ -97,14 +93,14 @@ class Silicron:
         for idx, text in tqdm(enumerate(texts), total=len(texts)):
             try:
                 # Create the embeddings using OpenAI
-                embeddings = self._get_embedding(text.page_content)
+                embeddings = self._get_embedding(text)
 
                 # Create the vector to be inserted into Pinecone
                 vector = {
                     "id": str(idx),
                     "values": embeddings,
                     "metadata": {
-                        "original_text": text.page_content,
+                        "original_text": text,
                     },
                 }
 
@@ -115,7 +111,6 @@ class Silicron:
                 )
             except Exception as e:
                 print(e)
-
 
     def _get_embedding(self, text, model="text-embedding-ada-002"):
         """
@@ -129,8 +124,9 @@ class Silicron:
             list: The embeddings for the given text.
         """
         text = text.replace("\n", " ")
-        return openai.Embedding.create(input=[text], model=model)["data"][0]["embedding"]
-
+        return openai.Embedding.create(input=[text], model=model)["data"][0][
+            "embedding"
+        ]
 
     def _extract_response_content(self, response):
         return response["choices"][0]["message"]["content"]
