@@ -2,6 +2,18 @@ import openai
 import pinecone
 import IPython
 
+def set_credentials():
+    """Set the credentials for OpenAI and Pinecone."""
+    # OpenAI
+    with open("/Users/michael/Desktop/wip/openai_credentials.txt", "r") as f:
+        OPENAI_API_KEY = f.readline().strip()
+        openai.api_key = OPENAI_API_KEY
+
+    # Pinecone
+    with open("/Users/michael/Desktop/wip/pinecone_credentials.txt", "r") as f:
+        PINECONE_API_KEY = f.readline().strip()
+        PINECONE_API_ENV = f.readline().strip()
+        pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
 def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     """

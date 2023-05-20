@@ -33,16 +33,8 @@ class Silicron:
         """
         self.api_key = api_key  # TODO not implemented.
 
-        # OpenAI
-        with open("/Users/michael/Desktop/wip/openai_credentials.txt", "r") as f:
-            OPENAI_API_KEY = f.readline().strip()
-            openai.api_key = OPENAI_API_KEY
-
-        # Pinecone
-        with open("/Users/michael/Desktop/wip/pinecone_credentials.txt", "r") as f:
-            PINECONE_API_KEY = f.readline().strip()
-            PINECONE_API_ENV = f.readline().strip()
-            pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
+        # Set credentials (OpenAI and Pinecone)
+        utils.set_credentials()
 
     def get_response(self, prompt: str, config: dict = None) -> str:
         """Get a response from the chatbot based on the given prompt and configuration.
