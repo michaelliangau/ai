@@ -1,6 +1,8 @@
 # Native imports
 import json
+import uuid
 from typing import Union, List
+import logging
 
 # Third party imports
 import IPython
@@ -9,6 +11,14 @@ import pinecone
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import TextLoader
 from tqdm import tqdm
+
+# Display logging messages in the terminal
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
+console_handler = logging.StreamHandler()
+logger.addHandler(console_handler)
 
 
 class Silicron:
@@ -71,33 +81,36 @@ class Silicron:
         return formatted_response
 
     def upload_data(
-        self, data_file_path: Union[str, List[str]], index_name: str
+        self, data_file_paths: Union[str, List[str]], index_name: str
     ) -> None:
         """
         Segment the text from the provided file or list of values,
         create vectors in OpenAI, and insert them into the Pinecone database.
 
         Args:
-            data_file_path (Union[str, List[str]]): The path to the data file or a list of values to process.
+            data_file_paths (Union[str, List[str]]): The path to the data file or a list of values to process.
             index_name (str): The name of the Pinecone index to insert the vectors into.
         """
-        # open the text file in a single str object
-        with open(data_file_path, "r") as f:
-            texts = f.read()
-            texts = [texts]
+        # If the data_file_paths is a string, then it is a path to a file.
+        if isinstance(data_file_paths, str):
+            data_file_paths = [data_file_paths]
 
-        # Initialize Pinecone service
-        pinecone_service = pinecone.Index(index_name=index_name)
+        for file_path in tqdm(data_file_paths):
+            # open the text file in a single str object
+            with open(file_path, "r") as f:
+                text = f.read()
 
-        # Iterate through the chunks and add them to Pinecone
-        for idx, text in tqdm(enumerate(texts), total=len(texts)):
+            # Initialize Pinecone service
+            pinecone_service = pinecone.Index(index_name=index_name)
+
+            # Iterate through the chunks and add them to Pinecone
             try:
                 # Create the embeddings using OpenAI
                 embeddings = self._get_embedding(text)
 
                 # Create the vector to be inserted into Pinecone
                 vector = {
-                    "id": str(idx),
+                    "id": str(uuid.uuid4()),
                     "values": embeddings,
                     "metadata": {
                         "original_text": text,
@@ -108,6 +121,9 @@ class Silicron:
                 _ = pinecone_service.upsert(
                     vectors=[vector],
                     namespace="data",
+                )
+                logging.info(
+                    f"Successfully inserted vector into vector db: {file_path}"
                 )
             except Exception as e:
                 print(e)

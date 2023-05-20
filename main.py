@@ -4,8 +4,8 @@ API_KEY = "your_api_key_here"
 bot = silicron.Silicron(API_KEY)
 
 # Upload data
-data_file_path = "./tests/data/test.txt"
-bot.upload_data(data_file_path, index_name="test-index")
+data_file_paths = "./tests/data/test.txt"
+bot.upload_data(data_file_paths, index_name="test-index")
 
 
 prompt = "Who is Michael Liang?"
