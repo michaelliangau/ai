@@ -10,9 +10,9 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import TextLoader
 from tqdm import tqdm
 
-class ContextGPT:
+class Silicron:
     def __init__(self, api_key: str):
-        """Initialize the ContextGPT class.
+        """Initialize the Silicron class.
 
         Args:
             api_key (str): The API key to use for authentication.

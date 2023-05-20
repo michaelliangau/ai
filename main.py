@@ -1,7 +1,7 @@
-import contextgpt
+import silicron
 
 API_KEY = "your_api_key_here"
-bot = contextgpt.ContextGPT(API_KEY)
+bot = silicron.Silicron(API_KEY)
 
 # Upload data
 data_file_path = "./tests/data/test.txt"
