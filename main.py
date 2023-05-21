@@ -6,11 +6,13 @@ bot = silicron.Silicron(API_KEY)
 
 # Upload data
 data_file_paths = "./tests/data/test.txt"
-bot.upload_data(data_file_paths, index_name="test-index") # TODO working on this API to get this data to the cloud.
+bot.upload(
+    data_file_paths, index_name="test-index"
+)  # TODO working on this API to get this data to the cloud.
 
 # Get response
 prompt = "Who is Michael Liang?"
 config = {"chatbot": None, "database": "test-index"}
-response = bot.get_response(prompt, config=config)
+response = bot.ask(prompt, config=config)
 
 print(response)

@@ -1,19 +1,8 @@
 import openai
 import pinecone
 import IPython
+import boto3
 
-def set_credentials():
-    """Set the credentials for OpenAI and Pinecone."""
-    # OpenAI
-    with open("/Users/michael/Desktop/wip/openai_credentials.txt", "r") as f:
-        OPENAI_API_KEY = f.readline().strip()
-        openai.api_key = OPENAI_API_KEY
-
-    # Pinecone
-    with open("/Users/michael/Desktop/wip/pinecone_credentials.txt", "r") as f:
-        PINECONE_API_KEY = f.readline().strip()
-        PINECONE_API_ENV = f.readline().strip()
-        pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
 def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     """
@@ -93,3 +82,34 @@ def trim_input(input_text: str, max_length: int = 4096) -> str:
     """
 
     return input_text[:max_length]
+
+
+def initialise_s3_session(credentials_path):
+    """Initialise an S3 session using the credentials in the given file.
+
+    Args:
+        credentials_path (str): The path to the credentials file.
+    """
+    with open(credentials_path, "r") as f:
+        AWS_ACCESS_KEY_ID = f.readline().strip()
+        AWS_SECRET_ACCESS_KEY = f.readline().strip()
+        # AWS_SESSION_TOKEN = f.readline().strip()  # if not applicable, remove this line
+        s3 = boto3.resource(
+            "s3",
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            # aws_session_token=AWS_SESSION_TOKEN  # if not applicable, remove this line
+        )
+    return s3
+
+
+def upload_to_s3(s3, file_path, bucket_name, destination_path):
+    """Upload a file to S3.
+
+    Args:
+        s3 (boto3.resource): The S3 session.
+        file_path (str): The path to the file to upload.
+        bucket_name (str): The name of the bucket to upload to.
+        destination_path (str): The path to upload the file to.
+    """
+    s3.Bucket(bucket_name).upload_file(file_path, destination_path)
