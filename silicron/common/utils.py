@@ -22,13 +22,13 @@ def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     return embedding
 
 
-def get_context(prompt: str, database: str, top_k: int = 10, namespace: str = "data"):
+def get_context(prompt: str, database: str, top_k: int = 3, namespace: str = "data"):
     """
     Get the context for the given prompt from the database.
 
     Args:
         prompt (str): The prompt to get the context for.
-        top_k (int, optional): The number of documents to return. Defaults to 10.
+        top_k (int, optional): The number of documents to return.
         database (str): The name of the database to get the context from.
 
     Returns:
@@ -42,13 +42,16 @@ def get_context(prompt: str, database: str, top_k: int = 10, namespace: str = "d
         namespace=namespace,
         include_metadata=True,
     )
+
     try:
         context = ""
+        context_list = []
         for doc in response["matches"]:
             context += f"{doc['metadata']['original_text']}"
+            context_list.append(doc["metadata"]["original_text"])
     except Exception as e:
         context = ""
-    return context
+    return context, context_list
 
 
 def extract_response_content(response):

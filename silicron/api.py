@@ -8,10 +8,7 @@ import logging
 import IPython
 import openai
 import pinecone
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import TextLoader
 from tqdm import tqdm
-import boto3
 
 # Our imports
 import silicron.common.utils as utils
@@ -66,7 +63,7 @@ class Silicron:
                 Defaults to None.
 
         Returns:
-            str: The formatted response from the chatbot.
+            Dict: API response.
         """
         # Set default config
         config = utils.set_config(config)
@@ -76,7 +73,7 @@ class Silicron:
         database = config["database"]
 
         # Inject context into prompt
-        context = utils.get_context(prompt, database)
+        context, context_list = utils.get_context(prompt, database)
         prompt_context = f"{prompt}\nAdditional context for you: {context}"
 
         prompt_context = utils.trim_input(prompt_context)
@@ -92,9 +89,13 @@ class Silicron:
         )
 
         # Format response
-        formatted_response = utils.extract_response_content(response)
+        llm_response = utils.extract_response_content(response)
+        out_response = {
+            "response": llm_response,
+            "context_referenced": context_list,
+        }
 
-        return formatted_response
+        return out_response
 
     def upload(self, data_file_paths: Union[str, List[str]], index_name: str) -> None:
         """
