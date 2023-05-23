@@ -8,8 +8,6 @@ import logging
 import IPython
 import openai
 import pinecone
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import TextLoader
 from tqdm import tqdm
 
 # Our imports
@@ -23,6 +21,11 @@ logger = logging.getLogger()
 console_handler = logging.StreamHandler()
 logger.addHandler(console_handler)
 
+# CONSTANTS
+S3_BUCKET = "silicron"
+CUSTOMER_ID = 0
+PATH_TO_CREDENTIALS = "/Users/michael/Desktop/wip"
+
 
 class Silicron:
     def __init__(self, api_key: str):
@@ -33,18 +36,25 @@ class Silicron:
         """
         self.api_key = api_key  # TODO not implemented.
 
-        # OpenAI
-        with open("/Users/michael/Desktop/wip/openai_credentials.txt", "r") as f:
+        self.customer_id = CUSTOMER_ID  # TODO implement dynamic customer id.
+
+        # S3 init
+        self.s3 = utils.initialise_s3_session(
+            f"{PATH_TO_CREDENTIALS}/aws_credentials.txt"
+        )
+
+        # OpenAI init
+        with open(f"{PATH_TO_CREDENTIALS}/openai_credentials.txt", "r") as f:
             OPENAI_API_KEY = f.readline().strip()
             openai.api_key = OPENAI_API_KEY
 
-        # Pinecone
-        with open("/Users/michael/Desktop/wip/pinecone_credentials.txt", "r") as f:
+        # Pinecone init
+        with open(f"{PATH_TO_CREDENTIALS}/pinecone_credentials.txt", "r") as f:
             PINECONE_API_KEY = f.readline().strip()
             PINECONE_API_ENV = f.readline().strip()
             pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
-    def get_response(self, prompt: str, config: dict = None) -> str:
+    def ask(self, prompt: str, config: dict = None) -> str:
         """Get a response from the chatbot based on the given prompt and configuration.
 
         Args:
@@ -53,7 +63,7 @@ class Silicron:
                 Defaults to None.
 
         Returns:
-            str: The formatted response from the chatbot.
+            Dict: API response.
         """
         # Set default config
         config = utils.set_config(config)
@@ -63,7 +73,7 @@ class Silicron:
         database = config["database"]
 
         # Inject context into prompt
-        context = utils.get_context(prompt, database)
+        context, context_list = utils.get_context(prompt, database)
         prompt_context = f"{prompt}\nAdditional context for you: {context}"
 
         prompt_context = utils.trim_input(prompt_context)
@@ -79,13 +89,15 @@ class Silicron:
         )
 
         # Format response
-        formatted_response = utils.extract_response_content(response)
+        llm_response = utils.extract_response_content(response)
+        out_response = {
+            "response": llm_response,
+            "context_referenced": context_list,
+        }
 
-        return formatted_response
+        return out_response
 
-    def upload_data(
-        self, data_file_paths: Union[str, List[str]], index_name: str
-    ) -> None:
+    def upload(self, data_file_paths: Union[str, List[str]], index_name: str) -> None:
         """
         Segment the text from the provided file or list of values,
         create vectors in OpenAI, and insert them into the Pinecone database.
@@ -128,5 +140,17 @@ class Silicron:
                 logging.info(
                     f"Successfully inserted vector into vector db: {file_path}"
                 )
+
+                # Save the file to S3
+                utils.upload_to_s3(
+                    self.s3,
+                    file_path,
+                    S3_BUCKET,
+                    f"customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}",
+                )
+                logging.info(
+                    f"Successfully uploaded file to S3: s3://{S3_BUCKET}/customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
+                )
+
             except Exception as e:
                 print(e)

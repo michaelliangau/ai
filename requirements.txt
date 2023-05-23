@@ -1,4 +1,4 @@
-openai==0.27.6
-black==23.3.0
-pinecone-client==2.2.1
-langchain==0.0.136
+openai==0.27.6 # michael_l: api embeddings and query
+black==23.3.0 # michael_l: formatting
+pinecone-client==2.2.1 # michael_l: vector db
+boto3==1.26.137 # michael_l: data store

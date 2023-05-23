@@ -1,6 +1,7 @@
 import openai
 import pinecone
 import IPython
+import boto3
 
 
 def get_embedding(text: str, model: str = "text-embedding-ada-002"):
@@ -21,13 +22,13 @@ def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     return embedding
 
 
-def get_context(prompt: str, database: str, top_k: int = 10, namespace: str = "data"):
+def get_context(prompt: str, database: str, top_k: int = 3, namespace: str = "data"):
     """
     Get the context for the given prompt from the database.
 
     Args:
         prompt (str): The prompt to get the context for.
-        top_k (int, optional): The number of documents to return. Defaults to 10.
+        top_k (int, optional): The number of documents to return.
         database (str): The name of the database to get the context from.
 
     Returns:
@@ -41,13 +42,16 @@ def get_context(prompt: str, database: str, top_k: int = 10, namespace: str = "d
         namespace=namespace,
         include_metadata=True,
     )
+
     try:
         context = ""
+        context_list = []
         for doc in response["matches"]:
             context += f"{doc['metadata']['original_text']}"
+            context_list.append(doc["metadata"]["original_text"])
     except Exception as e:
         context = ""
-    return context
+    return context, context_list
 
 
 def extract_response_content(response):
@@ -81,3 +85,34 @@ def trim_input(input_text: str, max_length: int = 4096) -> str:
     """
 
     return input_text[:max_length]
+
+
+def initialise_s3_session(credentials_path):
+    """Initialise an S3 session using the credentials in the given file.
+
+    Args:
+        credentials_path (str): The path to the credentials file.
+    """
+    with open(credentials_path, "r") as f:
+        AWS_ACCESS_KEY_ID = f.readline().strip()
+        AWS_SECRET_ACCESS_KEY = f.readline().strip()
+        # AWS_SESSION_TOKEN = f.readline().strip()  # if not applicable, remove this line
+        s3 = boto3.resource(
+            "s3",
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            # aws_session_token=AWS_SESSION_TOKEN  # if not applicable, remove this line
+        )
+    return s3
+
+
+def upload_to_s3(s3, file_path, bucket_name, destination_path):
+    """Upload a file to S3.
+
+    Args:
+        s3 (boto3.resource): The S3 session.
+        file_path (str): The path to the file to upload.
+        bucket_name (str): The name of the bucket to upload to.
+        destination_path (str): The path to upload the file to.
+    """
+    s3.Bucket(bucket_name).upload_file(file_path, destination_path)
