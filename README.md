@@ -15,7 +15,10 @@ make debug
 
 ## Package Deployment
 
-TODO build package push to pypi
+```bash
+make build-wheel
+make upload-wheel
+```
 
 ## Web Deployment
 

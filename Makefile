@@ -9,3 +9,9 @@ deploy:
 
 delete-deploy:
 	sls remove --stage staging
+
+build-wheel:
+	python setup.py sdist bdist_wheel
+
+upload-wheel:
+	twine upload dist/*
