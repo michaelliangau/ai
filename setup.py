@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="silicron",
-    version="0.0.1",
+    version="0.0.2",
     url="https://github.com/michaelliangau",
     author="Michael Liang",
     author_email="michaelliang15@gmail.com",
