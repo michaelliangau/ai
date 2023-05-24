@@ -5,8 +5,14 @@ Silicron - Easily extend LLMs with extra context, no code.
 
 ## Usage
 
+Package internals
 ```python3
-python main.py
+python example.py
+```
+
+Web app debugging
+```python3
+uvicorn main:app
 ```
 
 ## Note

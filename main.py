@@ -1,18 +1,17 @@
-import silicron
+import os
 
-# Set key
-API_KEY = "your_api_key_here"
-bot = silicron.Silicron(API_KEY)
+from fastapi import FastAPI
+from mangum import Mangum
 
-# Upload data
-data_file_paths = ["./tests/data/test.txt"]
-bot.upload(
-    data_file_paths, index_name="test-index"
-)
+stage = os.environ.get('STAGE', None)
+openapi_prefix = f"/{stage}" if stage else "/"
 
-# Get response
-prompt = "Who is Michael Liang?"
-config = {"chatbot": None, "database": "test-index"}
-response = bot.ask(prompt, config=config)
+app = FastAPI(title="MyAwesomeApp", openapi_prefix=openapi_prefix) # Here is the magic
 
-print(response)
+
+@app.get("/hello")
+def hello_world():
+    return {"message": "Hello World"}
+
+
+handler = Mangum(app)
