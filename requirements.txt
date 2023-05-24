@@ -2,3 +2,7 @@ openai==0.27.6 # michael_l: api embeddings and query
 black==23.3.0 # michael_l: formatting
 pinecone-client==2.2.1 # michael_l: vector db
 boto3==1.26.137 # michael_l: data store
+fastapi==0.95.2 # michael_l: web app backend framework
+uvicorn==0.22.0 # michael_l: web app local debugging
+mangum==0.17.0 # michael_l: aws lambda
+jinja2==3.1.2 # michael_l: web app templating

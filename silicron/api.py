@@ -5,13 +5,12 @@ from typing import Union, List
 import logging
 
 # Third party imports
-import IPython
 import openai
 import pinecone
 from tqdm import tqdm
 
 # Our imports
-import silicron.common.utils as utils
+import common.utils as utils
 
 # Display logging messages in the terminal
 logging.basicConfig(
