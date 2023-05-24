@@ -3,30 +3,33 @@ Silicron - Easily extend LLMs with extra context, no code.
 
 ## Usage
 
-Package internals
+PyPI package
 ```bash
 python example.py
 ```
 
 Web app debugging
 ```bash
-cd app
-uvicorn main:app
+make debug
 ```
 
-## Deployment
+## Package Deployment
+
+TODO build package push to pypi
+
+## Web Deployment
 
 1. Make changes
 2. Run the following bash comands
 
 To deploy (change --stage flag to deploy to any named environment)
 ```bash
-sls deploy --stage staging 
+make deploy
 ```
 
 To delete your app
 ```bash
-sls remove --stage staging
+make delete-deploy
 ```
 
 This command assumes you have the following installed:

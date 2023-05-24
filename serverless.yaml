@@ -25,7 +25,7 @@ functions:
   app:
     package:
       patterns:
-        - 'app/main.py'
+        - 'main.py'
         - "!requirements.txt"
         - "!package.json"
         - "!package-lock.json"

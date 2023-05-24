@@ -1,6 +1,5 @@
 import openai
 import pinecone
-import IPython
 import boto3
 
 
