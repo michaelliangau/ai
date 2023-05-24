@@ -15,3 +15,6 @@ build-wheel:
 
 upload-wheel:
 	twine upload dist/*
+
+test:
+	pytest

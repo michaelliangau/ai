@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from mangum import Mangum
 
 # Local imports
-import silicron_backend as silicron
+import silicron_backend.api as silicron
 
 # Environment stage (development/production) defaulting to root if not set.
 stage = os.environ.get("STAGE", None)

@@ -13,6 +13,11 @@ Web app debugging
 make debug
 ```
 
+Testing
+```bash
+make test
+```
+
 ## Package Deployment
 
 ```bash
