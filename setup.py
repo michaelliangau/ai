@@ -11,7 +11,7 @@ setup(
     author="Michael Liang",
     author_email="michaelliang15@gmail.com",
     packages=find_packages(),
-    description="Easily extend your chatbot with a knowledge base.",
+    description="Easily build contextual chat apps.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[],

@@ -1,5 +1,5 @@
 # Silicron
-Chat to your data.
+Contextual chat apps.
 
 ## Package Deployment
 
