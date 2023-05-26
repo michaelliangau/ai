@@ -10,7 +10,7 @@ import pinecone
 from tqdm import tqdm
 
 # Our imports
-import common.utils as utils
+import silicron_backend.utils as utils
 
 # Display logging messages in the terminal
 logging.basicConfig(
@@ -53,7 +53,7 @@ class Silicron:
             PINECONE_API_ENV = f.readline().strip()
             pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
 
-    def ask(self, prompt: str, config: dict = None) -> str:
+    def chat(self, prompt: str, config: dict = None) -> str:
         """Get a response from the chatbot based on the given prompt and configuration.
 
         Args:

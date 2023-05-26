@@ -1,34 +1,39 @@
 # Silicron
-Silicron - Easily extend LLMs with extra context, no code.
+Chat to your data.
 
-## Usage
+## Package Deployment
 
-PyPI package
+**Usage**
 ```bash
 python example.py
 ```
 
-Web app debugging
-```bash
-make debug
-```
-
-Testing
-```bash
-make test
-```
-
-## Package Deployment
+The `silicron` folder is built into a package upon running the below commands.
 
 ```bash
 make build-wheel
 make upload-wheel
 ```
+You will be prompted to add your PyPI credentials (michaelliangau)
 
-## Web Deployment
+## Web app
 
-1. Make changes
-2. Run the following bash comands
+**Debugging**
+1. Set up local environment variables:
+```bash
+export SILICRON_LOCAL_API_ENDPOINT=http://127.0.0.1:8000
+```
+2. Run the web app
+```bash
+make debug-setup-local-env
+make debug
+```
+
+**Deployment**
+
+URLs of our deployed web app:
+- [Staging lambda](https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging/)
+- Production lambda - TODO
 
 To deploy (change --stage flag to deploy to any named environment)
 ```bash
@@ -44,6 +49,12 @@ This command assumes you have the following installed:
 - Docker
 - AWS credentials
 - [serverless npm package](https://www.npmjs.com/package/serverless) (`npm install -g serverless`)
+
+## Testing
+All pytest tests are located in the `tests` folder and are run with the following command:
+```bash
+make test
+```
 
 ## Resources
 - [Design Doc](https://docs.google.com/document/d/1MfPYqvYliRFHUaQkkjJrplB-LnGcamcLJK97dgilbUY/edit#)
