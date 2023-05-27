@@ -6,3 +6,5 @@ fastapi==0.95.2 # michael_l: web app backend framework
 uvicorn==0.22.0 # michael_l: web app local debugging
 mangum==0.17.0 # michael_l: aws lambda
 jinja2==3.1.2 # michael_l: web app templating
+tqdm==4.65.0 # michael_l: progress reporting
+python-multipart==0.0.6 # michael_l: fastapi form uploads

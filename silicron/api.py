@@ -1,155 +1,169 @@
 # Native imports
-import json
-import uuid
-from typing import Union, List
+from typing import Union, List, Dict, Any
 import logging
+import os
 
 # Third party imports
-import openai
-import pinecone
-from tqdm import tqdm
+import requests
+import tqdm
 
 # Our imports
-import common.utils as utils
+import silicron.utils as utils
 
-# Display logging messages in the terminal
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger()
-console_handler = logging.StreamHandler()
-logger.addHandler(console_handler)
-
-# CONSTANTS
-S3_BUCKET = "silicron"
-CUSTOMER_ID = 0
-PATH_TO_CREDENTIALS = "/Users/michael/Desktop/wip"
+# Constants
+STAGING_API_ENDPOINT = "https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging"
 
 
 class Silicron:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str = ""):
         """Initialize the Silicron class.
 
         Args:
             api_key (str): The API key to use for authentication.
+            api_endpoint (str): The API endpoint to use for requests.
+            fn_endpoints (Dict[str, str]): A dictionary containing the API endpoints
+                for each function.
+            session (requests.Session): A requests session object to use for requests.
         """
-        self.api_key = api_key  # TODO not implemented.
-
-        self.customer_id = CUSTOMER_ID  # TODO implement dynamic customer id.
-
-        # S3 init
-        self.s3 = utils.initialise_s3_session(
-            f"{PATH_TO_CREDENTIALS}/aws_credentials.txt"
+        self.api_key = api_key  # TODO: Authenticate with API key
+        self.api_endpoint = os.getenv(
+            "SILICRON_LOCAL_API_ENDPOINT", STAGING_API_ENDPOINT
         )
+        self.fn_endpoints = {
+            "chat": f"{self.api_endpoint}/chat",
+            "upload": f"{self.api_endpoint}/upload",
+        }
+        self.session = requests.Session()
 
-        # OpenAI init
-        with open(f"{PATH_TO_CREDENTIALS}/openai_credentials.txt", "r") as f:
-            OPENAI_API_KEY = f.readline().strip()
-            openai.api_key = OPENAI_API_KEY
+        # Set logging level
+        logging.basicConfig(level=logging.INFO)
 
-        # Pinecone init
-        with open(f"{PATH_TO_CREDENTIALS}/pinecone_credentials.txt", "r") as f:
-            PINECONE_API_KEY = f.readline().strip()
-            PINECONE_API_ENV = f.readline().strip()
-            pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_API_ENV)
-
-    def ask(self, prompt: str, config: dict = None) -> str:
-        """Get a response from the chatbot based on the given prompt and configuration.
+    def chat(self, prompt: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Send a chat prompt to the Silicron API and get a response.
 
         Args:
-            prompt (str): The prompt to send to the chatbot.
-            config (dict, optional): A dictionary containing the configuration for the chatbot and database.
-                Defaults to None.
+            prompt (str): The chat prompt to send to the Silicron API.
+            config (Dict[str, Any], optional): A dictionary containing additional
+                configuration for the API. Defaults to None.
 
         Returns:
-            Dict: API response.
+            Dict[str, Any]: The response from the Silicron API as a dictionary.
+
+        Raises:
+            requests.exceptions.HTTPError: If an HTTP error occurs.
+            requests.exceptions.RequestException: If a request error occurs.
         """
-        # Set default config
+        # Set default config if none provided
         config = utils.set_config(config)
 
-        # Extract variables from config
-        chatbot = config["chatbot"]
-        database = config["database"]
-
-        # Inject context into prompt
-        context, context_list = utils.get_context(prompt, database)
-        prompt_context = f"{prompt}\nAdditional context for you: {context}"
-
-        prompt_context = utils.trim_input(prompt_context)
-
-        # Get response
-        init_prompt = "You are a helpful chatbot that helps users query their data in natural language. You are given a prompt and a context. You must return the response to the prompt based on the context."
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": init_prompt},
-                {"role": "user", "content": prompt_context},
-            ],
-        )
-
-        # Format response
-        llm_response = utils.extract_response_content(response)
-        out_response = {
-            "response": llm_response,
-            "context_referenced": context_list,
+        # HTTP headers for the request
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": self.api_key,
         }
 
-        return out_response
+        # HTTP body for the request
+        body = {"prompt": prompt, "config": config}
 
-    def upload(self, data_file_paths: Union[str, List[str]], index_name: str) -> None:
-        """
-        Segment the text from the provided file or list of values,
-        create vectors in OpenAI, and insert them into the Pinecone database.
+        try:
+            # Send POST request to Silicron API
+            response = self.session.post(
+                self.fn_endpoints["chat"], headers=headers, json=body
+            )
+
+            # Raise an HTTPError if the response contains an HTTP error status code
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as http_err:
+            return {"response": str(http_err), "response_code": 500}
+        except requests.exceptions.RequestException as req_err:
+            return {"response": str(req_err), "response_code": 500}
+
+        # Return the JSON response body as a Python dictionary, with success key set to True
+        return {"response": response.json(), "response_code": 200}
+
+    def upload(
+        self, files: Union[str, List[str]], database: str = "dev"
+    ) -> List[Dict[str, Any]]:
+        """Upload data to users' database.
 
         Args:
-            data_file_paths (Union[str, List[str]]): The path to the data file or a list of values to process.
-            index_name (str): The name of the Pinecone index to insert the vectors into.
+            files (Union[str, List[str]]): The path to the data file or a list of
+                paths to process.
+            database (str): The name of their database to get context from.
+                Defaults to 'dev'.
+
+        Returns:
+            List[Dict[str, Any]]: The responses from the Silicron API as a list of dictionaries.
+
+        Raises:
+            requests.exceptions.HTTPError: If an HTTP error occurs.
+            requests.exceptions.RequestException: If a request error occurs.
         """
-        # If the data_file_paths is a string, then it is a path to a file.
-        if isinstance(data_file_paths, str):
-            data_file_paths = [data_file_paths]
+        # Ensure files is a list
+        if isinstance(files, str):
+            files = [files]
 
-        for file_path in tqdm(data_file_paths):
-            # open the text file in a single str object
-            with open(file_path, "r") as f:
-                text = f.read()
+        # HTTP headers for the request
+        headers = {
+            "Authorization": self.api_key,
+        }
 
-            # Initialize Pinecone service
-            pinecone_service = pinecone.Index(index_name=index_name)
+        responses = []
 
-            # Iterate through the chunks and add them to Pinecone
+        for file in tqdm.tqdm(files, desc="Uploading files", unit="file"):
             try:
-                # Create the embeddings using OpenAI
-                embeddings = utils.get_embedding(text)
+                # Open the file in binary mode
+                with open(file, "rb") as f:
+                    # HTTP body for the request
+                    file_body = {"file": f}
+                    data_body = {"database": database}
 
-                # Create the vector to be inserted into Pinecone
-                vector = {
-                    "id": str(uuid.uuid4()),
-                    "values": embeddings,
-                    "metadata": {
-                        "original_text": text,
-                    },
-                }
+                    # Send POST request to Silicron API
+                    response = self.session.post(
+                        self.fn_endpoints["upload"],
+                        headers=headers,
+                        data=data_body,
+                        files=file_body,
+                    )
 
-                # Insert the vector into Pinecone
-                _ = pinecone_service.upsert(
-                    vectors=[vector],
-                    namespace="data",
-                )
-                logging.info(
-                    f"Successfully inserted vector into vector db: {file_path}"
-                )
+                    # Raise an HTTPError if the response contains an HTTP error status code
+                    response.raise_for_status()
 
-                # Save the file to S3
-                utils.upload_to_s3(
-                    self.s3,
-                    file_path,
-                    S3_BUCKET,
-                    f"customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}",
-                )
-                logging.info(
-                    f"Successfully uploaded file to S3: s3://{S3_BUCKET}/customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
-                )
+                    # Append the response to the list
+                    response_json = response.json()
 
+                    # Add a response_code field to the response
+                    if response.status_code == 200:
+                        response_json["response_code"] = 200
+                    else:
+                        response_json["response_code"] = 500
+
+                    responses.append(response_json)
+
+            except FileNotFoundError as fnf_err:
+                logging.error(f"File not found: {file}. Error: {fnf_err}")
+                responses.append(
+                    {"response_code": 500, "message": f"File not found: {file}"}
+                )
+            except requests.exceptions.HTTPError as http_err:
+                logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
+                responses.append(
+                    {"response_code": 500, "message": "HTTP error occurred"}
+                )
+            except requests.exceptions.RequestException as req_err:
+                logging.error(
+                    f"Request error occurred while uploading {file}: {req_err}"
+                )
+                responses.append(
+                    {"response_code": 500, "message": "Request error occurred"}
+                )
             except Exception as e:
-                print(e)
+                logging.error(
+                    f"An unexpected error occurred while uploading {file}: {e}"
+                )
+                responses.append(
+                    {"response_code": 500, "message": "Unexpected error occurred"}
+                )
+
+        # Return the JSON response bodies as a list of Python dictionaries
+        return responses
