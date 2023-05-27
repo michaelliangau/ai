@@ -17,4 +17,4 @@ upload-wheel:
 	twine upload dist/*
 
 test:
-	pytest
+	pip install -e ./ && pytest

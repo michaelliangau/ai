@@ -1,7 +1,6 @@
-# Silicron
-Contextual chat apps.
+# Silicron - Contextual Chat Apps
 
-## Package Deployment
+## Package Development
 
 **Usage**
 ```bash
@@ -16,18 +15,17 @@ make upload-wheel
 ```
 You will be prompted to add your PyPI credentials (michaelliangau)
 
-## Web app
+## Web App Development
 
 **Debugging**
 1. Set up local environment variables:
 ```bash
 export SILICRON_LOCAL_API_ENDPOINT=http://127.0.0.1:8000
 ```
-Alternatively, you can also add the above command to your `~/.bashrc` or `~/.zshrc` file.
+Alternatively, you can also add the above command to your `~/.bashrc` or `~/.zshrc` file which'll run this command everytime you open your shell.
 
 2. Run the web app
 ```bash
-make debug-setup-local-env
 make debug
 ```
 
@@ -54,8 +52,25 @@ This command assumes you have the following installed:
 
 ## Testing
 All pytest tests are located in the `tests` folder and are run with the following command:
+
 ```bash
 make test
+```
+Note you need to have the the local webserver running to properly test local package deployments because the package will attempt to make calls to your api endpoints. You can do this by running the following command in a separate terminal window:
+
+```bash
+make debug
+```
+
+
+
+## Gotchas
+Sometimes you'll have import package errors when working in subfolders, you can do this to import silicron from above the current directory:
+
+```python3
+import sys
+sys.path.append('..')
+import silicron
 ```
 
 ## Resources

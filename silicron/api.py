@@ -39,8 +39,7 @@ class Silicron:
         logging.basicConfig(level=logging.INFO)
 
     def chat(self, prompt: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
-        """
-        Send a chat prompt to the Silicron API and get a response.
+        """Send a chat prompt to the Silicron API and get a response.
 
         Args:
             prompt (str): The chat prompt to send to the Silicron API.
@@ -75,12 +74,12 @@ class Silicron:
             # Raise an HTTPError if the response contains an HTTP error status code
             response.raise_for_status()
         except requests.exceptions.HTTPError as http_err:
-            return {"error": str(http_err)}
+            return {"response": str(http_err), "response_code": 500}
         except requests.exceptions.RequestException as req_err:
-            return {"error": str(req_err)}
+            return {"response": str(req_err), "response_code": 500}
 
-        # Return the JSON response body as a Python dictionary
-        return response.json()
+        # Return the JSON response body as a Python dictionary, with success key set to True
+        return {"response": response.json(), "response_code": 200}
 
     def upload(
         self, files: Union[str, List[str]], database: str = "dev"
@@ -132,17 +131,38 @@ class Silicron:
 
                     # Append the response to the list
                     response_json = response.json()
+
+                    # Add a response_code field to the response
+                    if response.status_code == 200:
+                        response_json["response_code"] = 200
+                    else:
+                        response_json["response_code"] = 500
+
                     responses.append(response_json)
 
-                    logging.info(
-                        f"Uploaded {file} successfully, response: {response_json}"
-                    )
-
+            except FileNotFoundError as fnf_err:
+                logging.error(f"File not found: {file}. Error: {fnf_err}")
+                responses.append(
+                    {"response_code": 500, "message": f"File not found: {file}"}
+                )
             except requests.exceptions.HTTPError as http_err:
                 logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
+                responses.append(
+                    {"response_code": 500, "message": "HTTP error occurred"}
+                )
             except requests.exceptions.RequestException as req_err:
                 logging.error(
                     f"Request error occurred while uploading {file}: {req_err}"
+                )
+                responses.append(
+                    {"response_code": 500, "message": "Request error occurred"}
+                )
+            except Exception as e:
+                logging.error(
+                    f"An unexpected error occurred while uploading {file}: {e}"
+                )
+                responses.append(
+                    {"response_code": 500, "message": "Unexpected error occurred"}
                 )
 
         # Return the JSON response bodies as a list of Python dictionaries
