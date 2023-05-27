@@ -1,7 +1,7 @@
 # Native imports
 import json
 import uuid
-from typing import Union, List
+from typing import Union, List, Generator, Dict
 import logging
 
 # Third party imports
@@ -96,60 +96,61 @@ class Silicron:
 
         return out_response
 
-    def upload(self, data_file_paths: Union[str, List[str]], index_name: str) -> None:
-        """
-        Segment the text from the provided file or list of values,
-        create vectors in OpenAI, and insert them into the Pinecone database.
+    def upload(self, file_path: str, database: str, file_name: str) -> Dict[str, str]:
+        """Segment the text from the provided file, create vectors in OpenAI,
+        and insert them into the Pinecone database.
 
         Args:
-            data_file_paths (Union[str, List[str]]): The path to the data file or a list of values to process.
-            index_name (str): The name of the Pinecone index to insert the vectors into.
+            file_path (str): The path to the data file to process.
+            database (str): The name of the Pinecone index to insert the vectors into.
+            file_name (str): The name of the file to save to S3.
+
+        Returns:
+            Dict[str, str]: A dictionary with the result for the file, containing:
+                - 'file': The file path,
+                - 'status': 'success' or 'failure'.
         """
-        # If the data_file_paths is a string, then it is a path to a file.
-        if isinstance(data_file_paths, str):
-            data_file_paths = [data_file_paths]
+        # Initialize Pinecone service
+        pinecone_service = pinecone.Index(index_name=database)
 
-        for file_path in tqdm(data_file_paths):
-            # open the text file in a single str object
-            with open(file_path, "r") as f:
-                text = f.read()
+        result = {"file": file_name}
 
-            # Initialize Pinecone service
-            pinecone_service = pinecone.Index(index_name=index_name)
+        # open the text file in a single str object
+        with open(file_path, "r") as f:
+            text = f.read()
 
-            # Iterate through the chunks and add them to Pinecone
-            try:
-                # Create the embeddings using OpenAI
-                embeddings = utils.get_embedding(text)
+        try:
+            # Create the embeddings using OpenAI
+            embeddings = utils.get_embedding(text)
 
-                # Create the vector to be inserted into Pinecone
-                vector = {
-                    "id": str(uuid.uuid4()),
-                    "values": embeddings,
-                    "metadata": {
-                        "original_text": text,
-                    },
-                }
+            # Create the vector to be inserted into Pinecone
+            vector_id = str(uuid.uuid4())
+            vector = {
+                "id": vector_id,
+                "values": embeddings,
+                "metadata": {
+                    "original_text": text,
+                },
+            }
 
-                # Insert the vector into Pinecone
-                _ = pinecone_service.upsert(
-                    vectors=[vector],
-                    namespace="data",
-                )
-                logging.info(
-                    f"Successfully inserted vector into vector db: {file_path}"
-                )
+            # Insert the vector into Pinecone
+            _ = pinecone_service.upsert(
+                vectors=[vector],
+                namespace="data",
+            )
 
-                # Save the file to S3
-                utils.upload_to_s3(
-                    self.s3,
-                    file_path,
-                    S3_BUCKET,
-                    f"customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}",
-                )
-                logging.info(
-                    f"Successfully uploaded file to S3: s3://{S3_BUCKET}/customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
-                )
+            # Save the file to S3
+            s3_uri = f"customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
+            utils.upload_to_s3(
+                self.s3,
+                file_path,
+                S3_BUCKET,
+                s3_uri,
+            )
 
-            except Exception as e:
-                print(e)
+            result.update({"status": "success"})
+
+        except Exception:
+            result.update({"status": "failure"})
+
+        return result

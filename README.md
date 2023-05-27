@@ -23,6 +23,8 @@ You will be prompted to add your PyPI credentials (michaelliangau)
 ```bash
 export SILICRON_LOCAL_API_ENDPOINT=http://127.0.0.1:8000
 ```
+Alternatively, you can also add the above command to your `~/.bashrc` or `~/.zshrc` file.
+
 2. Run the web app
 ```bash
 make debug-setup-local-env

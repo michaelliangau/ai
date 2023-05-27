@@ -5,6 +5,7 @@ import os
 
 # Third party imports
 import requests
+import tqdm
 
 # Our imports
 import silicron.utils as utils
@@ -81,19 +82,68 @@ class Silicron:
         # Return the JSON response body as a Python dictionary
         return response.json()
 
-    def upload(self, file_paths: Union[str, List[str]], database: str = "dev") -> int:
+    def upload(
+        self, files: Union[str, List[str]], database: str = "dev"
+    ) -> List[Dict[str, Any]]:
         """Upload data to users' database.
 
-        This function will upload the given data to the users' specified database,
-        allowing it to be queried in function.
-
         Args:
-            file_paths (Union[str, List[str]]): The path to the data file or a list of
+            files (Union[str, List[str]]): The path to the data file or a list of
                 paths to process.
             database (str): The name of their database to get context from.
                 Defaults to 'dev'.
 
         Returns:
-            int: The HTTP status code returned from the server.
+            List[Dict[str, Any]]: The responses from the Silicron API as a list of dictionaries.
+
+        Raises:
+            requests.exceptions.HTTPError: If an HTTP error occurs.
+            requests.exceptions.RequestException: If a request error occurs.
         """
-        raise not NotImplementedError
+        # Ensure files is a list
+        if isinstance(files, str):
+            files = [files]
+
+        # HTTP headers for the request
+        headers = {
+            "Authorization": self.api_key,
+        }
+
+        responses = []
+
+        for file in tqdm.tqdm(files, desc="Uploading files", unit="file"):
+            try:
+                # Open the file in binary mode
+                with open(file, "rb") as f:
+                    # HTTP body for the request
+                    file_body = {"file": f}
+                    data_body = {"database": database}
+
+                    # Send POST request to Silicron API
+                    response = self.session.post(
+                        self.fn_endpoints["upload"],
+                        headers=headers,
+                        data=data_body,
+                        files=file_body,
+                    )
+
+                    # Raise an HTTPError if the response contains an HTTP error status code
+                    response.raise_for_status()
+
+                    # Append the response to the list
+                    response_json = response.json()
+                    responses.append(response_json)
+
+                    logging.info(
+                        f"Uploaded {file} successfully, response: {response_json}"
+                    )
+
+            except requests.exceptions.HTTPError as http_err:
+                logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
+            except requests.exceptions.RequestException as req_err:
+                logging.error(
+                    f"Request error occurred while uploading {file}: {req_err}"
+                )
+
+        # Return the JSON response bodies as a list of Python dictionaries
+        return responses

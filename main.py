@@ -2,7 +2,7 @@
 import os
 
 # Third Party Imports
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, HTTPException, Form
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import mangum
@@ -63,6 +63,45 @@ async def chat_endpoint(chat_input: silicron_models.ChatInput):
     response = bot.chat(prompt, config=config)
 
     return JSONResponse(content=response)
+
+
+@app.post("/upload")
+async def upload_endpoint(file: UploadFile, database: str = Form(...)):
+    """Function to handle the '/upload' route of the application.
+
+    Args:
+        file (UploadFile): The file to be processed and inserted into Pinecone database.
+        database (str): The name of the Pinecone index to insert the vectors into.
+
+    Returns:
+        JSONResponse: The result of the operation for each file uploaded.
+    """
+    # Initialize bot instance
+    API_KEY = "your_api_key_here"
+    bot = silicron_api.Silicron(API_KEY)
+
+    # Read file content
+    file_content = await file.read()
+
+    # Write file content to a temp file
+    file_name = file.filename
+    file_path = f"/tmp/{file_name}"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+
+    try:
+        # Process file
+        result = bot.upload(file_path, database, file_name)
+
+        # Return operation result
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 # Initialize Mangum for AWS Lambda integration
