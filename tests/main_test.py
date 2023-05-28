@@ -1,15 +1,5 @@
-from fastapi.testclient import TestClient
+"""Test the web side of the FastAPI app.
 
-# Enable us to import from the parent directory
-import sys
-
-sys.path.append(".")
-from main import app
-
-client = TestClient(app)
-
-
-# TODO: Write a test that tests for an API key that exists
-
-
-# TODO: Write a test that tests for an API key that doesn't exist
+No tests related to the PyPI package should be in here.
+"""
+# TODO: Add tests here as the static web pages are built out.
