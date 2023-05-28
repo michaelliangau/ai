@@ -22,20 +22,18 @@ logger.addHandler(console_handler)
 
 # CONSTANTS
 S3_BUCKET = "silicron"
-CUSTOMER_ID = 0
 PATH_TO_CREDENTIALS = "/Users/michael/Desktop/wip"
 
 
 class Silicron:
-    def __init__(self, api_key: str):
+    def __init__(self, user_id: str):
         """Initialize the Silicron class.
 
         Args:
-            api_key (str): The API key to use for authentication.
+            user_id (str): The user ID to use for authentication.
         """
-        self.api_key = api_key  # TODO not implemented.
-
-        self.customer_id = CUSTOMER_ID  # TODO implement dynamic customer id.
+        # Set user ID
+        self.user_id = user_id
 
         # S3 init
         self.s3 = utils.initialise_s3_session(
@@ -140,7 +138,7 @@ class Silicron:
             )
 
             # Save the file to S3
-            s3_uri = f"customer_data/{self.customer_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
+            s3_uri = f"customer_data/{self.user_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
             utils.upload_to_s3(
                 self.s3,
                 file_path,

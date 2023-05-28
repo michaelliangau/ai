@@ -26,7 +26,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Define your DynamoDB resource using boto3
 dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-table = dynamodb.Table('silicron_dev')
+table = dynamodb.Table('silicron_dev_api_keys')
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
@@ -69,24 +69,38 @@ def root(request: Request):
 
 
 @app.post("/chat")
-async def chat_endpoint(chat_input: silicron_models.ChatInput):
+async def chat_endpoint(body: silicron_models.ChatInput):
     """Function to handle the '/chat' route of the application.
 
     Args:
-        chat_input (ChatInput): A Pydantic model representing the incoming payload,
-            which should include a 'body' field with 'prompt' and a 'config' dictionary.
+        body (silicron_models.ChatInput): The request body.
 
     Returns:
         JSONResponse: The response from the bot.
     """
+    prompt = body.prompt
+    config = body.config
+    api_key = body.api_key    
 
-    # Extract data from chat_input
-    prompt = chat_input.prompt
-    config = chat_input.config
+    # Check if API Key exists in DynamoDB table
+    try:
+        response = table.get_item(
+            Key={
+                'api_key': api_key
+            }
+        )
+    except (BotoCoreError, ClientError) as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
-    # Initialize bot instance
-    API_KEY = "your_api_key_here"
-    bot = silicron_api.Silicron(API_KEY)
+    if 'Item' not in response:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    
+    if 'user_id' not in response['Item']:
+        # Return something went wrong error
+        raise HTTPException(status_code=500, detail="Retrieving account details failed")
+    
+    user_id = response['Item']['user_id']
+    bot = silicron_api.Silicron(user_id)
 
     # Get response
     response = bot.chat(prompt, config=config)

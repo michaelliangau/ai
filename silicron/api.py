@@ -9,6 +9,7 @@ import tqdm
 
 # Our imports
 import silicron.utils as utils
+import silicron.models as models
 
 # Constants
 STAGING_API_ENDPOINT = "https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging"
@@ -25,7 +26,7 @@ class Silicron:
                 for each function.
             session (requests.Session): A requests session object to use for requests.
         """
-        self.api_key = api_key  # TODO: Authenticate with API key
+        self.api_key = api_key
         self.api_endpoint = os.getenv(
             "SILICRON_LOCAL_API_ENDPOINT", STAGING_API_ENDPOINT
         )
@@ -59,11 +60,14 @@ class Silicron:
         # HTTP headers for the request
         headers = {
             "Content-Type": "application/json",
-            "Authorization": self.api_key,
         }
 
         # HTTP body for the request
-        body = {"prompt": prompt, "config": config}
+        body = {
+            "api_key": self.api_key,
+            "prompt": prompt,
+            "config": config
+        }
 
         try:
             # Send POST request to Silicron API
@@ -73,13 +77,23 @@ class Silicron:
 
             # Raise an HTTPError if the response contains an HTTP error status code
             response.raise_for_status()
+
+            # Parse the JSON response body into a Python dictionary
+            response_dict = response.json()
+
+            # Update the response_code
+            response_dict['response_code'] = 200
+
+            # Create an instance of ChatResponse
+            chat_response = models.ChatResponse(**response_dict)
+
+            return chat_response.dict()
+
         except requests.exceptions.HTTPError as http_err:
             return {"response": str(http_err), "response_code": 500}
         except requests.exceptions.RequestException as req_err:
             return {"response": str(req_err), "response_code": 500}
 
-        # Return the JSON response body as a Python dictionary, with success key set to True
-        return {"response": response.json(), "response_code": 200}
 
     def upload(
         self, files: Union[str, List[str]], database: str = "dev"
