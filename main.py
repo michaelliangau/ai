@@ -39,7 +39,7 @@ def root(request: Request):
     - Minimal connection to React frontend (P0)
     - Typeform link (P0) - MVP use a typeform link, P1 build the sign up flows etc.
     - Add Google Analytics (P0)
-    - Sign up/login (P1)
+    - Sign up/login (P1).
 
     Home page content should have:
     - 1 sentence - What does this app do?
