@@ -1,15 +1,5 @@
-from fastapi.testclient import TestClient
+"""Test the web side of the FastAPI app.
 
-# Enable us to import from the parent directory
-import sys
-
-sys.path.append(".")
-from main import app
-
-client = TestClient(app)
-
-
-# TODO: Make tests more flushed out once the API is more flushed out
-# def test_read_root():
-#     response = client.get("/hello")
-#     assert response.status_code == 200
+No tests related to the PyPI package should be in here.
+"""
+# TODO: Add tests here as the static web pages are built out.
