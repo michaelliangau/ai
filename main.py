@@ -26,7 +26,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Define your DynamoDB resource using boto3
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-table = dynamodb.Table("silicron_dev_api_keys")
+table = dynamodb.Table("silicron_dev_api_keys") # TODO (GA): Change this to silicron_prod_api_keys
 
 
 @app.get("/", response_class=HTMLResponse)
