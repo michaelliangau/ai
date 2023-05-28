@@ -25,8 +25,9 @@ app = FastAPI(title="Silicron", root_path=openapi_prefix)
 templates = Jinja2Templates(directory="templates")
 
 # Define your DynamoDB resource using boto3
-dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-table = dynamodb.Table('silicron_dev_api_keys')
+dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+table = dynamodb.Table("silicron_dev_api_keys")
+
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
@@ -59,6 +60,7 @@ def root(request: Request):
     # )
     raise NotImplementedError
 
+
 # TODO (P1): Login/Sign up flow (Google sign in only)
 
 
@@ -81,23 +83,19 @@ async def chat_endpoint(body: silicron_models.ChatInput):
     # Get request body
     prompt = body.prompt
     config = body.config
-    api_key = body.api_key    
+    api_key = body.api_key
 
     # Check if API Key exists in DynamoDB table and get user_id
     try:
-        response = table.get_item(
-            Key={
-                'api_key': api_key
-            }
-        )
+        response = table.get_item(Key={"api_key": api_key})
     except (BotoCoreError, ClientError) as error:
         raise HTTPException(status_code=400, detail=str(error))
-    if 'Item' not in response:
+    if "Item" not in response:
         raise HTTPException(status_code=403, detail="Invalid API Key")
-    if 'user_id' not in response['Item']:
+    if "user_id" not in response["Item"]:
         raise HTTPException(status_code=500, detail="Retrieving account details failed")
-    user_id = response['Item']['user_id']
-    
+    user_id = response["Item"]["user_id"]
+
     # Initialize bot instance
     bot = silicron_api.Silicron(user_id)
 
@@ -108,7 +106,9 @@ async def chat_endpoint(body: silicron_models.ChatInput):
 
 
 @app.post("/upload")
-async def upload_endpoint(file: UploadFile, api_key: str = Form(...), database: str = Form(...)):
+async def upload_endpoint(
+    file: UploadFile, api_key: str = Form(...), database: str = Form(...)
+):
     """Function to handle the '/upload' route of the application.
 
     Args:
@@ -121,18 +121,14 @@ async def upload_endpoint(file: UploadFile, api_key: str = Form(...), database: 
     """
     # Check if API Key exists in DynamoDB table and get user_id
     try:
-        response = table.get_item(
-            Key={
-                'api_key': api_key
-            }
-        )
+        response = table.get_item(Key={"api_key": api_key})
     except (BotoCoreError, ClientError) as error:
         raise HTTPException(status_code=400, detail=str(error))
-    if 'Item' not in response:
+    if "Item" not in response:
         raise HTTPException(status_code=403, detail="Invalid API Key")
-    if 'user_id' not in response['Item']:
+    if "user_id" not in response["Item"]:
         raise HTTPException(status_code=500, detail="Retrieving account details failed")
-    user_id = response['Item']['user_id']
+    user_id = response["Item"]["user_id"]
 
     # Initialize bot instance
     bot = silicron_api.Silicron(user_id)

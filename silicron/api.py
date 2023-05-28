@@ -58,17 +58,11 @@ class Silicron:
         config = utils.set_config(config)
 
         # HTTP body for the request
-        body = {
-            "api_key": self.api_key,
-            "prompt": prompt,
-            "config": config
-        }
+        body = {"api_key": self.api_key, "prompt": prompt, "config": config}
 
         try:
             # Send POST request to Silicron API
-            response = self.session.post(
-                self.fn_endpoints["chat"], json=body
-            )
+            response = self.session.post(self.fn_endpoints["chat"], json=body)
 
             # Raise an HTTPError if the response contains an HTTP error status code
             response.raise_for_status()
@@ -77,7 +71,7 @@ class Silicron:
             response_dict = response.json()
 
             # Update the response_code
-            response_dict['response_code'] = 200
+            response_dict["response_code"] = 200
 
             # Create an instance of ChatResponse
             chat_response = models.ChatResponse(**response_dict)
@@ -88,7 +82,6 @@ class Silicron:
             return {"response": str(http_err), "response_code": 500}
         except requests.exceptions.RequestException as req_err:
             return {"response": str(req_err), "response_code": 500}
-
 
     def upload(
         self, files: Union[str, List[str]], database: str = "dev"
@@ -124,10 +117,7 @@ class Silicron:
                 with open(file, "rb") as f:
                     # HTTP body for the request
                     file_body = {"file": f}
-                    data_body = {
-                        "api_key": self.api_key,
-                        "database": database
-                    }
+                    data_body = {"api_key": self.api_key, "database": database}
 
                     # Send POST request to Silicron API
                     response = self.session.post(
@@ -151,32 +141,42 @@ class Silicron:
             except FileNotFoundError as fnf_err:
                 logging.error(f"File not found: {file}. Error: {fnf_err}")
                 responses.append(
-                    models.UploadResponse(response=f"File not found: {file}", response_code=404)
+                    models.UploadResponse(
+                        response=f"File not found: {file}", response_code=404
+                    )
                 )
             except requests.exceptions.HTTPError as http_err:
                 logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
                 if response.status_code == 403:
                     responses.append(
-                        models.UploadResponse(response="Invalid API Key", response_code=403)
+                        models.UploadResponse(
+                            response="Invalid API Key", response_code=403
+                        )
                     )
                     break
                 else:
                     responses.append(
-                        models.UploadResponse(response="HTTP error occurred", response_code=500)
+                        models.UploadResponse(
+                            response="HTTP error occurred", response_code=500
+                        )
                     )
             except requests.exceptions.RequestException as req_err:
                 logging.error(
                     f"Request error occurred while uploading {file}: {req_err}"
                 )
                 responses.append(
-                    models.UploadResponse(response="Request error occurred", response_code=500)
+                    models.UploadResponse(
+                        response="Request error occurred", response_code=500
+                    )
                 )
             except Exception as e:
                 logging.error(
                     f"An unexpected error occurred while uploading {file}: {e}"
                 )
                 responses.append(
-                    UploadResponse(response="Unexpected error occurred", response_code=500)
+                    UploadResponse(
+                        response="Unexpected error occurred", response_code=500
+                    )
                 )
 
         return responses

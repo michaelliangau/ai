@@ -144,14 +144,11 @@ class Silicron:
                 s3_uri,
             )
             result = {
-                "response": f'Successfully uploaded {file_name}',
-                "response_code": 200
+                "response": f"Successfully uploaded {file_name}",
+                "response_code": 200,
             }
 
         except Exception:
-            result = {
-                "response": f'Failed to upload {file_name}',
-                "response_code": 500
-            }
+            result = {"response": f"Failed to upload {file_name}", "response_code": 500}
 
         return result
