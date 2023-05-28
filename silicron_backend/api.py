@@ -111,8 +111,6 @@ class Silicron:
         # Initialize Pinecone service
         pinecone_service = pinecone.Index(index_name=database)
 
-        result = {"file": file_name}
-
         # open the text file in a single str object
         with open(file_path, "r") as f:
             text = f.read()
@@ -145,10 +143,15 @@ class Silicron:
                 S3_BUCKET,
                 s3_uri,
             )
-
-            result.update({"status": "success"})
+            result = {
+                "response": f'Successfully uploaded {file_name}',
+                "response_code": 200
+            }
 
         except Exception:
-            result.update({"status": "failure"})
+            result = {
+                "response": f'Failed to upload {file_name}',
+                "response_code": 500
+            }
 
         return result

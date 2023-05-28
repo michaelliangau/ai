@@ -57,11 +57,6 @@ class Silicron:
         # Set default config if none provided
         config = utils.set_config(config)
 
-        # HTTP headers for the request
-        headers = {
-            "Content-Type": "application/json",
-        }
-
         # HTTP body for the request
         body = {
             "api_key": self.api_key,
@@ -72,7 +67,7 @@ class Silicron:
         try:
             # Send POST request to Silicron API
             response = self.session.post(
-                self.fn_endpoints["chat"], headers=headers, json=body
+                self.fn_endpoints["chat"], json=body
             )
 
             # Raise an HTTPError if the response contains an HTTP error status code
@@ -100,6 +95,10 @@ class Silicron:
     ) -> List[Dict[str, Any]]:
         """Upload data to users' database.
 
+        We can't use the json parameter in the requests.post() method because
+        we need to send a file in the request body. JSON parameter is still the
+        preferred way to send data to the API.
+
         Args:
             files (Union[str, List[str]]): The path to the data file or a list of
                 paths to process.
@@ -117,11 +116,6 @@ class Silicron:
         if isinstance(files, str):
             files = [files]
 
-        # HTTP headers for the request
-        headers = {
-            "Authorization": self.api_key,
-        }
-
         responses = []
 
         for file in tqdm.tqdm(files, desc="Uploading files", unit="file"):
@@ -130,12 +124,14 @@ class Silicron:
                 with open(file, "rb") as f:
                     # HTTP body for the request
                     file_body = {"file": f}
-                    data_body = {"database": database}
+                    data_body = {
+                        "api_key": self.api_key,
+                        "database": database
+                    }
 
                     # Send POST request to Silicron API
                     response = self.session.post(
                         self.fn_endpoints["upload"],
-                        headers=headers,
                         data=data_body,
                         files=file_body,
                     )
@@ -143,41 +139,44 @@ class Silicron:
                     # Raise an HTTPError if the response contains an HTTP error status code
                     response.raise_for_status()
 
-                    # Append the response to the list
+                    # Convert the response to a JSON object
                     response_json = response.json()
 
                     # Add a response_code field to the response
-                    if response.status_code == 200:
-                        response_json["response_code"] = 200
-                    else:
-                        response_json["response_code"] = 500
+                    response_json["response_code"] = response.status_code
 
-                    responses.append(response_json)
+                    # Enforce response schema
+                    responses.append(models.UploadResponse(**response_json))
 
             except FileNotFoundError as fnf_err:
                 logging.error(f"File not found: {file}. Error: {fnf_err}")
                 responses.append(
-                    {"response_code": 500, "message": f"File not found: {file}"}
+                    models.UploadResponse(response=f"File not found: {file}", response_code=404)
                 )
             except requests.exceptions.HTTPError as http_err:
                 logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
-                responses.append(
-                    {"response_code": 500, "message": "HTTP error occurred"}
-                )
+                if response.status_code == 403:
+                    responses.append(
+                        models.UploadResponse(response="Invalid API Key", response_code=403)
+                    )
+                    break
+                else:
+                    responses.append(
+                        models.UploadResponse(response="HTTP error occurred", response_code=500)
+                    )
             except requests.exceptions.RequestException as req_err:
                 logging.error(
                     f"Request error occurred while uploading {file}: {req_err}"
                 )
                 responses.append(
-                    {"response_code": 500, "message": "Request error occurred"}
+                    models.UploadResponse(response="Request error occurred", response_code=500)
                 )
             except Exception as e:
                 logging.error(
                     f"An unexpected error occurred while uploading {file}: {e}"
                 )
                 responses.append(
-                    {"response_code": 500, "message": "Unexpected error occurred"}
+                    UploadResponse(response="Unexpected error occurred", response_code=500)
                 )
 
-        # Return the JSON response bodies as a list of Python dictionaries
         return responses
