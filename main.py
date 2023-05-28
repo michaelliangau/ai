@@ -2,11 +2,13 @@
 import os
 
 # Third Party Imports
-from fastapi import FastAPI, Request, UploadFile, HTTPException, Form
+from fastapi import FastAPI, Request, UploadFile, HTTPException, Form, APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import mangum
 import IPython
+from botocore.exceptions import BotoCoreError, ClientError
+import boto3
 
 # Local imports
 import silicron_backend.api as silicron_api
@@ -22,10 +24,26 @@ app = FastAPI(title="Silicron", root_path=openapi_prefix)
 # Configure templating with Jinja2Templates
 templates = Jinja2Templates(directory="templates")
 
+# Define your DynamoDB resource using boto3
+dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+table = dynamodb.Table('silicron_dev')
 
-@app.get("/hello", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     """Function to handle the root ('/') route of the application.
+
+    TODO (P0): Return a simple landing page with:
+    - Minimal connection to React frontend (P0)
+    - Typeform link (P0) - MVP use a typeform link, P1 build the sign up flows etc.
+    - Add Google Analytics (P0)
+    - Sign up/login (P1)
+
+    Home page content should have:
+    - 1 sentence - What does this app do?
+    - 1 code block - how do I use it?
+    - 1 sign up for early access button.
+    - Use a nice looking template (https://www.assemblyai.com/)
+    - Nothing else.
 
     Args:
         request (Request): The request object.
@@ -33,10 +51,20 @@ def root(request: Request):
     Returns:
         HTMLResponse: The rendered template as an HTML response.
     """
-    data = {"items": [{"id": 1, "name": "item1"}, {"id": 2, "name": "item2"}]}
-    return templates.TemplateResponse(
-        "index.html", {"request": request, "items": data["items"]}
-    )
+    # TODO: Delete this - example snippet how to send data to the template
+    # data = {"items": [{"id": 1, "name": "item1"}, {"id": 2, "name": "item2"}]}
+    # return templates.TemplateResponse(
+    #     "index.html", {"request": request, "items": data["items"]}
+    # )
+    raise NotImplementedError
+
+# TODO (P1): Login/Sign up flow (Google sign in only)
+
+
+# TODO (P1): Payment flow (Stripe - link a payment method to a user)
+
+
+# TODO (P2): Dashboard (simple metrics)
 
 
 @app.post("/chat")
