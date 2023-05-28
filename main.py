@@ -21,7 +21,7 @@ openapi_prefix = f"/{stage}" if stage else "/"
 # Create FastAPI instance
 app = FastAPI(title="Silicron", root_path=openapi_prefix)
 
-# Configure templating with Jinja2Templates
+# Configure templating with Jinja2Templates.
 templates = Jinja2Templates(directory="templates")
 
 # Define your DynamoDB resource using boto3
