@@ -42,7 +42,8 @@ def root(request: Request):
     - 1 sentence - What does this app do?
     - 1 code block - how do I use it?
     - 1 sign up for early access button.
-    - Use a nice looking template (https://www.assemblyai.com/)
+    - Use a nice looking template (example webste - https://www.assemblyai.com/)
+    - Clean code (build in a way a non-FE developer can extend it)
     - Nothing else.
 
     Args:
