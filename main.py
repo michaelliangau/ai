@@ -21,7 +21,7 @@ openapi_prefix = f"/{stage}" if stage else "/"
 # Create FastAPI instance
 app = FastAPI(title="Silicron", root_path=openapi_prefix)
 
-# Configure templating with Jinja2Templates
+# Configure templating with Jinja2Templates.
 templates = Jinja2Templates(directory="templates")
 
 # Define your DynamoDB resource using boto3
@@ -155,6 +155,7 @@ async def upload_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
+        # Delete temp file
         if os.path.exists(file_path):
             os.remove(file_path)
 
