@@ -92,6 +92,8 @@ class Silicron:
         we need to send a file in the request body. JSON parameter is still the
         preferred way to send data to the API.
 
+        TODO: Uploading a file into a non-existent index returns a 200 status code.
+
         Args:
             files (Union[str, List[str]]): The path to the data file or a list of
                 paths to process.

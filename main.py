@@ -155,6 +155,7 @@ async def upload_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
+        # Delete temp file
         if os.path.exists(file_path):
             os.remove(file_path)
 

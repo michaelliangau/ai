@@ -12,6 +12,6 @@ bot = silicron.Silicron(api_key="dev")
 # Upload files
 response = bot.upload(
     ["tests/data/short_text_file.txt", "tests/data/long_text_file.txt"],
-    "test-index",
+    "0-dev",
 )
 print("upload response", response)

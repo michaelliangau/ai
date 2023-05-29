@@ -62,8 +62,6 @@ Note you need to have the the local webserver running to properly test local pac
 make debug
 ```
 
-
-
 ## Gotchas
 Sometimes you'll have import package errors when working in subfolders, you can do this to import silicron from above the current directory:
 
