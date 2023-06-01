@@ -2,6 +2,7 @@ import openai
 import pinecone
 import boto3
 
+
 def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     """
     Get embeddings for the given text using the specified OpenAI model.
