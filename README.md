@@ -76,5 +76,6 @@ import silicron
 - [FastAPI AWS Lambda Deployment](https://ademoverflow.com/blog/tutorial-fastapi-aws-lambda-serverless/)
 
 ## Note
+- supabase
 - pgvector = postgres
 - redis vector database = in memory vector db for  caching purposes

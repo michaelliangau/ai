@@ -11,8 +11,8 @@ from botocore.exceptions import BotoCoreError, ClientError
 import boto3
 
 # Local imports
-import silicron_backend.api as silicron_api
-import silicron_backend.models as silicron_models
+import backend.api as backend_api
+import backend.models as backend_models
 
 # Environment stage (development/production) defaulting to root if not set.
 stage = os.environ.get("STAGE", None)
@@ -78,11 +78,11 @@ def root(request: Request):
 
 
 @app.post("/chat")
-async def chat_endpoint(body: silicron_models.ChatInput):
+async def chat_endpoint(body: backend_models.ChatInput):
     """Function to handle the '/chat' route of the application.
 
     Args:
-        body (silicron_models.ChatInput): The request body.
+        body (backend_models.ChatInput): The request body.
 
     Returns:
         JSONResponse: The response from the bot.
@@ -105,7 +105,7 @@ async def chat_endpoint(body: silicron_models.ChatInput):
     user_id = response["Item"]["user_id"]
 
     # Initialize bot instance
-    bot = silicron_api.Silicron(user_id)
+    bot = backend_api.Silicron(user_id)
 
     # Get response
     response = bot.chat(prompt, config=config)
@@ -140,7 +140,7 @@ async def upload_endpoint(
     user_id = response["Item"]["user_id"]
 
     # Initialize bot instance
-    bot = silicron_api.Silicron(user_id)
+    bot = backend_api.Silicron(user_id)
 
     # Read file content
     file_content = await file.read()
