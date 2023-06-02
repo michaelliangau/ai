@@ -38,10 +38,10 @@ export default function Hero() {
                 Get started
               </Link>
               <Link
-                href="#"
+                href="/signup"
                 className="text-sm font-medium leading-6 text-white"
               >
-                Learn more <span aria-hidden="true">→</span>
+                Sign up <span aria-hidden="true">→</span>
               </Link>
             </div>
           </div>
