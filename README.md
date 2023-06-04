@@ -74,8 +74,5 @@ import silicron
 ## Resources
 - [Design Doc](https://docs.google.com/document/d/1MfPYqvYliRFHUaQkkjJrplB-LnGcamcLJK97dgilbUY/edit#)
 - [FastAPI AWS Lambda Deployment](https://ademoverflow.com/blog/tutorial-fastapi-aws-lambda-serverless/)
-
-## Note
-- supabase
-- pgvector = postgres
-- redis vector database = in memory vector db for  caching purposes
+- [Supabase tutorial](https://supabase.com/blog/openai-embeddings-postgres-vector)
+- [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf)
