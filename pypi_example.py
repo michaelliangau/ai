@@ -1,4 +1,4 @@
-# import silicron
+import silicron
 
 # The current active test credentials that work are:
 # - Silicron api_key = "dev" returns user_id = 1
@@ -7,23 +7,23 @@
 bot = silicron.Silicron(api_key="dev")
 
 # Chat with the bot
-prompt = "Return with Yes."
-config = {"chatbot": "chatgpt3.5-turbo", "database": "0-dev"}
-response = bot.chat(prompt, config)
-print("chat response", response)
+# prompt = "Return with Yes."
+# config = {"chatbot": "chatgpt3.5-turbo", "database": "0-dev"}
+# response = bot.chat(prompt, config)
+# print("chat response", response)
 
 # Upload files
-# response = bot.upload(
-#     ["tests/data/short_text_file.txt", "tests/data/long_text_file.txt"],
-#     "0-dev",
-# )
-# print("upload response", response)
+response = bot.upload(
+    ["tests/data/short_text_file.txt", "tests/data/long_text_file.txt"],
+    "test",
+)
+print("upload response", response)
 
+exit()
 
 # SUPABASE MVP TODO DELETE
 from supabase import create_client, Client
 import numpy as np
-import asyncio
 
 url: str = "https://rhrszihruweifvjczkmh.supabase.co"
 key: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJocnN6aWhydXdlaWZ2amN6a21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODU2MDUzMjAsImV4cCI6MjAwMTE4MTMyMH0.0ge0isccOYhI5--jinj8iAcMCZHWSpD6UXpYfAuLzgc"

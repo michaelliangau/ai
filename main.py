@@ -114,9 +114,9 @@ async def upload_endpoint(
     """Function to handle the '/upload' route of the application.
 
     Args:
-        file (UploadFile): The file to be processed and inserted into Pinecone database.
+        file (UploadFile): The file to be processed and inserted into Supabase database.
         api_key (str): The API key of the user.
-        database (str): The name of the Pinecone index to insert the vectors into.
+        database (str): The name of the Supabase index to insert the vectors into.
 
     Returns:
         JSONResponse: The result of the operation for each file uploaded.
