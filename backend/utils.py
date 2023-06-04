@@ -21,7 +21,14 @@ def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     return embedding
 
 
-def get_context(supabase_client: supabase.Client, prompt: str, database: str, user_id: int, match_threshold: float = 0.8, match_count: int = 10):
+def get_context(
+    supabase_client: supabase.Client,
+    prompt: str,
+    database: str,
+    user_id: int,
+    match_threshold: float = 0.8,
+    match_count: int = 10,
+):
     """
     Get the context for the given prompt from the database.
 
@@ -32,27 +39,31 @@ def get_context(supabase_client: supabase.Client, prompt: str, database: str, us
         user_id (int): The ID of the user to get the context for.
         match_threshold (float, optional): The minimum similarity threshold for the context. Defaults to 0.8.
         match_count (int, optional): The number of context items to return. Defaults to 10.
-    
+
     Returns:
         context (str): The context for the given prompt.
         context_list (list): A list of the context items.
     """
     # Get result from vector db
-    query_embedding = get_embedding(prompt) # TODO we need the embedding of a test answer.
-    user_id = 1
-    database = "all"
-    response = supabase_client.rpc("search_embeddings", params={
-        "query_embedding": query_embedding,
-        "user_id": user_id,
-        "split": database,
-        "match_threshold": match_threshold,
-        "match_count": match_count,
-    }).execute()
+    query_embedding = get_embedding(
+        prompt
+    )  # TODO we need the embedding of a test answer.
+
+    response = supabase_client.rpc(
+        "search_embeddings",
+        params={
+            "query_embedding": query_embedding,
+            "user_id": user_id,
+            "split": database,
+            "match_threshold": match_threshold,
+            "match_count": match_count,
+        },
+    ).execute()
     response_data = response.data
 
     # Extract the context from the response
     context = ""
-    context_list = []    
+    context_list = []
     if len(response.data) > 0:
         for data in response_data:
             data_obj = {
@@ -107,12 +118,10 @@ def initialise_s3_session(credentials_path):
     with open(credentials_path, "r") as f:
         AWS_ACCESS_KEY_ID = f.readline().strip()
         AWS_SECRET_ACCESS_KEY = f.readline().strip()
-        # AWS_SESSION_TOKEN = f.readline().strip()  # if not applicable, remove this line
         s3 = boto3.resource(
             "s3",
             aws_access_key_id=AWS_ACCESS_KEY_ID,
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-            # aws_session_token=AWS_SESSION_TOKEN  # if not applicable, remove this line
         )
     return s3
 

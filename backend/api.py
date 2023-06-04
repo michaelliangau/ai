@@ -76,7 +76,7 @@ class Silicron:
             prompt=prompt,
             database=database,
             user_id=self.user_id,
-            match_threshold=0.1,
+            match_threshold=0.7,
             match_count=10,
         )
         prompt_context = f"{prompt}\nContext to reference: {context}"
@@ -125,13 +125,19 @@ class Silicron:
             embedding = utils.get_embedding(text)
 
             # Create the vector to be inserted into Supabase embeddings db
-            row = [{
-                "user_id": self.user_id,
-                "split": database,
-                "content": text,
-                "embedding": embedding,
-            }]
-            response = self.supabase_client.table(self.supabase_embeddings_db_name).insert(row).execute()
+            row = [
+                {
+                    "user_id": self.user_id,
+                    "split": database,
+                    "content": text,
+                    "embedding": embedding,
+                }
+            ]
+            response = (
+                self.supabase_client.table(self.supabase_embeddings_db_name)
+                .insert(row)
+                .execute()
+            )
 
             # Save the file to S3
             s3_uri = f"customer_data/{self.user_id}/chat/uploaded_data/{file_path.split('/')[-1]}"
