@@ -7,17 +7,17 @@ import silicron
 bot = silicron.Silicron(api_key="dev")
 
 # Chat with the bot
-# prompt = "Return with Yes."
-# config = {"chatbot": "chatgpt3.5-turbo", "database": "0-dev"}
-# response = bot.chat(prompt, config)
-# print("chat response", response)
+prompt = "Return with Yes."
+config = {"chatbot": "chatgpt3.5-turbo", "database": ""}
+response = bot.chat(prompt, config)
+print("chat response", response)
 
 # Upload files
-response = bot.upload(
-    ["tests/data/short_text_file.txt", "tests/data/long_text_file.txt"],
-    "test",
-)
-print("upload response", response)
+# response = bot.upload(
+#     ["tests/data/short_text_file.txt", "tests/data/long_text_file.txt"],
+#     "test",
+# )
+# print("upload response", response)
 
 exit()
 
@@ -32,8 +32,8 @@ supabase: Client = create_client(url, key)
 
 # Insert data
 # data = [
-#     {"user_id": 1, "split": "all", "content": "Test", "embedding": np.random.rand(1536).tolist()},
-#     {"user_id": 2, "split": "all", "content": "Another Test", "embedding": np.random.rand(1536).tolist()},
+#     {"user_id": 1, "split": "", "content": "Test", "embedding": np.random.rand(1536).tolist()},
+#     {"user_id": 2, "split": "", "content": "Another Test", "embedding": np.random.rand(1536).tolist()},
 # ]
 # response = supabase.table("embeddings").insert(data).execute()
 
@@ -42,7 +42,7 @@ supabase: Client = create_client(url, key)
 response = supabase.rpc("search_embeddings", params={
     "query_embedding": np.random.rand(1536).tolist(),
     "user_id": 1,
-    "split": "all",
+    "split": "",
     "match_threshold": 0.1,
     "match_count": 10,
 }).execute()

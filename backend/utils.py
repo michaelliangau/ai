@@ -1,5 +1,5 @@
 import openai
-import pinecone
+import supabase
 import boto3
 
 
@@ -21,35 +21,47 @@ def get_embedding(text: str, model: str = "text-embedding-ada-002"):
     return embedding
 
 
-def get_context(prompt: str, database: str, top_k: int = 3, namespace: str = "data"):
+def get_context(supabase_client: supabase.Client, prompt: str, database: str, user_id: int, match_threshold: float = 0.8, match_count: int = 10):
     """
     Get the context for the given prompt from the database.
 
     Args:
+        supabase_client (supabase.Client): The Supabase client.
         prompt (str): The prompt to get the context for.
-        top_k (int, optional): The number of documents to return.
-        database (str): The name of the database to get the context from.
-
+        database (str): The name of the Supabase db data split to get the context from.
+        user_id (int): The ID of the user to get the context for.
+        match_threshold (float, optional): The minimum similarity threshold for the context. Defaults to 0.8.
+        match_count (int, optional): The number of context items to return. Defaults to 10.
+    
     Returns:
-        str: The context for the given prompt.
+        context (str): The context for the given prompt.
+        context_list (list): A list of the context items.
     """
-    pinecone_service = pinecone.Index(index_name=database)
-    query_embedding = get_embedding(prompt)
-    response = pinecone_service.query(
-        vector=query_embedding,
-        top_k=top_k,
-        namespace=namespace,
-        include_metadata=True,
-    )
+    # Get result from vector db
+    query_embedding = get_embedding(prompt) # TODO we need the embedding of a test answer.
+    user_id = 1
+    database = "all"
+    response = supabase_client.rpc("search_embeddings", params={
+        "query_embedding": query_embedding,
+        "user_id": user_id,
+        "split": database,
+        "match_threshold": match_threshold,
+        "match_count": match_count,
+    }).execute()
+    response_data = response.data
 
-    try:
-        context = ""
-        context_list = []
-        for doc in response["matches"]:
-            context += f"{doc['metadata']['original_text']}"
-            context_list.append(doc["metadata"]["original_text"])
-    except Exception as e:
-        context = ""
+    # Extract the context from the response
+    context = ""
+    context_list = []    
+    if len(response.data) > 0:
+        for data in response_data:
+            data_obj = {
+                "content": data["content"],
+                "similarity": data["similarity"],
+            }
+            context_list.append(data_obj)
+            context += f"{data['content']}\n"
+
     return context, context_list
 
 
@@ -61,7 +73,7 @@ def extract_response_content(response):
 
 def set_config(config=None):
     """Set the default config."""
-    default_config = {"chatbot": "chatgpt3.5-turbo", "database": "test-index"}
+    default_config = {"chatbot": "chatgpt3.5-turbo", "database": ""}
 
     if config:
         default_config.update((k, v) for k, v in config.items() if v is not None)

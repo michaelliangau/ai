@@ -71,13 +71,20 @@ class Silicron:
         database = config["database"]
 
         # Inject context into prompt
-        context, context_list = utils.get_context(prompt, database)
-        prompt_context = f"{prompt}\nAdditional context for you: {context}"
+        context, context_list = utils.get_context(
+            supabase_client=self.supabase_client,
+            prompt=prompt,
+            database=database,
+            user_id=self.user_id,
+            match_threshold=0.1,
+            match_count=10,
+        )
+        prompt_context = f"{prompt}\nContext to reference: {context}"
 
         prompt_context = utils.trim_input(prompt_context)
 
         # Get response
-        init_prompt = "You are a helpful chatbot that helps users query their data in natural language. You are given a prompt and a context. You must return the response to the prompt based on the context."
+        init_prompt = "You are a helpful chatbot that helps users answer their questions with some additional context."
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[

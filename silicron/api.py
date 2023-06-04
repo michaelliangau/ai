@@ -69,6 +69,7 @@ class Silicron:
 
             # Parse the JSON response body into a Python dictionary
             response_dict = response.json()
+            print(response_dict)
 
             # Update the response_code
             response_dict["response_code"] = 200

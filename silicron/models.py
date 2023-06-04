@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 
 class ChatResponse(BaseModel):
     response: str = Field(...)
-    context_referenced: Optional[List[str]] = Field(default=None)
+    context_referenced: Optional[List[Dict[str, Any]]] = Field(default=None)
     response_code: int = Field(...)
 
 
