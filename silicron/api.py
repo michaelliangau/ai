@@ -84,7 +84,7 @@ class Silicron:
             return {"response": str(req_err), "response_code": 500}
 
     def upload(
-        self, files: Union[str, List[str]], database: str = "dev"
+        self, files: Union[str, List[str]], database: str = ""
     ) -> List[Dict[str, Any]]:
         """Upload data to users' database.
 
@@ -97,8 +97,8 @@ class Silicron:
         Args:
             files (Union[str, List[str]]): The path to the data file or a list of
                 paths to process.
-            database (str): The name of their database to get context from.
-                Defaults to 'dev'.
+            database (str): The name of their data split to get context from.
+                Defaults to ''.
 
         Returns:
             List[Dict[str, Any]]: The responses from the Silicron API as a list of dictionaries.
