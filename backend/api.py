@@ -10,7 +10,7 @@ import pinecone
 from tqdm import tqdm
 
 # Our imports
-import silicron_backend.utils as utils
+import backend.utils as utils
 
 # Display logging messages in the terminal
 logging.basicConfig(

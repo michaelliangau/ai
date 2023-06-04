@@ -1,15 +1,18 @@
 # import silicron
 
-# # Initialize bot instance
-# bot = silicron.Silicron(api_key="dev")
+# The current active test credentials that work are:
+# - Silicron api_key = "dev" returns user_id = 1
+# - Pinecone database = "0-dev"
+# Initialize bot instance
+bot = silicron.Silicron(api_key="dev")
 
-# # Chat with the bot
-# prompt = "Return with Yes."
-# config = {"chatbot": "chatgpt3.5-turbo", "database": "test-index"}
-# response = bot.chat(prompt, config)
-# print("chat response", response)
+# Chat with the bot
+prompt = "Return with Yes."
+config = {"chatbot": "chatgpt3.5-turbo", "database": "0-dev"}
+response = bot.chat(prompt, config)
+print("chat response", response)
 
-# # Upload files
+# Upload files
 # response = bot.upload(
 #     ["tests/data/short_text_file.txt", "tests/data/long_text_file.txt"],
 #     "0-dev",
@@ -17,7 +20,7 @@
 # print("upload response", response)
 
 
-
+# SUPABASE MVP TODO DELETE
 from supabase import create_client, Client
 import numpy as np
 import asyncio
