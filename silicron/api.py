@@ -9,13 +9,11 @@ import tqdm
 
 # Our imports
 import silicron.utils as utils
-import silicron.models as models
 
 # Constants
 STAGING_API_ENDPOINT = "https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging"
 
 # TODO this can be made way neater by putting configs in the init function.
-# TODO remove pydantic dep
 
 class Silicron:
     def __init__(self, api_key: str = ""):
@@ -75,10 +73,7 @@ class Silicron:
             # Update the response_code
             response_dict["response_code"] = 200
 
-            # Create an instance of ChatResponse
-            chat_response = models.ChatResponse(**response_dict)
-
-            return chat_response.dict()
+            return response_dict
 
         except requests.exceptions.HTTPError as http_err:
             return {"response": str(http_err), "response_code": 500}
@@ -139,48 +134,44 @@ class Silicron:
                     # Add a response_code field to the response
                     response_json["response_code"] = response.status_code
 
-                    # Enforce response schema
-                    responses.append(models.UploadResponse(**response_json))
+                    responses.append(response_json)  # Append the dictionary directly
+
 
             except FileNotFoundError as fnf_err:
                 logging.error(f"File not found: {file}. Error: {fnf_err}")
-                responses.append(
-                    models.UploadResponse(
-                        response=f"File not found: {file}", response_code=404
-                    )
-                )
+                responses.append({
+                    "response": f"File not found: {file}", 
+                    "response_code": 404
+                })
             except requests.exceptions.HTTPError as http_err:
                 logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
                 if response.status_code == 403:
-                    responses.append(
-                        models.UploadResponse(
-                            response="Invalid API Key", response_code=403
-                        )
-                    )
+                    responses.append({
+                        "response": "Invalid API Key", 
+                        "response_code": 403
+                    })
                     break
                 else:
-                    responses.append(
-                        models.UploadResponse(
-                            response="HTTP error occurred", response_code=500
-                        )
-                    )
+                    responses.append({
+                        "response": "HTTP error occurred", 
+                        "response_code": 500
+                    })
             except requests.exceptions.RequestException as req_err:
                 logging.error(
                     f"Request error occurred while uploading {file}: {req_err}"
                 )
-                responses.append(
-                    models.UploadResponse(
-                        response="Request error occurred", response_code=500
-                    )
-                )
+                responses.append({
+                    "response": "Request error occurred", 
+                    "response_code": 500
+                })
             except Exception as e:
                 logging.error(
                     f"An unexpected error occurred while uploading {file}: {e}"
                 )
-                responses.append(
-                    UploadResponse(
-                        response="Unexpected error occurred", response_code=500
-                    )
-                )
+                responses.append({
+                    "response": "Unexpected error occurred", 
+                    "response_code": 500
+                })
+
 
         return responses
