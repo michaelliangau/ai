@@ -95,7 +95,7 @@ import silicron
 - pgvector = postgres
 - redis vector database = in memory vector db for caching purposes
 
-## Frontend for Silicron
+## Frontend
 
 This is an integration that uses Next.js as the front end and FastAPI as the API backend. Silicron is a use case in which the Next.js application can take advantage of Python AI libraries in the backend.
 
