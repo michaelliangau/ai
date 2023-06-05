@@ -1,6 +1,5 @@
 import openai
 import supabase
-import boto3
 
 
 def get_embedding(text: str, model: str = "text-embedding-ada-002"):
@@ -107,23 +106,6 @@ def trim_input(input_text: str, max_length: int = 4096) -> str:
     """
 
     return input_text[:max_length]
-
-
-def initialise_s3_session(credentials_path):
-    """Initialise an S3 session using the credentials in the given file.
-
-    Args:
-        credentials_path (str): The path to the credentials file.
-    """
-    with open(credentials_path, "r") as f:
-        AWS_ACCESS_KEY_ID = f.readline().strip()
-        AWS_SECRET_ACCESS_KEY = f.readline().strip()
-        s3 = boto3.resource(
-            "s3",
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-        )
-    return s3
 
 
 def upload_to_s3(s3, file_path, bucket_name, destination_path):

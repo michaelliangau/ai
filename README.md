@@ -22,11 +22,17 @@ You will be prompted to add your PyPI credentials (michaelliangau)
 ```bash
 export SILICRON_LOCAL_API_ENDPOINT=http://127.0.0.1:8000
 ```
-Alternatively, you can also add the above command to your `~/.bashrc` or `~/.zshrc` file which'll run this command everytime you open your shell.
+This will make the public package route requests to your local endpoint instead of the public one. 
+You can also add the above command to your `~/.bashrc` or `~/.zshrc` file which'll run this command everytime you open your shell.
 
 2. Run the web app
 ```bash
 make debug
+```
+
+3. To unset local environment variables:
+```bash
+unset SILICRON_LOCAL_API_ENDPOINT
 ```
 
 **Deployment**

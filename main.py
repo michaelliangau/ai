@@ -9,10 +9,14 @@ import mangum
 import IPython
 from botocore.exceptions import BotoCoreError, ClientError
 import boto3
+from dotenv import load_dotenv
 
 # Local imports
 import backend.api as backend_api
 import backend.models as backend_models
+
+# Load environment variables
+load_dotenv()
 
 # Environment stage (development/production) defaulting to root if not set.
 stage = os.environ.get("STAGE", None)

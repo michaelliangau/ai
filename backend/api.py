@@ -3,14 +3,17 @@ import json
 import uuid
 from typing import Union, List, Generator, Dict
 import logging
+import os
 
 # Third party imports
 import openai
 from tqdm import tqdm
 import supabase
+import boto3
 
 # Our imports
 import backend.utils as utils
+
 
 # Display logging messages in the terminal
 logging.basicConfig(
@@ -36,21 +39,23 @@ class Silicron:
         self.user_id = user_id
 
         # S3 init
-        self.s3 = utils.initialise_s3_session(
-            f"{PATH_TO_CREDENTIALS}/aws_credentials.txt"
+        AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+        AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+        self.s3 = boto3.resource(
+            "s3",
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         )
 
         # OpenAI init
-        with open(f"{PATH_TO_CREDENTIALS}/openai_credentials.txt", "r") as f:
-            OPENAI_API_KEY = f.readline().strip()
-            openai.api_key = OPENAI_API_KEY
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        openai.api_key = OPENAI_API_KEY
 
         # Supabase init
-        with open(f"{PATH_TO_CREDENTIALS}/supabase_credentials.txt", "r") as f:
-            SUPABASE_URL = f.readline().strip()
-            SUPABASE_KEY = f.readline().strip()
-            self.supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
-            self.supabase_embeddings_db_name = "embeddings"
+        SUPABASE_URL = os.environ.get("SUPABASE_URL")
+        SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+        self.supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
+        self.supabase_embeddings_db_name = "embeddings"
 
     def chat(self, prompt: str, config: dict = None) -> str:
         """Get a response from the chatbot based on the given prompt and configuration.

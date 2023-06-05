@@ -10,7 +10,7 @@ with open("requirements_pypi.txt", "r", encoding="utf-8") as fr:
 
 setup(
     name="silicron",
-    version="0.0.3",
+    version="0.0.4",
     url="https://github.com/michaelliangau",
     author="Michael Liang",
     author_email="michaelliang15@gmail.com",
