@@ -31,11 +31,6 @@ table = dynamodb.Table(
 )  # TODO (GA): Change this to silicron_prod_api_keys
 
 
-@app.get("/api/python")
-def hello_world():
-    return {"message": "Hello World"}
-
-
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     """Function to handle the root ('/') route of the application.
