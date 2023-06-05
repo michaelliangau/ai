@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request, UploadFile, HTTPException, Form, APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import mangum
-import IPython
 from botocore.exceptions import BotoCoreError, ClientError
 import boto3
 

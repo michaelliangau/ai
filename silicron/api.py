@@ -14,6 +14,8 @@ import silicron.models as models
 # Constants
 STAGING_API_ENDPOINT = "https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging"
 
+# TODO this can be made way neater by putting configs in the init function.
+# TODO remove pydantic dep
 
 class Silicron:
     def __init__(self, api_key: str = ""):
@@ -69,7 +71,6 @@ class Silicron:
 
             # Parse the JSON response body into a Python dictionary
             response_dict = response.json()
-            print(response_dict)
 
             # Update the response_code
             response_dict["response_code"] = 200

@@ -2,6 +2,12 @@ service: silicron
 
 package:
   individually: true
+  excludeDevDependencies: false
+  patterns:
+    - '!**'
+    - 'main.py'
+    - 'backend/**'
+    - 'templates/**'
 
 provider:
   name: aws
@@ -23,16 +29,6 @@ custom:
 
 functions:
   app:
-    package:
-      patterns:
-        - 'main.py'
-        - "!requirements.txt"
-        - "!package.json"
-        - "!package-lock.json"
-        - "!.serverless/**"
-        - "!.virtualenv/**"
-        - "!node_modules/**"
-
     handler: main.handler
     environment:
       STAGE: ${self:provider.stage}

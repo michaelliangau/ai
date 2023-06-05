@@ -35,12 +35,12 @@ URLs of our deployed web app:
 - [Staging lambda](https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging/)
 - Production lambda - TODO
 
-To deploy (change --stage flag to deploy to any named environment)
+To deploy to staging
 ```bash
 make deploy
 ```
 
-To delete your app
+To delete your staging app
 ```bash
 make delete-deploy
 ```
