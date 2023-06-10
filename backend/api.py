@@ -16,8 +16,9 @@ import backend.utils as utils
 
 
 import logging
+
 logger = logging.getLogger()
-logger.setLevel(logging.INFO) # or logging.DEBUG for more detailed logs
+logger.setLevel(logging.INFO)  # or logging.DEBUG for more detailed logs
 
 
 # Display logging messages in the terminal
@@ -73,7 +74,6 @@ class Silicron:
         Returns:
             Dict: API response.
         """
-        logging.
         # Set default config
         config = utils.set_config(config)
 
