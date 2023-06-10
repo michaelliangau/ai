@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, UploadFile, HTTPException, Form, APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import mangum
+
 # import IPython
 from botocore.exceptions import BotoCoreError, ClientError
 import boto3
@@ -99,8 +100,7 @@ async def chat_endpoint(body: backend_models.ChatInput):
     if "Item" not in response:
         raise HTTPException(status_code=403, detail="Invalid API Key")
     if "user_id" not in response["Item"]:
-        raise HTTPException(
-            status_code=500, detail="Retrieving account details failed")
+        raise HTTPException(status_code=500, detail="Retrieving account details failed")
     user_id = response["Item"]["user_id"]
 
     # Initialize bot instance
@@ -135,8 +135,7 @@ async def upload_endpoint(
     if "Item" not in response:
         raise HTTPException(status_code=403, detail="Invalid API Key")
     if "user_id" not in response["Item"]:
-        raise HTTPException(
-            status_code=500, detail="Retrieving account details failed")
+        raise HTTPException(status_code=500, detail="Retrieving account details failed")
     user_id = response["Item"]["user_id"]
 
     # Initialize bot instance
