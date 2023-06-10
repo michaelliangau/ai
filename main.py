@@ -9,10 +9,14 @@ import mangum
 # import IPython
 from botocore.exceptions import BotoCoreError, ClientError
 import boto3
+from dotenv import load_dotenv
 
 # Local imports
 import backend.api as backend_api
 import backend.models as backend_models
+
+# Load environment variables
+load_dotenv()
 
 # Environment stage (development/production) defaulting to root if not set.
 stage = os.environ.get("STAGE", None)
@@ -110,14 +114,14 @@ async def chat_endpoint(body: backend_models.ChatInput):
 
 @app.post("/upload")
 async def upload_endpoint(
-    file: UploadFile, api_key: str = Form(...), database: str = Form(...)
+    file: UploadFile, api_key: str = Form(...), database: str = Form("")
 ):
     """Function to handle the '/upload' route of the application.
 
     Args:
-        file (UploadFile): The file to be processed and inserted into Pinecone database.
+        file (UploadFile): The file to be processed and inserted into Supabase database.
         api_key (str): The API key of the user.
-        database (str): The name of the Pinecone index to insert the vectors into.
+        database (str): The name of the Supabase index to insert the vectors into.
 
     Returns:
         JSONResponse: The result of the operation for each file uploaded.
@@ -127,6 +131,7 @@ async def upload_endpoint(
         response = table.get_item(Key={"api_key": api_key})
     except (BotoCoreError, ClientError) as error:
         raise HTTPException(status_code=400, detail=str(error))
+
     if "Item" not in response:
         raise HTTPException(status_code=403, detail="Invalid API Key")
     if "user_id" not in response["Item"]:

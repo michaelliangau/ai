@@ -27,12 +27,19 @@ You will be prompted to add your PyPI credentials (michaelliangau)
 export SILICRON_LOCAL_API_ENDPOINT=http://127.0.0.1:8000
 ```
 
-Alternatively, you can also add the above command to your `~/.bashrc` or `~/.zshrc` file which'll run this command everytime you open your shell.
+This will make the public package route requests to your local endpoint instead of the public one. 
+You can also add the above command to your `~/.bashrc` or `~/.zshrc` file which'll run this command everytime you open your shell.
+
 
 2. Run the web app
 
 ```bash
 make debug
+```
+
+3. To unset local environment variables:
+```bash
+unset SILICRON_LOCAL_API_ENDPOINT
 ```
 
 **Deployment**
@@ -42,13 +49,14 @@ URLs of our deployed web app:
 - [Staging lambda](https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging/)
 - Production lambda - TODO
 
-To deploy (change --stage flag to deploy to any named environment)
+
+To deploy to staging
 
 ```bash
 make deploy
 ```
 
-To delete your app
+To delete your staging app
 
 ```bash
 make delete-deploy
@@ -83,17 +91,6 @@ import sys
 sys.path.append('..')
 import silicron
 ```
-
-## Resources
-
-- [Design Doc](https://docs.google.com/document/d/1MfPYqvYliRFHUaQkkjJrplB-LnGcamcLJK97dgilbUY/edit#)
-- [FastAPI AWS Lambda Deployment](https://ademoverflow.com/blog/tutorial-fastapi-aws-lambda-serverless/)
-
-## Note
-
-- supabase
-- pgvector = postgres
-- redis vector database = in memory vector db for caching purposes
 
 ## Frontend
 
@@ -132,3 +129,20 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 > **Note** On the landing page, click on the sign up button to see the example signup form (inspired/"copied" from [https://assemblyai.com/dashboard/signup](https://assemblyai.com/dashboard/signup))
+
+
+## Resources
+
+- [Design Doc](https://docs.google.com/document/d/1MfPYqvYliRFHUaQkkjJrplB-LnGcamcLJK97dgilbUY/edit#)
+- [FastAPI AWS Lambda Deployment](https://ademoverflow.com/blog/tutorial-fastapi-aws-lambda-serverless/)
+- [Supabase tutorial](https://supabase.com/blog/openai-embeddings-postgres-vector)
+- [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf)
+- 
+## Note
+
+- supabase
+- pgvector = postgres
+- redis vector database = in memory vector db for caching purposes
+
+
+

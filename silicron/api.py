@@ -7,26 +7,39 @@ import os
 import requests
 import tqdm
 
-# Our imports
-import silicron.utils as utils
-import silicron.models as models
-
 # Constants
 STAGING_API_ENDPOINT = "https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging"
 
 
 class Silicron:
-    def __init__(self, api_key: str = ""):
+    """Silicron Class
+
+    Attributes:
+        api_key (str): The API key to use for authentication.
+        chatbot (str): The chatbot to use for chat.
+        database (str): The database to use for chat.
+        api_endpoint (str): The API endpoint to use for requests.
+        fn_endpoints (Dict[str, str]): A dictionary containing the API endpoints
+            for each function.
+        session (requests.Session): A requests session object to use for requests.
+    """
+
+    def __init__(
+        self, api_key: str = "", chatbot: str = "chatgpt3.5-turbo", database: str = ""
+    ):
         """Initialize the Silicron class.
 
         Args:
             api_key (str): The API key to use for authentication.
-            api_endpoint (str): The API endpoint to use for requests.
-            fn_endpoints (Dict[str, str]): A dictionary containing the API endpoints
-                for each function.
-            session (requests.Session): A requests session object to use for requests.
+            chatbot (str): The chatbot to use for chat.
+            database (str): The database to use for chat.
         """
+        # Chatbot config.
         self.api_key = api_key
+        self.chatbot = chatbot
+        self.database = database
+
+        # Network config.
         self.api_endpoint = os.getenv(
             "SILICRON_LOCAL_API_ENDPOINT", STAGING_API_ENDPOINT
         )
@@ -39,13 +52,11 @@ class Silicron:
         # Set logging level
         logging.basicConfig(level=logging.INFO)
 
-    def chat(self, prompt: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
+    def chat(self, prompt: str) -> Dict[str, Any]:
         """Send a chat prompt to the Silicron API and get a response.
 
         Args:
             prompt (str): The chat prompt to send to the Silicron API.
-            config (Dict[str, Any], optional): A dictionary containing additional
-                configuration for the API. Defaults to None.
 
         Returns:
             Dict[str, Any]: The response from the Silicron API as a dictionary.
@@ -54,11 +65,15 @@ class Silicron:
             requests.exceptions.HTTPError: If an HTTP error occurs.
             requests.exceptions.RequestException: If a request error occurs.
         """
-        # Set default config if none provided
-        config = utils.set_config(config)
-
         # HTTP body for the request
-        body = {"api_key": self.api_key, "prompt": prompt, "config": config}
+        body = {
+            "api_key": self.api_key,
+            "prompt": prompt,
+            "config": {
+                "chatbot": self.chatbot,
+                "database": self.database,
+            },
+        }
 
         try:
             # Send POST request to Silicron API
@@ -73,19 +88,14 @@ class Silicron:
             # Update the response_code
             response_dict["response_code"] = 200
 
-            # Create an instance of ChatResponse
-            chat_response = models.ChatResponse(**response_dict)
-
-            return chat_response.dict()
+            return response_dict
 
         except requests.exceptions.HTTPError as http_err:
             return {"response": str(http_err), "response_code": 500}
         except requests.exceptions.RequestException as req_err:
             return {"response": str(req_err), "response_code": 500}
 
-    def upload(
-        self, files: Union[str, List[str]], database: str = "dev"
-    ) -> List[Dict[str, Any]]:
+    def upload(self, files: Union[str, List[str]]) -> List[Dict[str, Any]]:
         """Upload data to users' database.
 
         We can't use the json parameter in the requests.post() method because
@@ -97,8 +107,6 @@ class Silicron:
         Args:
             files (Union[str, List[str]]): The path to the data file or a list of
                 paths to process.
-            database (str): The name of their database to get context from.
-                Defaults to 'dev'.
 
         Returns:
             List[Dict[str, Any]]: The responses from the Silicron API as a list of dictionaries.
@@ -119,7 +127,7 @@ class Silicron:
                 with open(file, "rb") as f:
                     # HTTP body for the request
                     file_body = {"file": f}
-                    data_body = {"api_key": self.api_key, "database": database}
+                    data_body = {"api_key": self.api_key, "database": self.database}
 
                     # Send POST request to Silicron API
                     response = self.session.post(
@@ -137,48 +145,37 @@ class Silicron:
                     # Add a response_code field to the response
                     response_json["response_code"] = response.status_code
 
-                    # Enforce response schema
-                    responses.append(models.UploadResponse(**response_json))
+                    responses.append(response_json)  # Append the dictionary directly
 
             except FileNotFoundError as fnf_err:
                 logging.error(f"File not found: {file}. Error: {fnf_err}")
                 responses.append(
-                    models.UploadResponse(
-                        response=f"File not found: {file}", response_code=404
-                    )
+                    {"response": f"File not found: {file}", "response_code": 404}
                 )
             except requests.exceptions.HTTPError as http_err:
                 logging.error(f"HTTP error occurred while uploading {file}: {http_err}")
                 if response.status_code == 403:
                     responses.append(
-                        models.UploadResponse(
-                            response="Invalid API Key", response_code=403
-                        )
+                        {"response": "Invalid API Key", "response_code": 403}
                     )
                     break
                 else:
                     responses.append(
-                        models.UploadResponse(
-                            response="HTTP error occurred", response_code=500
-                        )
+                        {"response": "HTTP error occurred", "response_code": 500}
                     )
             except requests.exceptions.RequestException as req_err:
                 logging.error(
                     f"Request error occurred while uploading {file}: {req_err}"
                 )
                 responses.append(
-                    models.UploadResponse(
-                        response="Request error occurred", response_code=500
-                    )
+                    {"response": "Request error occurred", "response_code": 500}
                 )
             except Exception as e:
                 logging.error(
                     f"An unexpected error occurred while uploading {file}: {e}"
                 )
                 responses.append(
-                    UploadResponse(
-                        response="Unexpected error occurred", response_code=500
-                    )
+                    {"response": "Unexpected error occurred", "response_code": 500}
                 )
 
         return responses
