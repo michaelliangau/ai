@@ -15,6 +15,12 @@ import boto3
 import backend.utils as utils
 
 
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)  # or logging.DEBUG for more detailed logs
+
+
 # Display logging messages in the terminal
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
