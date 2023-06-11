@@ -10,23 +10,22 @@ export default function Hero() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-7xl text-center">
             <h1 className="relative text-4xl font-bold tracking-tighter text-white sm:text-6xl">
-              Simplifying Large Context Language Models
+              The internet's framework for
+              <br />
+              <span className="text-green-500">Context Aware AI</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-neutral-500">
-              Silicron is a framework designed to extend the capabilities of
-              OpenAI's GPT-3 model, making it effortless for developers to
-              integrate additional data into their applications, without having
-              to handle the intricacies of context length and context retrieval.
+              Connect vector databases to your ChatGPT apps for simple zero-shot document retrieval.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link
+              {/* <Link
                 href="#"
                 className="rounded-md bg-white/10 px-3.5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-white/20"
               >
                 Get started
-              </Link>
+              </Link> */}
               <Link
-                href="/signup"
+                href="https://forms.gle/2hLQTY8ixrCeWFNa9" target="_blank"
                 className="text-sm font-medium leading-6 text-white"
               >
                 Sign up <span aria-hidden="true">→</span>
