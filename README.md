@@ -96,17 +96,13 @@ import silicron
 
 This is an integration that uses Next.js as the front end and FastAPI as the API backend. Silicron is a use case in which the Next.js application can take advantage of Python AI libraries in the backend.
 
-## Hybrid application struture (\*\*possible roadmap feature)
-
 The Python/FastAPi server is mapped into Next.js app under `/api/`.
 
-This is implemented using `next.config.js` rewrites to map any request to `/api/:path*` to the FastAPI API, which is hosted in the `/silicron_backend` folder.
+This is implemented using `next.config.js` rewrites to map any request to `/api/:path*` to the FastAPI API, which is hosted in the `frontend` folder.
 
 On localhost, the rewrite will be made to the `127.0.0.1:8000` port, which is where the FastAPI server is running.
 
-> **Note** As of right now, two separate development servers have to be running in order this test the API endpoints from the front end. If you're open to it, I will need to modify the package.json file under "scripts" to concurrently run both servers making it a hybrid application and not two separately hosted applications.
-
-## Running the frontend locally
+> **Note** As of right now, two separate development servers have to be running in order this test the API endpoints from the front end.
 
 To get started, cd to the frontend folder from the root directory:
 
@@ -128,8 +124,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-> **Note** On the landing page, click on the sign up button to see the example signup form (inspired/"copied" from [https://assemblyai.com/dashboard/signup](https://assemblyai.com/dashboard/signup))
-
 
 ## Resources
 
@@ -137,12 +131,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - [FastAPI AWS Lambda Deployment](https://ademoverflow.com/blog/tutorial-fastapi-aws-lambda-serverless/)
 - [Supabase tutorial](https://supabase.com/blog/openai-embeddings-postgres-vector)
 - [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf)
-- 
-## Note
 
-- supabase
-- pgvector = postgres
-- redis vector database = in memory vector db for caching purposes
 
 
 
