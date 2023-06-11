@@ -28,7 +28,7 @@ export default function Hero() {
                 href="https://forms.gle/2hLQTY8ixrCeWFNa9"
                 className="text-sm font-medium leading-6 text-white"
               >
-                Sign up <span aria-hidden="true">→</span>
+                Get early access <span aria-hidden="true">→</span>
               </Link>
             </div>
           </div>

@@ -28,7 +28,7 @@ export function CodeBlock() {
               <br />
               <span className="text-neutral-500"># Init bot.</span>
               <br />
-              <span className=""><span className="text-orange-300">bot</span> = <span className="text-green-500">silicron</span>.Silicron(api_key=YOUR_API_KEY, chatbot="chatgpt3.5-turbo", database="test")</span>
+              <span className=""><span className="text-orange-300">bot</span> = <span className="text-green-500">silicron</span>.Silicron(api_key=YOUR_API_KEY, chatbot="chatgpt3.5-turbo", database="")</span>
               <br />
               <br />
               <span className="text-neutral-500"># Upload files containing context you want ChatGPT to reference.</span>
