@@ -33,12 +33,12 @@ export function CodeBlock() {
               <br />
               <span className="text-neutral-500"># Upload files containing context you want ChatGPT to reference.</span>
               <br />
-              <span className="">response = <span className="text-orange-300">bot</span>.upload(["presidents.txt"])</span>              
+              <span className="">response = <span className="text-orange-300">bot</span>.upload(["ecommerce_return_policy.txt"])</span>              
               <br />
               <br />
-              <span className="text-neutral-500"># ChatGPT will return responses based off your data.</span>
+              <span className="text-neutral-500"># ChatGPT will return responses based off your uploaded data.</span>
               <br />
-              <span className="">prompt = "Who is the current president of the United States?"</span>
+              <span className="">prompt = "Can I return an item after 45 days?"</span>
               <br />
               <span className="">response = <span className="text-orange-300">bot</span>.chat(prompt)</span>
             </div>
