@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 
 const navigation = [
-  { name: "", href: "#" },
+  { name: "PyPI", href: "https://pypi.org/project/silicron/" },
   // { name: "Features", href: "#" },
   // { name: "Documentation", href: "#" },
   // { name: "Github", href: "#" },
@@ -50,11 +50,11 @@ export default function Header() {
             </Link>
           ))}
         </div>
-        {/* <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a href="#" className="text-sm font-medium leading-6 text-white">
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
+          <a href="#" className="hidden text-sm font-medium leading-6 text-white">
             Log in <span aria-hidden="true">&rarr;</span>
           </a>
-        </div> */}
+        </div>
       </nav>
       <Dialog
         as="div"
