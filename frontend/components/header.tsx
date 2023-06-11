@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 
 const navigation = [
-  // { name: "Product", href: "#" },
+  { name: "", href: "#" },
   // { name: "Features", href: "#" },
   // { name: "Documentation", href: "#" },
   // { name: "Github", href: "#" },
