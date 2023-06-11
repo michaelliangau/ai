@@ -36,47 +36,6 @@ table = dynamodb.Table(
 )  # TODO (GA): Change this to silicron_prod_api_keys
 
 
-@app.get("/", response_class=HTMLResponse)
-def root(request: Request):
-    """Function to handle the root ('/') route of the application.
-
-    TODO (P0): Return a simple landing page with:
-    - Minimal connection to React frontend (P0)
-    - Typeform link (P0) - MVP use a typeform link, P1 build the sign up flows etc.
-    - Add Google Analytics (P0)
-    - Sign up/login (P1).
-
-    Home page content should have:
-    - 1 sentence - What does this app do?
-    - 1 code block - how do I use it?
-    - 1 sign up for early access button.
-    - Use a nice looking template (example webste - https://www.assemblyai.com/)
-    - Clean code (build in a way a non-FE developer can extend it)
-    - Nothing else.
-
-    Args:
-        request (Request): The request object.
-
-    Returns:
-        HTMLResponse: The rendered template as an HTML response.
-    """
-    # TODO: Delete this - example snippet how to send data to the template
-    # data = {"items": [{"id": 1, "name": "item1"}, {"id": 2, "name": "item2"}]}
-    # return templates.TemplateResponse(
-    #     "index.html", {"request": request, "items": data["items"]}
-    # )
-    raise NotImplementedError
-
-
-# TODO (P1): Login/Sign up flow (Google sign in only)
-
-
-# TODO (P1): Payment flow (Stripe - link a payment method to a user)
-
-
-# TODO (P2): Dashboard (simple metrics)
-
-
 @app.post("/chat")
 async def chat_endpoint(body: backend_models.ChatInput):
     """Function to handle the '/chat' route of the application.
@@ -95,8 +54,9 @@ async def chat_endpoint(body: backend_models.ChatInput):
     # Check if API Key exists in DynamoDB table and get user_id
     try:
         response = table.get_item(Key={"api_key": api_key})
-    except (BotoCoreError, ClientError) as error:
-        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as e:
+        logging.error(e)
+        raise HTTPException(status_code=500, detail="An unknown error occurred")
     if "Item" not in response:
         raise HTTPException(status_code=403, detail="Invalid API Key")
     if "user_id" not in response["Item"]:
