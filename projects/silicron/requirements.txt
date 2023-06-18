@@ -1,0 +1,14 @@
+openai==0.27.6 # michael_l: api embeddings and query
+black==23.3.0 # michael_l: formatting
+supabase==1.0.3 # michael_l: vector db
+boto3==1.26.137 # michael_l: data store
+fastapi==0.95.2 # michael_l: web app backend framework
+uvicorn==0.22.0 # michael_l: web app local debugging
+mangum==0.17.0 # michael_l: aws lambda
+jinja2==3.1.2 # michael_l: web app templating
+tqdm==4.65.0 # michael_l: progress reporting
+python-multipart==0.0.6 # michael_l: fastapi form uploads
+botocore==1.29.137 # michael_l: data store
+ipython==8.10.0 # michael_l: debugging
+python-dotenv==1.0.0 # michael_l: environment variables
+numpy==1.23.5 # michael_l: openai embeddings
