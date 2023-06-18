@@ -43,3 +43,9 @@ import common.utils as common_utils
 ```python
 common_utils.start_comet_ml_logging("michaelliang-dev")
 ```
+
+## Formatting code
+
+```bash
+make format
+```
