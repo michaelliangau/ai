@@ -7,6 +7,11 @@ A simple landing package is also built using NextJS on Vercel available [here](h
 
 An MVP version of the package is available [here](https://pypi.org/project/silicron/).
 
+This package is missing a `.env` and `.env_lambda` file which contains various sensitive API keys:
+- OPENAPI
+- SUPABASE
+- AWS
+
 ## Package Development
 
 **Usage**

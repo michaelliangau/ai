@@ -13,7 +13,7 @@ setup(
     version="0.0.4",
     url="https://github.com/michaelliangau",
     author="Michael Liang",
-    author_email="michaelliang15@gmail.com",
+    author_email="",
     packages=find_packages(),
     description="Give chatbots memory.",
     long_description=long_description,
