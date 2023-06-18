@@ -7,6 +7,7 @@ import numpy as np
 import yfinance as yf
 import IPython
 
+
 def get_average_values(folder):
     """Get the average values for each date from a folder of experiments.
 

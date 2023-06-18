@@ -26,6 +26,7 @@ All project specific code exists in the `projects` folder. These projects are or
 - `diffusion_model` - Vanilla image diffusion model on Stanford cars dataset.
 - `rnnt` - Recurrent neural network transducer architecture for seq2seq problems.
 - `buffet_bot` - Algorithmic investing using LLMs
+- `silicron` - PyPI package to extend chat apps with context using vector stores.
 
 ## Common utils
 
@@ -41,4 +42,10 @@ import common.utils as common_utils
 
 ```python
 common_utils.start_comet_ml_logging("michaelliang-dev")
+```
+
+## Formatting code
+
+```bash
+make format
 ```
