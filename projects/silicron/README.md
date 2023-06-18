@@ -1,6 +1,11 @@
 # Silicron - Contextual Chat Apps
 
-PyPI package to extend chat apps with context using vector stores
+PyPI package to extend chat apps with context using Supabase vectors, hosted on AWS
+Lambda using FastAPI.
+
+A simple landing package is also built using NextJS on Vercel available [here](https://silicron-cyan.vercel.app/).
+
+An MVP version of the package is available [here](https://pypi.org/project/silicron/).
 
 ## Package Development
 

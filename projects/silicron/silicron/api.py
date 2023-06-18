@@ -8,7 +8,7 @@ import requests
 import tqdm
 
 # Constants
-STAGING_API_ENDPOINT = "https://wsesuzvgd0.execute-api.us-east-1.amazonaws.com/staging"
+STAGING_API_ENDPOINT = "ADD_THE_STAGING_API_ENDPOINT_HERE"
 
 
 class Silicron:
