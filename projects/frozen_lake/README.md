@@ -1,6 +1,6 @@
 # Frozen lake
 
-Frozen lake environment.
+Simple RL agent in Frozen lake environment.
 
 ## Resources
 
