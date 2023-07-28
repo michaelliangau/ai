@@ -23,4 +23,4 @@ All project specific code exists in the `projects` folder.
 - `rnnt` - Recurrent neural network transducer architecture for seq2seq problems.
 - `buffet_bot` - Algorithmic investing using LLMs
 - `silicron` - PyPI package to extend chat apps with context using vector stores.
-- `frozen_lake` - RL primitives, implement a simple agent and environment.
+- `grid_world` - RL primitives, implement a Q-learning agent and grid world environment.

@@ -1,6 +1,6 @@
-# Frozen lake
+# Grid World
 
-Simple RL agent in Frozen lake environment.
+Simple Q learning agent in Grid World environment built using NumPy.
 
 ## Resources
 
