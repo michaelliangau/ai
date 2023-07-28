@@ -1,5 +1,7 @@
-import environment
-import agent
+import environments
+import agents
+import numpy as np
+np.random.seed(0)  # For reproducibility
 
 # Map action to direction
 action_to_direction = {
@@ -9,10 +11,10 @@ action_to_direction = {
     3: 'LEFT'
 }
 
-# Initialize agent and environment
-env = environment.GridWorld(grid_size=4, hole_count=4)
+# Initialize agent and environments
+env = environments.GridWorld(grid_size=4, hole_count=4)
 print(env.grid)
-agent = agent.QAgent(env.state_space.shape[0], env.action_space.shape[0])
+agent = agents.QLearningAgent(env.state_space.shape[0], env.action_space.shape[0])
 
 # Training parameters
 num_episodes = 10000
