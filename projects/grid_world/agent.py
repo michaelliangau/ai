@@ -1,6 +1,6 @@
 import numpy as np
 
-class SimpleAgent:
+class QAgent:
     """Simple agent that implements the Q-learning algorithm."""
     def __init__(self, num_states=16, num_actions=4, alpha=0.9, gamma=0.95, epsilon=0.5):
         """Init the agent.

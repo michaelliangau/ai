@@ -12,7 +12,7 @@ action_to_direction = {
 # Initialize agent and environment
 env = environment.GridWorld(grid_size=4, hole_count=4)
 print(env.grid)
-agent = agent.SimpleAgent(env.state_space.shape[0], env.action_space.shape[0])
+agent = agent.QAgent(env.state_space.shape[0], env.action_space.shape[0])
 
 # Training parameters
 num_episodes = 10000
