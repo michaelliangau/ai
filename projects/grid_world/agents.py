@@ -156,3 +156,98 @@ class ValueIterationAgent:
         """
         return self.policy[state]
 
+class PolicyIterationAgent():
+    def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
+        """Initialize the PolicyIterationAgent.
+        
+        Policy iteration is a model based RL method
+        
+        Args:
+            num_states (int): Number of states in the environment.
+            goal_state_idx (int): Index of the goal state.
+            num_actions (int): Number of possible actions in the environment.
+            theta (float, optional): Threshold for determining the convergence of the
+            value function. Defaults to 1e-8.
+            gamma (float, optional): Discount factor for future rewards. Defaults to 0.95.
+        """
+        self.num_states = num_states
+        self.goal_state_idx = goal_state_idx
+        self.num_actions = num_actions
+        self.theta = theta
+        self.gamma = gamma
+        self.policy = np.zeros(num_states)
+        self.values = np.zeros(num_states)
+    
+    def policy_evaluation(self, env):
+        """Evaluate the current policy.
+        
+        This is the core policy evaluation mechanic. It's sort of like value iteration
+        except it only updates the value function for the current policy (actions chosen
+        by current policy).
+        
+        Args:
+            env (GridWorld): The environment in which the agent interacts.
+        """
+        while True:
+            delta = 0
+            for state in range(self.num_states):
+                if state == self.goal_state_idx:
+                    continue
+                v = self.values[state]
+                action = self.policy[state]
+                # Value of the state is the expected return from the current action under the current policy
+                self.values[state] = sum([prob * (reward + self.gamma * self.values[next_state]) for prob, next_state, reward, _ in env.transitions(state, action)])
+                delta = max(delta, np.abs(v - self.values[state]))
+            if delta < self.theta:
+                break
+    
+    def policy_improvement(self, env):
+        """Improve the current policy.
+        
+        Evaluates all possible action values for each state similar to value iteration
+        and returns whether or not the policy is stable.
+
+        Args:
+            env (GridWorld): The environment in which the agent interacts.
+
+        Returns:
+            bool: Whether or not the policy is stable.
+        """
+        policy_stable = True
+        for state in range(self.num_states):
+            if state == self.goal_state_idx:
+                continue
+            old_action = self.policy[state]
+            action_values = np.zeros(self.num_actions)
+            for action in range(self.num_actions):
+                action_values[action] = sum([prob * (reward + self.gamma * self.values[next_state]) 
+                                             for prob, next_state, reward, _ in env.transitions(state, action)])
+            self.policy[state] = np.argmax(action_values)
+            if old_action != self.policy[state]:
+                policy_stable = False
+        return policy_stable
+
+    def policy_iteration(self, env):
+        """Perform the policy iteration algorithm.
+        
+        Args:
+            env (GridWorld): The environment in which the agent interacts.
+        """
+        while True:
+            self.policy_evaluation(env)
+            print('values', self.values.reshape((4, 4)))
+            policy_stable = self.policy_improvement(env)
+            print('policy', self.policy.reshape((4, 4)))
+            if policy_stable:
+                break
+
+    def get_action(self, state):
+        """Get the action to take in a given state.
+
+        Args:
+            state (int): The current state.
+
+        Returns:
+            int: The action to take.
+        """
+        return self.policy[state]
