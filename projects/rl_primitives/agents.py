@@ -3,6 +3,7 @@ import IPython
 from collections import defaultdict
 from tqdm import tqdm
 
+
 class QLearningAgent:
     """Simple agent that implements the Q-learning algorithm."""
 
@@ -281,12 +282,13 @@ class PolicyIterationAgent:
         """
         return self.policy[state]
 
+
 class MonteCarloAgent:
     def __init__(self, num_states, num_actions, gamma=0.95, epsilon=0.1):
         """Initialize the MonteCarloAgent.
-        
+
         Monte Carlo methods are model free RL methods
-        
+
         Args:
             num_states (int): Number of states in the environment.
             num_actions (int): Number of possible actions in the environment.
@@ -297,35 +299,41 @@ class MonteCarloAgent:
         self.num_actions = num_actions
         self.gamma = gamma
         self.epsilon = epsilon
-        self.returns = defaultdict(lambda: defaultdict(list))  # dict to save returns for each state-action pair
+        self.returns = defaultdict(
+            lambda: defaultdict(list)
+        )  # dict to save returns for each state-action pair
         self.Q = defaultdict(lambda: np.zeros(num_actions))  # action value function
         self.policy = np.zeros(num_states, dtype=int)  # policy
 
     def generate_episode(self, env):
         """Generate an episode by following the epsilon-greedy policy.
-        
+
         Args:
             env (GridWorld): The environment in which the agent interacts.
-        
+
         Returns:
             episode (list): A list of (state, action, reward) tuples
         """
         state = env.reset()
         episode = []
         while True:
-            probs = np.ones(self.num_actions, dtype=float) * self.epsilon / self.num_actions
-            probs[self.policy[state]] += (1.0 - self.epsilon)
+            probs = (
+                np.ones(self.num_actions, dtype=float) * self.epsilon / self.num_actions
+            )
+            probs[self.policy[state]] += 1.0 - self.epsilon
             action = np.random.choice(np.arange(len(probs)), p=probs)
             next_state, reward = env.step(action)
             episode.append((state, action, reward))
-            if next_state == env.state_space[-1] or reward == -1 or reward == 1:  # If the last state is reached
+            if (
+                next_state == env.state_space[-1] or reward == -1 or reward == 1
+            ):  # If the last state is reached
                 break
             state = next_state
         return episode
 
     def first_visit_mc_prediction(self, num_episodes, env):
         """First visit Monte Carlo prediction.
-        
+
         First visit means we only consider the first visit to each state in each
         episode when calculating the average return.
 
@@ -341,19 +349,19 @@ class MonteCarloAgent:
 
             # Prepare lists
             states, actions, rewards = zip(*episode)
-            discounts = np.array([self.gamma**i for i in range(len(rewards)+1)])
-            
+            discounts = np.array([self.gamma**i for i in range(len(rewards) + 1)])
+
             # Iterate over each state in the episode
             for i, state in enumerate(states):
                 # Calculate the return (discounted sum of rewards) from this state onwards
                 action = actions[i]
                 future_rewards = rewards[i:]
-                discounted_future_rewards = discounts[:-(1+i)] * future_rewards
+                discounted_future_rewards = discounts[: -(1 + i)] * future_rewards
                 return_from_this_state = sum(discounted_future_rewards)
-                
+
                 # Append the calculated return to the list of returns for this state-action pair
                 self.returns[state][action].append(return_from_this_state)
-                
+
                 # Average the returns to calculate the action-value for this state-action pair
                 average_return = np.mean(self.returns[state][action])
                 self.Q[state][action] = average_return
