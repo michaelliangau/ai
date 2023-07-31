@@ -1,6 +1,6 @@
 # Grid World
 
-Simple Q learning agent in Grid World environment built using NumPy.
+Q-Learning, value iteration and policy iteration agent in Grid World environment built using NumPy.
 
 ## Resources
 
