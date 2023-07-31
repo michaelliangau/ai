@@ -1,6 +1,12 @@
-# Grid World
+# RL primitives
 
-Simple Q learning agent in Grid World environment built using NumPy.
+Agents in a Grid World environment built using NumPy.
+
+Types of agents implemented:
+- Q Learning (Temporal Difference)
+- Value iteration
+- Policy iteration
+- Monte Carlo
 
 ## Resources
 
