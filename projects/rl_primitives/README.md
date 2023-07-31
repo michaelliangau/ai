@@ -3,7 +3,7 @@
 Agents in a Grid World environment built using NumPy.
 
 Types of agents implemented:
-- Q Learning
+- Q Learning (Temporal Difference)
 - Value iteration
 - Policy iteration
 - Monte Carlo
