@@ -196,6 +196,12 @@ class PolicyIterationAgent:
         except it only updates the value function for the current policy (actions chosen
         by current policy).
 
+        Policy evaluation updates the value function based on the current policy until
+        the value function estimate stabilizes.
+        Policy improvement then updates the policy based on the current value function.
+        This generates a new policy that is guaranteed to be better than or as good as
+        the old policy.
+
         Args:
             env (GridWorld): The environment in which the agent interacts.
         """
@@ -259,9 +265,7 @@ class PolicyIterationAgent:
         """
         while True:
             self.policy_evaluation(env)
-            print("values", self.values.reshape((4, 4)))
             policy_stable = self.policy_improvement(env)
-            print("policy", self.policy.reshape((4, 4)))
             if policy_stable:
                 break
 
