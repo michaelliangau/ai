@@ -1,11 +1,15 @@
 import numpy as np
 import IPython
 
+
 class QLearningAgent:
     """Simple agent that implements the Q-learning algorithm."""
-    def __init__(self, num_states=16, num_actions=4, alpha=0.9, gamma=0.95, epsilon=0.5):
+
+    def __init__(
+        self, num_states=16, num_actions=4, alpha=0.9, gamma=0.95, epsilon=0.5
+    ):
         """Init the agent.
-        
+
         Args:
             num_states (int): number of states. Defaults to 16 (4 x 4 grid).
             num_actions (int): number of actions. Defaults to 4 (left, down, right, up).
@@ -19,17 +23,17 @@ class QLearningAgent:
         self.gamma = gamma
         self.epsilon = epsilon
 
-        # Q table: Expected return (not reward) for each state-action pair 
+        # Q table: Expected return (not reward) for each state-action pair
         self.Q = np.zeros((num_states, num_actions))
-    
+
     def get_epsilon_greedy_action(self, state):
         """Pick a random action with probability epsilon, otherwise pick the best action
-        
+
         Args:
             state (int): current state
         """
         if np.random.rand() < self.epsilon:
-            return np.random.choice(self.num_actions) # explore
+            return np.random.choice(self.num_actions)  # explore
         else:
             # exploit
             # find the indices of the maximum values
@@ -37,7 +41,6 @@ class QLearningAgent:
             # choose randomly from those indices
             return np.random.choice(max_indices)
 
-    
     def update_Q(self, state, action, reward, next_state):
         """Update the Q table.
 
@@ -45,7 +48,7 @@ class QLearningAgent:
 
         This is the core mechanics of Q-learning and implements the Bellman optimality
         equation for Q-values. This is a subset of the general Bellman equation.
-        
+
         Reference principle of optimality on why Q learning works. Optimal policy of
         subsequences is also optimal for the original sequence.
 
@@ -69,6 +72,7 @@ class QLearningAgent:
         # Update the Q table value, multiplying the learning rate (alpha) by the error.
         self.Q[state][action] += self.alpha * td_error
 
+
 class ValueIterationAgent:
     def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the ValueIterationAgent.
@@ -85,7 +89,9 @@ class ValueIterationAgent:
         self.num_states = num_states
         self.goal_state_idx = goal_state_idx
         self.num_actions = num_actions
-        self.theta = theta  # small number threshold to determine convergence of value function
+        self.theta = (
+            theta  # small number threshold to determine convergence of value function
+        )
         self.gamma = gamma  # discount factor
         self.values = np.zeros(num_states)  # initialize value function
         self.policy = np.zeros(num_states)  # initialize policy
@@ -100,7 +106,7 @@ class ValueIterationAgent:
         values during iteration.
 
         Values in the value function is expected total reward an agent can expect to
-        receive from that state onward, excluding immediate rewards from transitioning 
+        receive from that state onward, excluding immediate rewards from transitioning
         to the state. Therefore goal states have a value of 0.
 
         Args:
@@ -123,14 +129,16 @@ class ValueIterationAgent:
                     # Loop over possible transitions (GridWorld has just 1 transition as it is deterministic, doesn't have to be the case)
                     for prob, next_state, reward, _ in env.transitions(state, action):
                         # Compute action values for each action in this state
-                        action_values[action] += prob * (reward + self.gamma * self.values[next_state])
-                
+                        action_values[action] += prob * (
+                            reward + self.gamma * self.values[next_state]
+                        )
+
                 # Set new value of this state to the maximum action value
                 self.values[state] = np.max(action_values)
 
                 # Update delta (how large was the update)
                 delta = max(delta, np.abs(state_value - self.values[state]))
-            
+
             # Break loop once max delta across all states is smaller than theta
             if delta < self.theta:
                 break
@@ -142,7 +150,9 @@ class ValueIterationAgent:
             action_values = np.zeros(self.num_actions)
             for a in range(self.num_actions):
                 for prob, next_state, reward, _ in env.transitions(s, a):
-                    action_values[a] += prob * (reward + self.gamma * self.values[next_state])
+                    action_values[a] += prob * (
+                        reward + self.gamma * self.values[next_state]
+                    )
             self.policy[s] = np.argmax(action_values)
 
     def get_action(self, state):
@@ -156,12 +166,13 @@ class ValueIterationAgent:
         """
         return self.policy[state]
 
-class PolicyIterationAgent():
+
+class PolicyIterationAgent:
     def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the PolicyIterationAgent.
-        
+
         Policy iteration is a model based RL method
-        
+
         Args:
             num_states (int): Number of states in the environment.
             goal_state_idx (int): Index of the goal state.
@@ -177,14 +188,14 @@ class PolicyIterationAgent():
         self.gamma = gamma
         self.policy = np.zeros(num_states)
         self.values = np.zeros(num_states)
-    
+
     def policy_evaluation(self, env):
         """Evaluate the current policy.
-        
+
         This is the core policy evaluation mechanic. It's sort of like value iteration
         except it only updates the value function for the current policy (actions chosen
         by current policy).
-        
+
         Args:
             env (GridWorld): The environment in which the agent interacts.
         """
@@ -196,14 +207,21 @@ class PolicyIterationAgent():
                 v = self.values[state]
                 action = self.policy[state]
                 # Value of the state is the expected return from the current action under the current policy
-                self.values[state] = sum([prob * (reward + self.gamma * self.values[next_state]) for prob, next_state, reward, _ in env.transitions(state, action)])
+                self.values[state] = sum(
+                    [
+                        prob * (reward + self.gamma * self.values[next_state])
+                        for prob, next_state, reward, _ in env.transitions(
+                            state, action
+                        )
+                    ]
+                )
                 delta = max(delta, np.abs(v - self.values[state]))
             if delta < self.theta:
                 break
-    
+
     def policy_improvement(self, env):
         """Improve the current policy.
-        
+
         Evaluates all possible action values for each state similar to value iteration
         and returns whether or not the policy is stable.
 
@@ -220,8 +238,14 @@ class PolicyIterationAgent():
             old_action = self.policy[state]
             action_values = np.zeros(self.num_actions)
             for action in range(self.num_actions):
-                action_values[action] = sum([prob * (reward + self.gamma * self.values[next_state]) 
-                                             for prob, next_state, reward, _ in env.transitions(state, action)])
+                action_values[action] = sum(
+                    [
+                        prob * (reward + self.gamma * self.values[next_state])
+                        for prob, next_state, reward, _ in env.transitions(
+                            state, action
+                        )
+                    ]
+                )
             self.policy[state] = np.argmax(action_values)
             if old_action != self.policy[state]:
                 policy_stable = False
@@ -229,15 +253,15 @@ class PolicyIterationAgent():
 
     def policy_iteration(self, env):
         """Perform the policy iteration algorithm.
-        
+
         Args:
             env (GridWorld): The environment in which the agent interacts.
         """
         while True:
             self.policy_evaluation(env)
-            print('values', self.values.reshape((4, 4)))
+            print("values", self.values.reshape((4, 4)))
             policy_stable = self.policy_improvement(env)
-            print('policy', self.policy.reshape((4, 4)))
+            print("policy", self.policy.reshape((4, 4)))
             if policy_stable:
                 break
 

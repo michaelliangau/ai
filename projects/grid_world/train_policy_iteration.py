@@ -1,23 +1,19 @@
 import environments
 import agents
 import numpy as np
+
 np.random.seed(0)  # For reproducibility
 
 
 # Map action to direction
-action_to_direction = {
-    0: 'UP',
-    1: 'RIGHT',
-    2: 'DOWN',
-    3: 'LEFT'
-}
+action_to_direction = {0: "UP", 1: "RIGHT", 2: "DOWN", 3: "LEFT"}
 
 # Initialize agent and environments
 env = environments.GridWorld(grid_size=4, hole_count=1)
 agent = agents.PolicyIterationAgent(
     num_states=env.state_space.shape[0],
-    goal_state_idx=env.state_space.shape[0] - 1, # final state is goal state
-    num_actions=env.action_space.shape[0]
+    goal_state_idx=env.state_space.shape[0] - 1,  # final state is goal state
+    num_actions=env.action_space.shape[0],
 )
 
 # Train agent

@@ -1,25 +1,28 @@
 import numpy as np
 
+
 class GridWorld:
     def __init__(self, grid_size=4, hole_count=4):
         """Initialize the environment.
 
         This is a static grid world environment.
-        
+
         Args:
             grid_size (int): size of the grid (default is 4)
             hole_count (int): number of holes in the grid (default is 4)
         """
         self.grid_size = grid_size
         self.state_space = np.arange(grid_size * grid_size)
-        self.action_space = np.arange(4) # 0: Up, 1: Right, 2: Down, 3: Left
+        self.action_space = np.arange(4)  # 0: Up, 1: Right, 2: Down, 3: Left
 
         # Initialize the grid
         self.hole_count = hole_count
         self.state = 0
-        self.grid = np.full((self.grid_size, self.grid_size), 'F') # Fill the grid with frozen blocks
-        self.grid[0, 0] = 'S' # Place the start block
-        self.grid[-1, -1] = 'G' # Place the goal block
+        self.grid = np.full(
+            (self.grid_size, self.grid_size), "F"
+        )  # Fill the grid with frozen blocks
+        self.grid[0, 0] = "S"  # Place the start block
+        self.grid[-1, -1] = "G"  # Place the goal block
 
         # Place the hole blocks randomly
         for _ in range(self.hole_count):
@@ -27,7 +30,7 @@ class GridWorld:
             # Ensure we don't place a hole at the start or goal
             while (row, col) in [(0, 0), (self.grid_size - 1, self.grid_size - 1)]:
                 row, col = np.random.randint(self.grid_size, size=2)
-            self.grid[row, col] = 'H'
+            self.grid[row, col] = "H"
 
     def _get_grid_position(self, state):
         """Converts a state number to a position in a 4x4 grid.
@@ -53,7 +56,6 @@ class GridWorld:
         self.state = 0
         return self.state
 
-
     # Step 3: Take an action and return the next state and reward
     def step(self, action):
         """Take an action and return the next state and reward
@@ -74,11 +76,11 @@ class GridWorld:
             row = min(row + 1, self.grid_size - 1)
         elif action == 3:  # Left
             col = max(col - 1, 0)
-            
+
         # Update the state
         next_state = row * self.grid_size + col
         self.state = next_state
-        
+
         # Get reward based on current state
         reward = self._get_reward(row, col)
 
@@ -90,24 +92,24 @@ class GridWorld:
         Args:
             row (int): row of the current state
             col (int): column of the current state
-        
+
         Returns:
             reward (int): -1 for falling into a hole, 1 for reaching the goal, and 0 otherwise
         """
-        if self.grid[row, col] == 'H':  # If the agent falls into a hole
+        if self.grid[row, col] == "H":  # If the agent falls into a hole
             return -1
-        elif self.grid[row, col] == 'G':  # If the agent reaches the goal
+        elif self.grid[row, col] == "G":  # If the agent reaches the goal
             return 1
         else:  # If the agent is on a frozen block
             return 0
-        
+
     def transitions(self, state, action):
         """Compute the transition for the given state and action.
 
         Transition probabiltiies are used in value iteration algorithms. Transition
         probs are 1.0 here because GridWorld is determinstic. This may change for
         different environments.
-        
+
         Args:
             state: The current state.
             action: The action to perform.
@@ -124,10 +126,10 @@ class GridWorld:
             row = min(row + 1, self.grid_size - 1)
         elif action == 3:  # Left
             col = max(col - 1, 0)
-        
+
         transition_prob = 1.0
         next_state = row * self.grid_size + col
         reward = self._get_reward(row, col)
-        done = (self.grid[row, col] == 'H') or (self.grid[row, col] == 'G')
+        done = (self.grid[row, col] == "H") or (self.grid[row, col] == "G")
 
         return [(transition_prob, next_state, reward, done)]
