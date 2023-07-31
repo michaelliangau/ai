@@ -14,34 +14,41 @@ action_to_direction = {
 
 # Initialize agent and environments
 env = environments.GridWorld(grid_size=4, hole_count=1)
-print(env.grid)
-agent = agents.ValueIterationAgent(env.state_space.shape[0], env.action_space.shape[0])
+agent = agents.ValueIterationAgent(
+    num_states=env.state_space.shape[0],
+    goal_state_idx=env.state_space.shape[0] - 1, # final state is goal
+    num_actions=env.action_space.shape[0]
+)
 
 # Train the agent
 agent.value_iteration(env)
 
-# # Training parameters
-# num_episodes = 10000
-# max_steps_per_episode = 100
+# Traverse the grid
+current_state = 0
 
-# for episode in range(num_episodes):
-#     # Reset the state, env doesn't change
-#     state = env.reset()
-    
-#     for step in range(max_steps_per_episode):
-#         action = agent.get_epsilon_greedy_action(state)
-#         next_state, reward = env.step(action)
-#         agent.update_Q(state, action, reward, next_state)
-        
-#         state = next_state
-        
-#         if reward == -1 or reward == 1:  # agent fell in a hole or reached the goal
-#             break
-    
-#     # Print out progress
-#     if (episode + 1) % 1000 == 0:
-#         print(f"Episode {episode + 1}/{num_episodes} completed")
+# Keep track of the states and actions taken for visualization
+states = [current_state]
+actions = []
 
-# print("Training finished.")
-# print("Q table:")
-# print(agent.Q)
+# Traverse the grid based on the policy until we reach the goal
+while current_state != agent.goal_state_idx:
+    # Get the action for the current state from the policy
+    action = agent.get_action(current_state)
+
+    # Store action
+    actions.append(action_to_direction[action])
+
+    # Get the next state and done flag from the environment
+    prob, next_state, reward, done = env.transitions(current_state, action)[0]
+
+    # Store the next state
+    states.append(next_state)
+
+    # Update the current state
+    current_state = next_state
+
+# Print the states and actions
+for state, action in zip(states, actions):
+    print(f"State: {state}, Action: {action}")
+
+print(f"Final State: {states[-1]}")

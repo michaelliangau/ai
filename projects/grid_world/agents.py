@@ -70,18 +70,20 @@ class QLearningAgent:
         self.Q[state][action] += self.alpha * td_error
 
 class ValueIterationAgent:
-    def __init__(self, num_states, num_actions, theta=1e-8, gamma=0.95):
+    def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the ValueIterationAgent.
 
         Value iteration is a model based RL method
 
         Args:
             num_states (int): Number of states in the environment.
+            goal_state_idx (int): Index of the goal state.
             num_actions (int): Number of possible actions in the environment.
             theta (float, optional): Threshold for determining the convergence of the value function. Defaults to 1e-8.
             gamma (float, optional): Discount factor for future rewards. Defaults to 0.95.
         """
         self.num_states = num_states
+        self.goal_state_idx = goal_state_idx
         self.num_actions = num_actions
         self.theta = theta  # small number threshold to determine convergence of value function
         self.gamma = gamma  # discount factor
@@ -94,7 +96,12 @@ class ValueIterationAgent:
         This is the core value iteration mechanic. It gets the maximum value of each
         state by maxing over the possible actions at each state.
 
-        Value iteration assumes you have access to the underlying MDP.
+        Value iteration assumes you have access to the underlying MDP and can get reward
+        values during iteration.
+
+        Values in the value function is expected total reward an agent can expect to
+        receive from that state onward, excluding immediate rewards from transitioning 
+        to the state. Therefore goal states have a value of 0.
 
         Args:
             env (GridWorld): The environment in which the agent interacts.
@@ -104,6 +111,9 @@ class ValueIterationAgent:
         while True:
             delta = 0
             for state in range(self.num_states):
+                # Skip goal state
+                if state == self.goal_state_idx:
+                    continue
                 # Get current value of state
                 state_value = self.values[state]
 
@@ -120,21 +130,18 @@ class ValueIterationAgent:
 
                 # Update delta (how large was the update)
                 delta = max(delta, np.abs(state_value - self.values[state]))
-
-                print(f"Values: {self.values}")
-                print(f"Action Values: {action_values}")
-                TODO There's a bug where the values are increasing linearly...somehow getting >1 reward.
-                IPython.embed()
             
             # Break loop once max delta across all states is smaller than theta
             if delta < self.theta:
                 break
 
-        # output a deterministic policy
+        # Output a deterministic policy
         for s in range(self.num_states):
-            action_values = np.zeros(env.num_actions)
+            if s == self.goal_state_idx:
+                continue
+            action_values = np.zeros(self.num_actions)
             for a in range(self.num_actions):
-                for prob, next_state, reward, done in env.transitions(s, a):
+                for prob, next_state, reward, _ in env.transitions(s, a):
                     action_values[a] += prob * (reward + self.gamma * self.values[next_state])
             self.policy[s] = np.argmax(action_values)
 
