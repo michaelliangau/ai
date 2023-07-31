@@ -1,6 +1,12 @@
 # RL primitives
 
-Q-Learning, value iteration and policy iteration agent in Grid World environment built using NumPy.
+Agents in a Grid World environment built using NumPy.
+
+Types of agents implemented:
+- Q Learning
+- Value iteration
+- Policy iteration
+- Monte Carlo
 
 ## Resources
 
