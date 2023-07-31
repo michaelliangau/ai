@@ -1,4 +1,4 @@
-# Grid World
+# RL primitives
 
 Q-Learning, value iteration and policy iteration agent in Grid World environment built using NumPy.
 
