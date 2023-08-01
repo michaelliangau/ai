@@ -1,3 +1,8 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import random
+from collections import deque
 import numpy as np
 import IPython
 from collections import defaultdict
@@ -369,3 +374,105 @@ class MonteCarloAgent:
                 # Update the policy for this state to be the action with the highest action-value
                 best_action_for_this_state = np.argmax(self.Q[state])
                 self.policy[state] = best_action_for_this_state
+
+
+class QNetwork(nn.Module):
+    """QNetwork class, state action representation."""
+    def __init__(self, state_size, action_size, hidden_size=64):
+        """Init the QNetwork.
+        
+        Simple 2 layer fully connected network with ReLU activation, nothing fancy.
+
+        Args:
+            state_size (int): number of states
+            action_size (int): number of actions
+            hidden_size (int, optional): number of hidden units. Defaults to 64.
+        """
+        super(QNetwork, self).__init__()
+        self.fc1 = nn.Linear(state_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, action_size)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+class DQNAgent:
+    """Deep Q Network agent, uses QNetwork class"""
+    def __init__(self, state_size, action_size, hidden_size=64, gamma=0.99, lr=0.001, batch_size=64, memory_size=10000):
+        """Init the QNetwork.
+        
+        Target network is used to calculate the target Q value, and the Q network is
+        used to calculate the current Q value. The target Q value is calculated using
+        the Bellman equation.
+
+        Args:
+            state_size (int): number of states
+            action_size (int): number of actions
+            hidden_size (int, optional): number of hidden units. Defaults to 64.
+            gamma (float, optional): discount factor. Defaults to 0.99.
+            lr (float, optional): learning rate. Defaults to 0.001.
+            batch_size (int, optional): batch size. Defaults to 64.
+            memory_size (int, optional): size of replay buffer. Defaults to 10000.
+        """
+        self.state_size = state_size
+        self.action_size = action_size
+        self.gamma = gamma
+        self.lr = lr
+        self.batch_size = batch_size
+        self.memory = deque(maxlen=memory_size) # TODO why do we use deque
+
+        # Init the Q network and target network
+        self.q_network = QNetwork(state_size, action_size, hidden_size).float()
+        self.target_network = QNetwork(state_size, action_size, hidden_size).float()
+        
+        # Copy the weights from the Q network to the target network
+        self.target_network.load_state_dict(self.q_network.state_dict())
+
+        # Optimizer
+        self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.lr)
+
+    def store(self, state, action, reward, next_state, done):
+        """Store the experience in memory."""
+        self.memory.append((state, action, reward, next_state, done))
+    
+    # TODO stepping through, up to here
+    def select_action(self, state, epsilon):
+        if np.random.rand() <= epsilon:
+            return random.randrange(self.action_size)
+        else:
+            state = torch.FloatTensor(state).unsqueeze(0)
+            with torch.no_grad():
+                action_values = self.q_network(state)
+            return torch.argmax(action_values).item()
+
+    def train(self, epsilon):
+        if len(self.memory) < self.batch_size:
+            return
+
+        batch = random.sample(self.memory, self.batch_size)
+        states, actions, rewards, next_states, dones = zip(*batch)
+        states = torch.FloatTensor(states)
+        actions = torch.LongTensor(actions)
+        rewards = torch.FloatTensor(rewards)
+        next_states = torch.FloatTensor(next_states)
+        dones = torch.FloatTensor(dones)
+
+        current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1)).squeeze()
+        next_q_values = self.target_network(next_states).max(1)[0]
+        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+
+        loss = nn.functional.mse_loss(current_q_values, target_q_values.detach())
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Update the weights of the target network
+        self.target_network.load_state_dict(self.q_network.state_dict())
+
+    def save_model(self, path):
+        torch.save(self.q_network.state_dict(), path)
+
+    def load_model(self, path):
+        self.q_network.load_state_dict(torch.load(path))
