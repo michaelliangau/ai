@@ -1,18 +1,26 @@
+
+# Native imports
+# Import packages from parent directory
+import sys
+sys.path.append("..")
+
+# Third party imports
+import IPython
+from tqdm import tqdm
+
+# Our imports
 import environments
 import agents
 
 env = environments.GridWorld(grid_size=4, hole_count=4)
 agent = agents.DQNAgent(state_size=16, action_size=4)
 
-
-exit()
-# TODO below is unvetted
 num_episodes = 1000
 epsilon = 0.9
 epsilon_min = 0.05
 epsilon_decay = 0.995
 
-for episode in range(num_episodes):
+for _ in tqdm(range(num_episodes)):
     state = env.reset()
     done = False
     while not done:
@@ -22,7 +30,7 @@ for episode in range(num_episodes):
         agent.store(state, action, reward, next_state, done)
         state = next_state
 
-    agent.train(epsilon)
+    agent.train()
 
     # Decay epsilon
     if epsilon > epsilon_min:

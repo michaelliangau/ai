@@ -403,9 +403,7 @@ class DQNAgent:
     def __init__(self, state_size, action_size, hidden_size=64, gamma=0.99, lr=0.001, batch_size=64, memory_size=10000):
         """Init the QNetwork.
         
-        Target network is used to calculate the target Q value, and the Q network is
-        used to calculate the current Q value. The target Q value is calculated using
-        the Bellman equation.
+        Q network: Input a state, output the Q value for each action.
 
         Args:
             state_size (int): number of states
@@ -421,7 +419,10 @@ class DQNAgent:
         self.gamma = gamma
         self.lr = lr
         self.batch_size = batch_size
-        self.memory = deque(maxlen=memory_size) # TODO why do we use deque
+        # deque discards memories once it reaches the max length, ensuring we have
+        # the most recent memories
+        self.memory = deque(maxlen=memory_size)
+
 
         # Init the Q network and target network
         self.q_network = QNetwork(state_size, action_size, hidden_size).float()
@@ -437,20 +438,47 @@ class DQNAgent:
         """Store the experience in memory."""
         self.memory.append((state, action, reward, next_state, done))
     
-    # TODO stepping through, up to here
     def select_action(self, state, epsilon):
+        """Select an action using epsilon greedy policy.
+        
+        Epsilon chance to take random action.
+
+        Otherwise run the state through the Q network and take the action with the
+        highest value.
+
+        Args:
+            state (int): current state, one hot encoded
+            epsilon (float): exploration rate
+        
+        Returns:
+            action (int): action to take
+        """
         if np.random.rand() <= epsilon:
             return random.randrange(self.action_size)
         else:
-            state = torch.FloatTensor(state).unsqueeze(0)
+            # One-hot encode the state
+            state_one_hot = np.zeros(self.state_size)
+            state_one_hot[state] = 1
+
+            # Convert to tensor and add batch dim
+            state_tensor = torch.FloatTensor(state_one_hot).unsqueeze(0)
+            
+            # Get values from Q network
             with torch.no_grad():
-                action_values = self.q_network(state)
+                action_values = self.q_network(state_tensor)
             return torch.argmax(action_values).item()
 
-    def train(self, epsilon):
+    def train(self):
+        """Train the Q and target network using a batch of experiences from memory.
+        
+        Logic for memory accumulation is handled outside of this loop.
+        """
+        # Exit if we don't have enough memories
         if len(self.memory) < self.batch_size:
             return
 
+        # WIP walking through it, up to here.
+        IPython.embed()
         batch = random.sample(self.memory, self.batch_size)
         states, actions, rewards, next_states, dones = zip(*batch)
         states = torch.FloatTensor(states)

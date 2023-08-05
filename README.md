@@ -34,6 +34,7 @@ All project specific code exists in the `projects` folder. These projects are or
 `common` contains common utils that are used across projects.
 
 ```python
+# Import packages from parent directories
 import sys
 sys.path.append("../..")
 import common.utils as common_utils
