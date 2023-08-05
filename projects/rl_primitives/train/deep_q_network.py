@@ -13,7 +13,8 @@ import environments
 import agents
 
 env = environments.GridWorld(grid_size=4, hole_count=4)
-agent = agents.DQNAgent(state_size=16, action_size=4)
+print(f"env", env.grid)
+agent = agents.DQNAgent(state_size=16, action_size=4, batch_size=4)
 
 num_episodes = 1000
 epsilon = 0.9

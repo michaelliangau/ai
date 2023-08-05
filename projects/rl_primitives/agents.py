@@ -394,8 +394,8 @@ class QNetwork(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = self.relu(self.fc1(x)) # B, state_size
+        x = self.fc2(x) # B, action_size
         return x
 
 class DQNAgent:
@@ -477,8 +477,6 @@ class DQNAgent:
         if len(self.memory) < self.batch_size:
             return
 
-        # WIP walking through it, up to here.
-        IPython.embed()
         batch = random.sample(self.memory, self.batch_size)
         states, actions, rewards, next_states, dones = zip(*batch)
         states = torch.FloatTensor(states)
@@ -486,7 +484,8 @@ class DQNAgent:
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
         dones = torch.FloatTensor(dones)
-
+        # WIP stepping through
+        IPython.embed()
         current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1)).squeeze()
         next_q_values = self.target_network(next_states).max(1)[0]
         target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
