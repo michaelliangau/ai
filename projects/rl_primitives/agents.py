@@ -13,10 +13,11 @@ from tqdm import tqdm
 
 class QLearningAgent:
     """Simple agent that implements the Q-learning algorithm.
-    
+
     It basically maintains a Q table and then updates it according to TD error for each
     action. One action at a time.
     """
+
     def __init__(
         self, num_states=16, num_actions=4, alpha=0.9, gamma=0.95, epsilon=0.5
     ):
@@ -92,6 +93,7 @@ class ValueIterationAgent:
     return for each state and then updates the value for that state. It stops when
     the magnitude of the value updated drops below a certain theta value.
     """
+
     def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the ValueIterationAgent.
 
@@ -195,6 +197,7 @@ class PolicyIterationAgent:
     This generates a new policy that is guaranteed to be better than or as good as
     the old policy
     """
+
     def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the PolicyIterationAgent.
 
@@ -308,6 +311,7 @@ class MonteCarloAgent:
     for all the states that were experienced in the episode. It stores the discounted
     returns for each state and averages over them in updating.
     """
+
     def __init__(self, num_states, num_actions, gamma=0.95, epsilon=0.1):
         """Initialize the MonteCarloAgent.
 
@@ -395,6 +399,7 @@ class MonteCarloAgent:
 
 class QNetwork(nn.Module):
     """QNetwork class, state action representation."""
+
     def __init__(self, state_size, action_size):
         """Init the QNetwork.
 
@@ -429,7 +434,7 @@ class QNetwork(nn.Module):
 
 class DQNAgent:
     """Deep Q Network agent, uses QNetwork class
-    
+
     An agent generates a running memory buffer of experiences by traversing the
     environment and then it samples a batch of experiences from the memory buffer
     and uses them to train the Q network.
@@ -438,7 +443,17 @@ class DQNAgent:
     expected Q values. Then it pushes next state through a target network and uses Bellman
     equation to compute a target Q value. TD error style.
     """
-    def __init__(self, state_size, action_size, gamma=0.99, lr=0.001, batch_size=64, memory_size=10000, target_q_net_update_freq=10):
+
+    def __init__(
+        self,
+        state_size,
+        action_size,
+        gamma=0.99,
+        lr=0.001,
+        batch_size=64,
+        memory_size=10000,
+        target_q_net_update_freq=10,
+    ):
         """Init the QNetwork.
 
         Args:
@@ -470,17 +485,20 @@ class DQNAgent:
 
         # Optimizer
         self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.lr)
-        print("Number of parameters in Q Net:", sum(p.numel() for p in self.q_network.parameters() if p.requires_grad))
+        print(
+            "Number of parameters in Q Net:",
+            sum(p.numel() for p in self.q_network.parameters() if p.requires_grad),
+        )
 
         # Scheduler
 
     def store(self, state, action, reward, next_state, done):
         """Store the experience in memory."""
         self.memory.append((state, action, reward, next_state, done))
-    
+
     def select_action(self, state, epsilon):
         """Select an action using epsilon greedy policy.
-        
+
         Epsilon chance to take random action.
 
         Otherwise run the state through the Q network and take the action with the
@@ -489,7 +507,7 @@ class DQNAgent:
         Args:
             state (int): current state, one hot encoded
             epsilon (float): exploration rate
-        
+
         Returns:
             action (int): action to take
         """
@@ -502,7 +520,7 @@ class DQNAgent:
 
             # Convert to tensor and add batch dim
             state_tensor = torch.FloatTensor(state_one_hot).unsqueeze(0)
-            
+
             # Get values from Q network
             with torch.no_grad():
                 action_values = self.q_network(state_tensor)
@@ -510,12 +528,12 @@ class DQNAgent:
 
     def train(self, num_step):
         """Train the Q and target network using a batch of experiences from memory.
-        
+
         Logic for memory accumulation is handled outside of this loop.
 
         The q values for the current state (from q net) should propagate towards the
         q values for the next state (from target network) discounted by gamma and + the
-        immediate reward. Bellman equation.            
+        immediate reward. Bellman equation.
 
         Args:
             num_step (int): number of steps taken so far
@@ -531,7 +549,6 @@ class DQNAgent:
         rewards = torch.FloatTensor(rewards)
         next_states = torch.LongTensor(next_states)
         dones = torch.IntTensor(dones)
-        
 
         # Get Q values (expected return for each state-action pair) for the current state
         states_one_hot_encoded = F.one_hot(states, num_classes=self.state_size).float()
@@ -541,7 +558,9 @@ class DQNAgent:
         q_values = current_q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
 
         # Compute target Q values using Bellman equation
-        next_states_one_hot_encoded = F.one_hot(next_states, num_classes=self.state_size).float()
+        next_states_one_hot_encoded = F.one_hot(
+            next_states, num_classes=self.state_size
+        ).float()
         next_q_values = self.target_network(next_states_one_hot_encoded)
         next_best_q_value = torch.max(next_q_values, dim=1)[0]
         target_q_values = rewards + (1 - dones) * self.gamma * next_best_q_value
@@ -557,7 +576,7 @@ class DQNAgent:
         # Update the weights of the target network
         if num_step % self.target_q_net_update_freq == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())
-        
+
         return loss
 
     def save_model(self, path):
