@@ -1,3 +1,10 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+from torch.optim.lr_scheduler import StepLR
+import random
+from collections import deque
 import numpy as np
 import IPython
 from collections import defaultdict
@@ -5,7 +12,11 @@ from tqdm import tqdm
 
 
 class QLearningAgent:
-    """Simple agent that implements the Q-learning algorithm."""
+    """Simple agent that implements the Q-learning algorithm.
+
+    It basically maintains a Q table and then updates it according to TD error for each
+    action. One action at a time.
+    """
 
     def __init__(
         self, num_states=16, num_actions=4, alpha=0.9, gamma=0.95, epsilon=0.5
@@ -76,10 +87,15 @@ class QLearningAgent:
 
 
 class ValueIterationAgent:
+    """Value iteration is a model based RL method.
+
+    It basically loops through the states and actions and computes the maximum possible
+    return for each state and then updates the value for that state. It stops when
+    the magnitude of the value updated drops below a certain theta value.
+    """
+
     def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the ValueIterationAgent.
-
-        Value iteration is a model based RL method
 
         Args:
             num_states (int): Number of states in the environment.
@@ -170,10 +186,20 @@ class ValueIterationAgent:
 
 
 class PolicyIterationAgent:
+    """Policy iteration is a model based RL method.
+
+    It works in 2 stages:
+
+    Policy evaluation: Updates the value function based on a current policy until
+    the value function estimate stabilizes.
+
+    Policy improvement: Updates the policy based on the current value function.
+    This generates a new policy that is guaranteed to be better than or as good as
+    the old policy
+    """
+
     def __init__(self, num_states, goal_state_idx, num_actions, theta=1e-8, gamma=0.95):
         """Initialize the PolicyIterationAgent.
-
-        Policy iteration is a model based RL method
 
         Args:
             num_states (int): Number of states in the environment.
@@ -198,12 +224,6 @@ class PolicyIterationAgent:
         except it only updates the value function for the current policy (actions chosen
         by current policy).
 
-        Policy evaluation updates the value function based on the current policy until
-        the value function estimate stabilizes.
-        Policy improvement then updates the policy based on the current value function.
-        This generates a new policy that is guaranteed to be better than or as good as
-        the old policy.
-
         Args:
             env (GridWorld): The environment in which the agent interacts.
         """
@@ -214,7 +234,8 @@ class PolicyIterationAgent:
                     continue
                 v = self.values[state]
                 action = self.policy[state]
-                # Value of the state is the expected return from the current action under the current policy
+                # Value of the state is the expected return from the current action
+                # under the current policy
                 self.values[state] = sum(
                     [
                         prob * (reward + self.gamma * self.values[next_state])
@@ -284,10 +305,15 @@ class PolicyIterationAgent:
 
 
 class MonteCarloAgent:
+    """Monte Carlo methods are model free RL methods.
+
+    It basically runs episodes and then updates the Q table based on observed returns
+    for all the states that were experienced in the episode. It stores the discounted
+    returns for each state and averages over them in updating.
+    """
+
     def __init__(self, num_states, num_actions, gamma=0.95, epsilon=0.1):
         """Initialize the MonteCarloAgent.
-
-        Monte Carlo methods are model free RL methods
 
         Args:
             num_states (int): Number of states in the environment.
@@ -369,3 +395,194 @@ class MonteCarloAgent:
                 # Update the policy for this state to be the action with the highest action-value
                 best_action_for_this_state = np.argmax(self.Q[state])
                 self.policy[state] = best_action_for_this_state
+
+
+class QNetwork(nn.Module):
+    """QNetwork class, state action representation."""
+
+    def __init__(self, state_size, action_size):
+        """Init the QNetwork.
+
+        Q network: Input a state, output the Q value for each action.
+
+        Multi-layer fully connected network with ReLU activation and layer normalization.
+
+        Args:
+            state_size (int): number of states
+            action_size (int): number of actions
+        """
+        super(QNetwork, self).__init__()
+        self.fc1 = nn.Linear(state_size, 1024)
+        self.ln1 = nn.LayerNorm(1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.ln2 = nn.LayerNorm(512)
+        self.fc3 = nn.Linear(512, 256)
+        self.ln3 = nn.LayerNorm(256)
+        self.fc4 = nn.Linear(256, 128)
+        self.ln4 = nn.LayerNorm(128)
+        self.fc5 = nn.Linear(128, action_size)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.ln1(self.fc1(x)))
+        x = self.relu(self.ln2(self.fc2(x)))
+        x = self.relu(self.ln3(self.fc3(x)))
+        x = self.relu(self.ln4(self.fc4(x)))
+        x = self.fc5(x)
+        return x
+
+
+class DQNAgent:
+    """Deep Q Network agent, uses QNetwork class
+
+    An agent generates a running memory buffer of experiences by traversing the
+    environment and then it samples a batch of experiences from the memory buffer
+    and uses them to train the Q network.
+
+    It pushes each experience through the q networks to compute
+    expected Q values. Then it pushes next state through a target network and uses Bellman
+    equation to compute a target Q value. TD error style.
+    """
+
+    def __init__(
+        self,
+        state_size,
+        action_size,
+        gamma=0.99,
+        lr=0.001,
+        batch_size=64,
+        memory_size=10000,
+        target_q_net_update_freq=10,
+    ):
+        """Init the QNetwork.
+
+        Args:
+            state_size (int): number of states
+            action_size (int): number of actions
+            gamma (float, optional): discount factor. Defaults to 0.99.
+            lr (float, optional): learning rate. Defaults to 0.001.
+            batch_size (int, optional): batch size. Defaults to 64.
+            memory_size (int, optional): size of replay buffer. Defaults to 10000.
+            target_q_net_update_freq (int, optional): how often to update the target
+                network in steps. Defaults to 10.
+        """
+        self.state_size = state_size
+        self.action_size = action_size
+        self.gamma = gamma
+        self.lr = lr
+        self.batch_size = batch_size
+        # deque discards memories once it reaches the max length, ensuring we have
+        # the most recent memories
+        self.memory = deque(maxlen=memory_size)
+        self.target_q_net_update_freq = target_q_net_update_freq
+
+        # Init the Q network and target network
+        self.q_network = QNetwork(state_size, action_size)
+        self.target_network = QNetwork(state_size, action_size)
+
+        # Copy the weights from the Q network to the target network
+        self.target_network.load_state_dict(self.q_network.state_dict())
+
+        # Optimizer
+        self.optimizer = optim.Adam(self.q_network.parameters(), lr=self.lr)
+        print(
+            "Number of parameters in Q Net:",
+            sum(p.numel() for p in self.q_network.parameters() if p.requires_grad),
+        )
+
+        # Scheduler
+
+    def store(self, state, action, reward, next_state, done):
+        """Store the experience in memory."""
+        self.memory.append((state, action, reward, next_state, done))
+
+    def select_action(self, state, epsilon):
+        """Select an action using epsilon greedy policy.
+
+        Epsilon chance to take random action.
+
+        Otherwise run the state through the Q network and take the action with the
+        highest value.
+
+        Args:
+            state (int): current state, one hot encoded
+            epsilon (float): exploration rate
+
+        Returns:
+            action (int): action to take
+        """
+        if np.random.rand() <= epsilon:
+            return random.randrange(self.action_size)
+        else:
+            # One-hot encode the state
+            state_one_hot = np.zeros(self.state_size)
+            state_one_hot[state] = 1
+
+            # Convert to tensor and add batch dim
+            state_tensor = torch.FloatTensor(state_one_hot).unsqueeze(0)
+
+            # Get values from Q network
+            with torch.no_grad():
+                action_values = self.q_network(state_tensor)
+            return torch.argmax(action_values).item()
+
+    def train(self, num_step):
+        """Train the Q and target network using a batch of experiences from memory.
+
+        Logic for memory accumulation is handled outside of this loop.
+
+        The q values for the current state (from q net) should propagate towards the
+        q values for the next state (from target network) discounted by gamma and + the
+        immediate reward. Bellman equation.
+
+        Args:
+            num_step (int): number of steps taken so far
+        """
+        # Exit if we don't have enough memories
+        if len(self.memory) < self.batch_size:
+            return
+
+        batch = random.sample(self.memory, self.batch_size)
+        states, actions, rewards, next_states, dones = zip(*batch)
+        states = torch.LongTensor(states)
+        actions = torch.LongTensor(actions)
+        rewards = torch.FloatTensor(rewards)
+        next_states = torch.LongTensor(next_states)
+        dones = torch.IntTensor(dones)
+
+        # Get Q values (expected return for each state-action pair) for the current state
+        states_one_hot_encoded = F.one_hot(states, num_classes=self.state_size).float()
+        current_q_values = self.q_network(states_one_hot_encoded)
+
+        # Get Q values for the actions taken.
+        q_values = current_q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
+
+        # Compute target Q values using Bellman equation
+        next_states_one_hot_encoded = F.one_hot(
+            next_states, num_classes=self.state_size
+        ).float()
+        next_q_values = self.target_network(next_states_one_hot_encoded)
+        next_best_q_value = torch.max(next_q_values, dim=1)[0]
+        target_q_values = rewards + (1 - dones) * self.gamma * next_best_q_value
+
+        # Compute loss
+        loss = nn.functional.mse_loss(q_values, target_q_values.detach())
+
+        # Back propagate
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Update the weights of the target network
+        if num_step % self.target_q_net_update_freq == 0:
+            self.target_network.load_state_dict(self.q_network.state_dict())
+
+        return loss
+
+    def save_model(self, path):
+        """Save the model weights to a file."""
+        torch.save(self.q_network.state_dict(), path)
+
+    def load_model(self, path):
+        """Load the model weights from a file."""
+        self.q_network.load_state_dict(torch.load(path))
