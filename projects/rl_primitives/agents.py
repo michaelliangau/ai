@@ -586,3 +586,80 @@ class DQNAgent:
     def load_model(self, path):
         """Load the model weights from a file."""
         self.q_network.load_state_dict(torch.load(path))
+
+class PolicyNetwork(nn.Module):
+    def __init__(self, state_size, action_size):
+        super(PolicyNetwork, self).__init__()
+        self.fc1 = nn.Linear(state_size, 128)
+        self.fc2 = nn.Linear(128, action_size)
+    
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        return torch.softmax(self.fc2(x), dim=-1)
+
+class ValueNetwork(nn.Module):
+    def __init__(self, state_size):
+        super(ValueNetwork, self).__init__()
+        self.fc1 = nn.Linear(state_size, 128)
+        self.fc2 = nn.Linear(128, 1)
+    
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        return self.fc2(x)
+
+class PPOAgent:
+    """Proximal Policy Optimization Agent.
+    
+    PPO is an improvement upon policy gradient methods that incorporates ideas from trust
+    region optimization (don't change too much at each step) and clipped surrogate
+    objectives (proxy objective fns that are clipped to prevent the agent from straying
+    too far with each step).
+    """
+    def __init__(self, state_size, action_size):
+        """Initialize the agent.
+        
+        Args:
+            state_size (int): Number of possible states.
+            action_size (int): Number of possible actions.
+        """
+        self.policy_network = PolicyNetwork(state_size, action_size)
+        self.value_network = ValueNetwork(state_size)
+        self.optimizer_policy = optim.Adam(self.policy_network.parameters())
+        self.optimizer_value = optim.Adam(self.value_network.parameters())
+        self.eps = 0.2
+    
+    def select_action(self, state: torch.Tensor):
+        """Select an action using the policy network.
+        
+        Args:
+            state (torch.Tensor): One hot encoded tensor representing the current state.
+
+        Returns:
+            int: The action to take.
+        """
+        with torch.no_grad():
+            probs = self.policy_network(state)
+            # Create a torch distrubition that we can sample according to the probabilities
+            m = torch.distributions.Categorical(probs)
+            return m.sample().item()
+
+    def step(self, state, action, reward, next_state, done, old_prob):
+        # Compute advantage
+        advantage = reward + (1 - done) * self.value_network(torch.FloatTensor(next_state)) - self.value_network(torch.FloatTensor(state))
+        
+        # Compute policy loss
+        prob = self.policy_network(torch.FloatTensor(state))[action]
+        ratio = prob / old_prob
+        policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantage)
+        
+        # Compute value loss
+        value_loss = (reward + (1 - done) * self.value_network(torch.FloatTensor(next_state)) - self.value_network(torch.FloatTensor(state)))**2
+        
+        # Update policy and value networks
+        self.optimizer_policy.zero_grad()
+        policy_loss.backward()
+        self.optimizer_policy.step()
+        
+        self.optimizer_value.zero_grad()
+        value_loss.backward()
+        self.optimizer_value.step()
