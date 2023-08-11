@@ -12,6 +12,9 @@ import torch.nn.functional as F
 import environments
 import agents
 
+# Hyperparameters
+epsilon = 0.2
+gamma = 0.99
 
 # Initialization
 env = environments.GridWorld(grid_size=4, hole_count=4)
@@ -19,6 +22,8 @@ print(f"env", env.grid)
 agent = agents.PPOAgent(
     state_size=env.state_space.size,
     action_size=env.action_space.size,
+    epsilon=epsilon,
+    gamma=gamma,
 )
 
 
@@ -27,14 +32,23 @@ for episode in range(num_episodes):
     state = env.reset()
     done = False
     while not done:
+        # Encode state
         state_tensor = torch.tensor(state)
         state_one_hot_encoded = F.one_hot(state_tensor, num_classes=env.state_space.size).float()
-        action = agent.select_action(state_one_hot_encoded)
+        
+        # Select action
+        action, old_prob = agent.select_action(state_one_hot_encoded)
+
+        # Get environment feedback
         next_state, reward = env.step(action)
-        # TODO WIP up to here
-        old_prob = agent.policy_network(torch.FloatTensor(state)).detach()[action]
-        agent.step(state, action, reward, next_state, 0 if reward == 1 else 1, old_prob)
+        next_state_one_hot_encoded = F.one_hot(torch.tensor(next_state), num_classes=env.state_space.size).float()
+
+        # Update agent
+        step_done = 0 if reward == 1 else 1
+        agent.step(state_one_hot_encoded, action, reward, next_state_one_hot_encoded, step_done, old_prob)
         state = next_state
+
+        # Terminate episode
         if reward == 1 or reward == -1:
             done = True
 

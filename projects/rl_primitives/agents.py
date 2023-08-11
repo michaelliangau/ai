@@ -615,22 +615,27 @@ class PPOAgent:
     objectives (proxy objective fns that are clipped to prevent the agent from straying
     too far with each step).
     """
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size: int, action_size: int, epsilon: float = 0.2, gamma: float = 0.99):
         """Initialize the agent.
         
         Args:
             state_size (int): Number of possible states.
             action_size (int): Number of possible actions.
+            epsilon (float, optional): Clipping parameter. Defaults to 0.2.
+            gamma (float, optional): Discount factor. Defaults to 0.99.
         """
         self.policy_network = PolicyNetwork(state_size, action_size)
         self.value_network = ValueNetwork(state_size)
         self.optimizer_policy = optim.Adam(self.policy_network.parameters())
         self.optimizer_value = optim.Adam(self.value_network.parameters())
-        self.eps = 0.2
+        self.epsilon = epsilon
+        self.gamma = gamma
     
     def select_action(self, state: torch.Tensor):
         """Select an action using the policy network.
         
+        Runs one hot encoded state through the policy network and gets a probability
+        distribution over actions.
         Args:
             state (torch.Tensor): One hot encoded tensor representing the current state.
 
@@ -639,21 +644,35 @@ class PPOAgent:
         """
         with torch.no_grad():
             probs = self.policy_network(state)
-            # Create a torch distrubition that we can sample according to the probabilities
+            # Create a torch distribution that we can sample according to the probabilities
             m = torch.distributions.Categorical(probs)
-            return m.sample().item()
+            selected_action = m.sample().item()
+            return selected_action, probs[selected_action] 
 
-    def step(self, state, action, reward, next_state, done, old_prob):
-        # Compute advantage
-        advantage = reward + (1 - done) * self.value_network(torch.FloatTensor(next_state)) - self.value_network(torch.FloatTensor(state))
+    def step(self, state: torch.Tensor, action: int, reward: int, next_state: torch.Tensor, done: int, old_prob: torch.Tensor):
+        """Update the policy and value networks using the PPO loss function.
         
-        # Compute policy loss
-        prob = self.policy_network(torch.FloatTensor(state))[action]
+        Args:
+            state (torch.Tensor): One hot encoded tensor representing the current state.
+            action (int): The action taken.
+            reward (int): The reward received.
+            next_state (torch.Tensor): One hot encoded tensor representing the next state.
+            done (int): Whether the episode is done.
+            old_prob (torch.Tensor): The probability of taking the action in the current state.
+        """
+        IPython.embed()
+        # Compute advantage which is Q value - value function estimate.
+        # Advantage measures how much better an action is compared to the value function estimate.
+        advantage = reward + (1 - done) * self.gamma * self.value_network(next_state) - self.value_network(state)
+        
+        # Compute policy loss 
+        # WIP UP TO HERE
+        prob = self.policy_network(state)[action]
         ratio = prob / old_prob
-        policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantage)
+        policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.epsilon, 1 + self.eps) * advantage)
         
         # Compute value loss
-        value_loss = (reward + (1 - done) * self.value_network(torch.FloatTensor(next_state)) - self.value_network(torch.FloatTensor(state)))**2
+        value_loss = (reward + (1 - done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
         
         # Update policy and value networks
         self.optimizer_policy.zero_grad()
