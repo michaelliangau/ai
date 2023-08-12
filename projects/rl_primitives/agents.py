@@ -630,7 +630,23 @@ class PPOAgent:
         self.optimizer_value = optim.Adam(self.value_network.parameters())
         self.epsilon = epsilon
         self.gamma = gamma
+        self.memory = []
     
+    def store_memory(self, state: torch.Tensor, action: int, reward: int, next_state: torch.Tensor, episode_done: int, old_prob: torch.Tensor):
+        """Store an experience in memory.
+        
+        Args:
+            state (torch.Tensor): One hot encoded tensor representing the current state.
+            action (int): The action taken.
+            reward (int): The reward received.
+            next_state (torch.Tensor): One hot encoded tensor representing the next
+                state.
+            episode_done (int): Whether or not the episode is done.
+            old_prob (torch.Tensor): The probability of taking the action in the current
+                state.
+        """
+        self.memory.append((state, action, reward, next_state, episode_done, old_prob))
+
     def select_action(self, state: torch.Tensor):
         """Select an action using the policy network.
         
@@ -649,7 +665,7 @@ class PPOAgent:
             selected_action = m.sample().item()
             return selected_action, probs[selected_action] 
 
-    def step(self, state: torch.Tensor, action: int, reward: int, next_state: torch.Tensor, done: int, old_prob: torch.Tensor):
+    def step(self, state: torch.Tensor, action: int, reward: int, next_state: torch.Tensor, episode_done: int, old_prob: torch.Tensor):
         """Update the policy and value networks using the PPO loss function.
         
         Args:
@@ -657,22 +673,25 @@ class PPOAgent:
             action (int): The action taken.
             reward (int): The reward received.
             next_state (torch.Tensor): One hot encoded tensor representing the next state.
-            done (int): Whether the episode is done.
+            episode_done (int): Whether the episode is done.
             old_prob (torch.Tensor): The probability of taking the action in the current state.
         """
-        IPython.embed()
         # Compute advantage which is Q value - value function estimate.
         # Advantage measures how much better an action is compared to the value function estimate.
-        advantage = reward + (1 - done) * self.gamma * self.value_network(next_state) - self.value_network(state)
+        advantage = reward + (1 - episode_done) * self.gamma * self.value_network(next_state) - self.value_network(state)
         
-        # Compute policy loss 
-        # WIP UP TO HERE
+        # Compute policy loss
+        # Compares the probability of taking the action under the current policy
+        # compared to the probability of taking the action under the old policy used to
+        # generate the data. Usually we're operating on a batch of old data so this
+        # ratio is not 1. But in the simplest example of PPO, we train only on the most
+        # recent data so the ratio is 1.
         prob = self.policy_network(state)[action]
         ratio = prob / old_prob
         policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.epsilon, 1 + self.eps) * advantage)
         
         # Compute value loss
-        value_loss = (reward + (1 - done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
+        value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
         
         # Update policy and value networks
         self.optimizer_policy.zero_grad()
