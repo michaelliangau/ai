@@ -72,10 +72,7 @@ for episode in range(num_episodes):
     for epoch in range(num_epochs):
         for mini_batch in mini_batches:
             states, actions, rewards, next_states, dones, old_probs = zip(*mini_batch)
-            # WIP up to here
-            IPython.embed()
-
-            agent.step(state_one_hot_encoded, action, reward, next_state_one_hot_encoded, episode_done, old_prob)
+            agent.step(states, actions, rewards, next_states, dones, old_probs)
 
 
 

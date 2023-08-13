@@ -665,34 +665,39 @@ class PPOAgent:
             selected_action = m.sample().item()
             return selected_action, probs[selected_action] 
 
-    def step(self, state: torch.Tensor, action: int, reward: int, next_state: torch.Tensor, episode_done: int, old_prob: torch.Tensor):
+
+    def step(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, old_probs: torch.Tensor):
         """Update the policy and value networks using the PPO loss function.
-        
+
         Args:
-            state (torch.Tensor): One hot encoded tensor representing the current state.
-            action (int): The action taken.
-            reward (int): The reward received.
-            next_state (torch.Tensor): One hot encoded tensor representing the next state.
-            episode_done (int): Whether the episode is done.
-            old_prob (torch.Tensor): The probability of taking the action in the current state.
+            states (torch.Tensor): Batch of one-hot encoded tensors representing the current states.
+            actions (torch.Tensor): Batch of actions taken.
+            rewards (torch.Tensor): Batch of rewards received.
+            next_states (torch.Tensor): Batch of one-hot encoded tensors representing the next states.
+            dones (torch.Tensor): Batch of binary flags indicating whether the episode is done.
+            old_probs (torch.Tensor): Batch of probabilities of taking the action in the current states.
         """
-        # Compute advantage which is Q value - value function estimate.
-        # Advantage measures how much better an action is compared to the value function estimate.
-        advantage = reward + (1 - episode_done) * self.gamma * self.value_network(next_state) - self.value_network(state)
-        
-        # Compute policy loss
-        # Compares the probability of taking the action under the current policy
-        # compared to the probability of taking the action under the old policy used to
-        # generate the data. Usually we're operating on a batch of old data so this
-        # ratio is not 1. But in the simplest example of PPO, we train only on the most
-        # recent data so the ratio is 1.
-        prob = self.policy_network(state)[action]
-        ratio = prob / old_prob
-        policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.epsilon, 1 + self.eps) * advantage)
-        
-        # Compute value loss
-        value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
-        
+        for state, action, reward, next_state, episode_done, old_prob in zip(states, actions, rewards, next_states, dones, old_probs):
+            IPython.embed()
+            # TODO WIP trying to understand the advantage function, it's calculated based on current value network states, why?
+            
+            # Compute advantage which is Q value - value function estimate.
+            # Advantage measures how much better an action is compared to the value function estimate.
+            advantage = reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(state)
+
+            # Compute policy loss
+            # Compares the probability of taking the action under the current policy
+            # compared to the probability of taking the action under the old policy used to
+            # generate the data. Usually we're operating on a batch of old data so this
+            # ratio is not 1. But in the simplest example of PPO, we train only on the most
+            # recent data so the ratio is 1.
+            prob = self.policy_network(state)[action]
+            ratio = prob / old_prob
+            policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage)
+            
+            # Compute value loss
+            value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
+            
         # Update policy and value networks
         self.optimizer_policy.zero_grad()
         policy_loss.backward()
