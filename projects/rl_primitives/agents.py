@@ -685,12 +685,11 @@ class PPOAgent:
             old_probs (torch.Tensor): Batch of probabilities of taking the action in the current states.
         """
         for state, action, reward, next_state, episode_done, old_prob in zip(states, actions, rewards, next_states, dones, old_probs):
-            # Compute advantage with TD error. How much better is this action compared to
-            # the "average" action in the state. In practice, I think PPO uses something
-            # called GAE. Keeping it simple for now. Advantage measures how much better
-            # an action is compared to the value function estimate. Implicitly,
+            # Compute advantage with TD error. Advantage is how much better is this action
+            # compared to the "average" action in the state. Implicitly,
             # self.value_network(state) estimates the expected return across all actions,
-            # similar to "averaging".
+            # similar to "averaging". In practice, I think PPO uses something
+            # called GAE. Keeping it simple for now. 
             td_target = reward + (1 - episode_done) * self.value_network(next_state)
             advantage = td_target - self.value_network(state)
 
