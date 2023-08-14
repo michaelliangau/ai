@@ -665,6 +665,13 @@ class PPOAgent:
             selected_action = m.sample().item()
             return selected_action, probs[selected_action] 
 
+    def calculate_gae(rewards, values, next_values, dones, gamma=0.99, lam=0.95):
+        advantages = torch.zeros_like(rewards)
+        last_advantage = 0
+        for t in reversed(range(len(rewards))):
+            delta = rewards[t] + gamma * next_values[t] * (1 - dones[t]) - values[t]
+            advantages[t] = last_advantage = delta + gamma * lam * (1 - dones[t]) * last_advantage
+        return advantages
 
     def step(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, old_probs: torch.Tensor):
         """Update the policy and value networks using the PPO loss function.
@@ -678,23 +685,39 @@ class PPOAgent:
             old_probs (torch.Tensor): Batch of probabilities of taking the action in the current states.
         """
         for state, action, reward, next_state, episode_done, old_prob in zip(states, actions, rewards, next_states, dones, old_probs):
-            IPython.embed()
-            # TODO WIP trying to understand the advantage function, it's calculated based on current value network states, why?
-            
-            # Compute advantage which is Q value - value function estimate.
-            # Advantage measures how much better an action is compared to the value function estimate.
-            advantage = reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(state)
+            # Compute advantage with TD error. How much better is this action compared to
+            # the "average" action in the state. In practice, I think PPO uses something
+            # called GAE. Keeping it simple for now. Advantage measures how much better
+            # an action is compared to the value function estimate. Implicitly,
+            # self.value_network(state) estimates the expected return across all actions,
+            # similar to "averaging".
+            td_target = reward + (1 - episode_done) * self.value_network(next_state)
+            advantage = td_target - self.value_network(state)
 
             # Compute policy loss
-            # Compares the probability of taking the action under the current policy
-            # compared to the probability of taking the action under the old policy used to
-            # generate the data. Usually we're operating on a batch of old data so this
-            # ratio is not 1. But in the simplest example of PPO, we train only on the most
-            # recent data so the ratio is 1.
+            # Existence of advantage in the loss fn: Encourage the policy to increase
+            # the probability of actions with positive advantage (good actions) = more
+            # loss values, and decrease the probability of actions with negative
+            # advantage (bad actions) = more positive loss values.
+            # The use of ratio/clamped ratio scales the loss value and acts to create a
+            # "trust region". Trust regions stabilize training and work by trust regions
+            # magnifying changes that align with past policy changes and reducing changes
+            # that do not align.
+            # Consider the following scenarios to understand trust regions:
+            # 1. If advantage is positive (good action) then the policy loss will be negative.
+            # If the ratio is high (network has made this action more likely) then we want to 
+            # scale the loss value to be more negative to keep the network moving in 
+            # this direction. In a "trusted" direction.
+            # 2. If advantage is positive (good action) and the ratio is low
+            # (network has made this action less likely), then we want to scale the loss
+            # value "up" (less negative) to slow down the network's movement in this
+            # direction. In an "untrusted" direction.
             prob = self.policy_network(state)[action]
             ratio = prob / old_prob
-            policy_loss = -torch.min(ratio * advantage, torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantage)
+            clamped_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
+            policy_loss = - advantage * torch.min(ratio, clamped_ratio)
             
+            # WIP up to here
             # Compute value loss
             value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
             
