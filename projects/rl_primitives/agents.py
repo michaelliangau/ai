@@ -676,6 +676,13 @@ class PPOAgent:
     def step(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, old_probs: torch.Tensor):
         """Update the policy and value networks using the PPO loss function.
 
+        Question: Why can we use TD error as the basis for updating the policy loss? It's
+            fundamentally based on value network calculations?
+
+        Answer: We want to converge the policy network towards choosing better actions
+            that derive greater "value"/advantage.
+
+
         Args:
             states (torch.Tensor): Batch of one-hot encoded tensors representing the current states.
             actions (torch.Tensor): Batch of actions taken.
@@ -714,11 +721,13 @@ class PPOAgent:
             prob = self.policy_network(state)[action]
             ratio = prob / old_prob
             clamped_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
+
             policy_loss = - advantage * torch.min(ratio, clamped_ratio)
             
-            # WIP up to here
+            IPython.embed()
+            # TODO WIP why is the value loss squared at the end?
             # Compute value loss
-            value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(torch.FloatTensor(state)))**2
+            value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(state))**2
             
         # Update policy and value networks
         self.optimizer_policy.zero_grad()
