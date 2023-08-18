@@ -1,12 +1,15 @@
 # RL primitives
 
-Agents in a Grid World environment built using NumPy.
+Agents in a Grid World environment built using NumPy to learn and play around with the
+algorithms.
 
 Types of agents implemented:
 - Q Learning (Temporal Difference)
 - Value iteration
 - Policy iteration
 - Monte Carlo
+- Deep Q learning (DQN)
+- Proximal Policy Optimization (PPO)
 
 ## Resources
 
