@@ -24,3 +24,4 @@ All project specific code exists in the `projects` folder.
 - `buffet_bot` - Algorithmic investing using LLMs
 - `silicron` - PyPI package to extend chat apps with context using vector stores.
 - `rl_primitives` - RL primitives, implement agents in grid world environment.
+- `llm_rl_finetuning` - Finetune an LLM using RL.
