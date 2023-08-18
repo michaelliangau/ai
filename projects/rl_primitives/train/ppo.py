@@ -1,7 +1,9 @@
 # Native imports
 import random
+
 # Import packages from parent directory
 import sys
+
 sys.path.append("..")
 
 # Third party imports
@@ -33,7 +35,7 @@ agent = agents.PPOAgent(
 num_episodes = 1000
 for episode in range(num_episodes):
     # Print episode results
-    print(f"Episode begin: {episode}")    
+    print(f"Episode begin: {episode}")
     state = env.reset()
     done = False
 
@@ -41,18 +43,29 @@ for episode in range(num_episodes):
     while not done:
         # Encode state
         state_tensor = torch.tensor(state)
-        state_one_hot_encoded = F.one_hot(state_tensor, num_classes=env.state_space.size).float()
-        
+        state_one_hot_encoded = F.one_hot(
+            state_tensor, num_classes=env.state_space.size
+        ).float()
+
         # Select action
         action, old_prob = agent.select_action(state_one_hot_encoded)
 
         # Get environment feedback
         next_state, reward = env.step(action)
-        next_state_one_hot_encoded = F.one_hot(torch.tensor(next_state), num_classes=env.state_space.size).float()
+        next_state_one_hot_encoded = F.one_hot(
+            torch.tensor(next_state), num_classes=env.state_space.size
+        ).float()
 
         # Store experience in memory
         episode_done = 1 if reward == 1 or reward == -1 else 0
-        agent.store_memory(state_one_hot_encoded, action, reward, next_state_one_hot_encoded, episode_done, old_prob)
+        agent.store_memory(
+            state_one_hot_encoded,
+            action,
+            reward,
+            next_state_one_hot_encoded,
+            episode_done,
+            old_prob,
+        )
 
         # Update state
         state = next_state
@@ -66,7 +79,9 @@ for episode in range(num_episodes):
     random.shuffle(experiences)
 
     # Divide experiences into mini-batches of a specified size
-    mini_batches = [experiences[i:i + batch_size] for i in range(0, len(experiences), batch_size)]
+    mini_batches = [
+        experiences[i : i + batch_size] for i in range(0, len(experiences), batch_size)
+    ]
 
     # Take training steps with the agent.
     # In PPO, we train on a single episode's data for multiple epochs. Training is
@@ -83,4 +98,3 @@ for episode in range(num_episodes):
 
     # Clear memory of agent - we only train on a single episode's data
     agent.clear_memory()
-    

@@ -587,37 +587,47 @@ class DQNAgent:
         """Load the model weights from a file."""
         self.q_network.load_state_dict(torch.load(path))
 
+
 class PolicyNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(PolicyNetwork, self).__init__()
         self.fc1 = nn.Linear(state_size, 128)
         self.fc2 = nn.Linear(128, action_size)
-    
+
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         return torch.softmax(self.fc2(x), dim=-1)
+
 
 class ValueNetwork(nn.Module):
     def __init__(self, state_size):
         super(ValueNetwork, self).__init__()
         self.fc1 = nn.Linear(state_size, 128)
         self.fc2 = nn.Linear(128, 1)
-    
+
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         return self.fc2(x)
 
+
 class PPOAgent:
     """Proximal Policy Optimization Agent.
-    
+
     PPO is an improvement upon policy gradient methods that incorporates ideas from trust
     region optimization (don't change too much at each step) and clipped surrogate
     objectives (proxy objective fns that are clipped to prevent the agent from straying
     too far with each step).
     """
-    def __init__(self, state_size: int, action_size: int, epsilon: float = 0.2, gamma: float = 0.99):
+
+    def __init__(
+        self,
+        state_size: int,
+        action_size: int,
+        epsilon: float = 0.2,
+        gamma: float = 0.99,
+    ):
         """Initialize the agent.
-        
+
         Args:
             state_size (int): Number of possible states.
             action_size (int): Number of possible actions.
@@ -631,10 +641,18 @@ class PPOAgent:
         self.epsilon = epsilon
         self.gamma = gamma
         self.memory = []
-    
-    def store_memory(self, state: torch.Tensor, action: int, reward: int, next_state: torch.Tensor, episode_done: int, old_prob: torch.Tensor):
+
+    def store_memory(
+        self,
+        state: torch.Tensor,
+        action: int,
+        reward: int,
+        next_state: torch.Tensor,
+        episode_done: int,
+        old_prob: torch.Tensor,
+    ):
         """Store an experience in memory.
-        
+
         Args:
             state (torch.Tensor): One hot encoded tensor representing the current state.
             action (int): The action taken.
@@ -646,14 +664,14 @@ class PPOAgent:
                 state.
         """
         self.memory.append((state, action, reward, next_state, episode_done, old_prob))
-    
+
     def clear_memory(self):
         """Clear the memory of stored experiences."""
         self.memory = []
-    
+
     def select_action(self, state: torch.Tensor):
         """Select an action using the policy network.
-        
+
         Runs one hot encoded state through the policy network and gets a probability
         distribution over actions.
         Args:
@@ -667,17 +685,27 @@ class PPOAgent:
             # Create a torch distribution that we can sample according to the probabilities
             m = torch.distributions.Categorical(probs)
             selected_action = m.sample().item()
-            return selected_action, probs[selected_action] 
+            return selected_action, probs[selected_action]
 
     def calculate_gae(rewards, values, next_values, dones, gamma=0.99, lam=0.95):
         advantages = torch.zeros_like(rewards)
         last_advantage = 0
         for t in reversed(range(len(rewards))):
             delta = rewards[t] + gamma * next_values[t] * (1 - dones[t]) - values[t]
-            advantages[t] = last_advantage = delta + gamma * lam * (1 - dones[t]) * last_advantage
+            advantages[t] = last_advantage = (
+                delta + gamma * lam * (1 - dones[t]) * last_advantage
+            )
         return advantages
 
-    def step(self, states: torch.Tensor, actions: torch.Tensor, rewards: torch.Tensor, next_states: torch.Tensor, dones: torch.Tensor, old_probs: torch.Tensor):
+    def step(
+        self,
+        states: torch.Tensor,
+        actions: torch.Tensor,
+        rewards: torch.Tensor,
+        next_states: torch.Tensor,
+        dones: torch.Tensor,
+        old_probs: torch.Tensor,
+    ):
         """Update the policy and value networks using the PPO loss function.
 
         Question: Why can we use TD error as the basis for updating the policy loss? It's
@@ -697,12 +725,14 @@ class PPOAgent:
         """
         policy_loss = torch.zeros(1)
         value_loss = torch.zeros(1)
-        for state, action, reward, next_state, episode_done, old_prob in zip(states, actions, rewards, next_states, dones, old_probs):
+        for state, action, reward, next_state, episode_done, old_prob in zip(
+            states, actions, rewards, next_states, dones, old_probs
+        ):
             # Compute advantage with TD error. Advantage is how much better is this action
             # compared to the "average" action in the state. Implicitly,
             # self.value_network(state) estimates the expected return across all actions,
             # similar to "averaging". In practice, I think PPO uses something
-            # called GAE. Keeping it simple for now. 
+            # called GAE. Keeping it simple for now.
             td_target = reward + (1 - episode_done) * self.value_network(next_state)
             advantage = td_target - self.value_network(state)
 
@@ -717,8 +747,8 @@ class PPOAgent:
             # that do not align.
             # Consider the following scenarios to understand trust regions:
             # 1. If advantage is positive (good action) then the policy loss will be negative.
-            # If the ratio is high (network has made this action more likely) then we want to 
-            # scale the loss value to be more negative to keep the network moving in 
+            # If the ratio is high (network has made this action more likely) then we want to
+            # scale the loss value to be more negative to keep the network moving in
             # this direction. In a "trusted" direction.
             # 2. If advantage is positive (good action) and the ratio is low
             # (network has made this action less likely), then we want to scale the loss
@@ -728,11 +758,15 @@ class PPOAgent:
             ratio = prob / old_prob
             clamped_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
 
-            policy_loss += - advantage * torch.min(ratio, clamped_ratio)
-            
+            policy_loss += -advantage * torch.min(ratio, clamped_ratio)
+
             # Compute value loss (MSE)
-            value_loss += (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(state))**2
-            
+            value_loss += (
+                reward
+                + (1 - episode_done) * self.value_network(next_state)
+                - self.value_network(state)
+            ) ** 2
+
         # Average the losses
         policy_loss /= len(states)
         value_loss /= len(states)
@@ -741,7 +775,7 @@ class PPOAgent:
         self.optimizer_policy.zero_grad()
         policy_loss.backward()
         self.optimizer_policy.step()
-        
+
         self.optimizer_value.zero_grad()
         value_loss.backward()
         self.optimizer_value.step()
