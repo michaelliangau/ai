@@ -16,7 +16,7 @@ import agents
 # Hyperparameters
 epsilon = 0.2
 gamma = 0.99
-batch_size = 2
+batch_size = 8
 num_epochs = 10
 
 # Initialization
@@ -32,6 +32,8 @@ agent = agents.PPOAgent(
 
 num_episodes = 1000
 for episode in range(num_episodes):
+    # Print episode results
+    print(f"Episode begin: {episode}")    
     state = env.reset()
     done = False
 
@@ -69,13 +71,16 @@ for episode in range(num_episodes):
     # Take training steps with the agent.
     # In PPO, we train on a single episode's data for multiple epochs. Training is
     # stabilised by clipping surrogate objective.
+    total_loss = 0
     for epoch in range(num_epochs):
+        epoch_loss = 0
         for mini_batch in mini_batches:
             states, actions, rewards, next_states, dones, old_probs = zip(*mini_batch)
-            agent.step(states, actions, rewards, next_states, dones, old_probs)
+            loss = agent.step(states, actions, rewards, next_states, dones, old_probs)
+            epoch_loss += loss.item()
+        total_loss += epoch_loss
+    print(f"Mean loss over all epochs: {total_loss / (num_epochs * len(mini_batches))}")
 
-
-
-
-
-
+    # Clear memory of agent - we only train on a single episode's data
+    agent.clear_memory()
+    

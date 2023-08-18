@@ -646,7 +646,11 @@ class PPOAgent:
                 state.
         """
         self.memory.append((state, action, reward, next_state, episode_done, old_prob))
-
+    
+    def clear_memory(self):
+        """Clear the memory of stored experiences."""
+        self.memory = []
+    
     def select_action(self, state: torch.Tensor):
         """Select an action using the policy network.
         
@@ -691,6 +695,8 @@ class PPOAgent:
             dones (torch.Tensor): Batch of binary flags indicating whether the episode is done.
             old_probs (torch.Tensor): Batch of probabilities of taking the action in the current states.
         """
+        policy_loss = torch.zeros(1)
+        value_loss = torch.zeros(1)
         for state, action, reward, next_state, episode_done, old_prob in zip(states, actions, rewards, next_states, dones, old_probs):
             # Compute advantage with TD error. Advantage is how much better is this action
             # compared to the "average" action in the state. Implicitly,
@@ -722,13 +728,15 @@ class PPOAgent:
             ratio = prob / old_prob
             clamped_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
 
-            policy_loss = - advantage * torch.min(ratio, clamped_ratio)
+            policy_loss += - advantage * torch.min(ratio, clamped_ratio)
             
-            IPython.embed()
-            # TODO WIP why is the value loss squared at the end?
-            # Compute value loss
-            value_loss = (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(state))**2
+            # Compute value loss (MSE)
+            value_loss += (reward + (1 - episode_done) * self.value_network(next_state) - self.value_network(state))**2
             
+        # Average the losses
+        policy_loss /= len(states)
+        value_loss /= len(states)
+
         # Update policy and value networks
         self.optimizer_policy.zero_grad()
         policy_loss.backward()
@@ -737,3 +745,5 @@ class PPOAgent:
         self.optimizer_value.zero_grad()
         value_loss.backward()
         self.optimizer_value.step()
+
+        return policy_loss + value_loss
