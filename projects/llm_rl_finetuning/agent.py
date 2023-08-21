@@ -40,15 +40,16 @@ class PPOAgent:
             environment: The environment in which the agent operates.
             epochs (int, optional): The number of epochs for training. Defaults to 1000.
         """
-        max_length = environment.max_length
+        max_seq_length = environment.max_seq_length
 
         for epoch in range(epochs):
+            IPython.embed()
             state = environment.reset()
             log_probs = []
             rewards = []
 
             # Generate sequence
-            for t in range(max_length):
+            for t in range(max_seq_length):
                 action, log_prob = self.select_action(state)
                 reward, done = environment.step(action)
                 log_probs.append(log_prob)

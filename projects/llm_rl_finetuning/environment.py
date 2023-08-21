@@ -1,12 +1,12 @@
 class Environment:
     """This class represents the environment in which the RL agent operates."""
-    def __init__(self, max_length):
+    def __init__(self, max_seq_length):
         """Initialize the environment.
 
         Args:
-            max_length (int): The maximum length of the sequence that can be generated.
+            max_seq_length (int): The maximum length of the sequence that can be generated.
         """
-        self.max_length = max_length
+        self.max_seq_length = max_seq_length
         self.current_index = 0
         self.generated_sequence = []
 
@@ -23,7 +23,7 @@ class Environment:
         self.generated_sequence.append(action)
         self.current_index += 1
 
-        if self.current_index >= self.max_length:
+        if self.current_index >= self.max_seq_length:
             reward = self._get_reward()
             return reward, True
         
