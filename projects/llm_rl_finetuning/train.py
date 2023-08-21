@@ -1,5 +1,10 @@
-# Load in LLAMA 2
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import agent
+import environment
+import IPython
 
-# Finetune with RL
-
-WIP figuring out how to do this
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+model = GPT2LMHeadModel.from_pretrained('gpt2')
+env = environment.Environment(max_length=100)
+ag = agent.PPOAgent(model, tokenizer)
+ag.train(env)
