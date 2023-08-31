@@ -1,5 +1,9 @@
 class Environment:
-    """This class represents the environment in which the RL agent operates."""
+    """This class represents the environment in which the RL agent operates.
+    
+    TODO This is currently an MVP that returns an arbitrary reward based on arbitrary actions.
+    We need to make it meaningfully alter the LLM to get closer to a target sequence.
+    """
     def __init__(self, max_seq_length):
         """Initialize the environment.
 
@@ -7,7 +11,6 @@ class Environment:
             max_seq_length (int): The maximum length of the sequence that can be generated.
         """
         self.max_seq_length = max_seq_length
-        self.current_index = 0
         self.generated_sequence = []
 
     def step(self, action):
@@ -21,9 +24,8 @@ class Environment:
                 sequence has reached its maximum length.
         """
         self.generated_sequence.append(action)
-        self.current_index += 1
 
-        if self.current_index >= self.max_seq_length:
+        if len(self.generated_sequence) >= self.max_seq_length:
             reward = self._get_reward()
             return reward, True
         
@@ -35,17 +37,12 @@ class Environment:
         Returns:
             int: The reward for the current sequence.
         """
-        # TODO - Call API with generated sequence
+        # TODO: Calculate a more meaningful reward.
         reward = 0
         return reward
 
     def reset(self):
-        """Reset the environment to its initial state.
-
-        Returns:
-            int: The initial state of the environment.
-        """
-        self.current_index = 0
+        """Reset the environment to its initial state."""
         self.generated_sequence = []
-        return 0
+
 

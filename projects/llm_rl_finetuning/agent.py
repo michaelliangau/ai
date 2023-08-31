@@ -2,11 +2,12 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Categorical
 import IPython
+
 class PPOAgent:
     """Class representing a Proximal Policy Optimization (PPO) agent."""
     def __init__(self, model, tokenizer, learning_rate=1e-4):
         """Initialize the PPOAgent.
-
+        
         Args:
             model: The model to be used by the agent.
             tokenizer: The tokenizer to be used by the agent.
@@ -16,54 +17,24 @@ class PPOAgent:
         self.tokenizer = tokenizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
-    def select_action(self, state):
-        """Select an action based on the current state.
+    def select_action(self, sequence):
+        """Select an action based on the current sequence.
 
         Args:
-            state: The current state.
+            sequence: The current sequence.
 
         Returns:
             tuple: The selected action and the log probability of the action.
         """
-        input_ids = torch.tensor([state], dtype=torch.long)
+        input_ids = self.tokenizer.encode(sequence)
+        input_tensor = torch.tensor([input_ids], dtype=torch.long) # Shape [batch, seq_length]
+        
         with torch.no_grad():
-            logits = self.model(input_ids=input_ids).logits
-            probs = F.softmax(logits[:, -1, :], dim=-1)
-            m = Categorical(probs)
-            action = m.sample()
+            logits = self.model(input_ids=input_tensor).logits
+            probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
+            m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
+            action = m.sample() # Sample from the categorical distribution
             return action.item(), m.log_prob(action)
-
-    def train(self, environment, epochs=1000):
-        """Train the agent.
-
-        Args:
-            environment: The environment in which the agent operates.
-            epochs (int, optional): The number of epochs for training. Defaults to 1000.
-        """
-        max_seq_length = environment.max_seq_length
-
-        for epoch in range(epochs):
-            IPython.embed()
-            state = environment.reset()
-            log_probs = []
-            rewards = []
-
-            # Generate sequence
-            for t in range(max_seq_length):
-                action, log_prob = self.select_action(state)
-                reward, done = environment.step(action)
-                log_probs.append(log_prob)
-                rewards.append(reward)
-                state.append(action)
-                if done:
-                    break
-
-            # Compute loss and update policy
-            loss = self.compute_loss(log_probs, rewards)
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            print(f'Epoch {epoch}: Loss {loss.item()}')
 
     def compute_loss(self, log_probs, rewards):
         """Compute the loss based on the log probabilities and rewards.
