@@ -1,4 +1,5 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import torch
 import agent
 import environment
 import IPython
@@ -15,18 +16,18 @@ ppo_agent = agent.PPOAgent(model, tokenizer)
 
 # Train loop
 for epoch in range(epochs):
-    state = env.reset()
+    generated_sequence = env.reset()
     log_probs = []
     rewards = []
 
     # Generate sequence
-    for t in range(env.max_seq_length):
+    for _ in range(env.max_seq_length):
         IPython.embed()
-        action, log_prob = ppo_agent.select_action(state)
+        action, log_prob = ppo_agent.select_action(generated_sequence)
         reward, done = env.step(action)
         log_probs.append(log_prob)
         rewards.append(reward)
-        state.append(action)
+        generated_sequence = torch.cat((generated_sequence, torch.tensor([action])))
         if done:
             break
 

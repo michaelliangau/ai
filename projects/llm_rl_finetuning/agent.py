@@ -1,11 +1,13 @@
 import torch
+from typing import List, Tuple
 import torch.nn.functional as F
 from torch.distributions import Categorical
 import IPython
+from transformers import PreTrainedModel, PreTrainedTokenizer
 
 class PPOAgent:
     """Class representing a Proximal Policy Optimization (PPO) agent."""
-    def __init__(self, model, tokenizer, learning_rate=1e-4):
+    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, learning_rate: float = 1e-4):
         """Initialize the PPOAgent.
         
         Args:
@@ -17,18 +19,26 @@ class PPOAgent:
         self.tokenizer = tokenizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
-    def select_action(self, sequence):
+    def tokenize_sequence(self, sequence: str) -> torch.Tensor[int]:
+        """Tokenize a sequence using the agent's tokenizer.
+
+        Args:
+            sequence (str): The sequence to be tokenized.
+
+        Returns:
+            Tensor[int]: The tokenized sequence as a tensor of integers.
+        """
+        return self.tokenizer.encode(sequence)
+
+    def select_action(self, input_tensor: torch.Tensor) -> Tuple[int, torch.Tensor]:
         """Select an action based on the current sequence.
 
         Args:
-            sequence: The current sequence.
+            input_tensor: The current sequence as a tokenized tensor.
 
         Returns:
             tuple: The selected action and the log probability of the action.
         """
-        input_ids = self.tokenizer.encode(sequence)
-        input_tensor = torch.tensor([input_ids], dtype=torch.long) # Shape [batch, seq_length]
-        
         with torch.no_grad():
             logits = self.model(input_ids=input_tensor).logits
             probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
@@ -36,7 +46,7 @@ class PPOAgent:
             action = m.sample() # Sample from the categorical distribution
             return action.item(), m.log_prob(action)
 
-    def compute_loss(self, log_probs, rewards):
+    def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
 
         Args:
@@ -59,4 +69,5 @@ class PPOAgent:
             policy_loss.append(-log_prob * R)
 
         return torch.stack(policy_loss).sum()
+
 
