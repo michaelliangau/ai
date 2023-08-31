@@ -19,7 +19,7 @@ class PPOAgent:
         self.tokenizer = tokenizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
-    def tokenize_sequence(self, sequence: str) -> torch.Tensor[int]:
+    def tokenize_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
 
         Args:
