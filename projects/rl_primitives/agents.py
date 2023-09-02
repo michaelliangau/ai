@@ -714,7 +714,6 @@ class PPOAgent:
         Answer: We want to converge the policy network towards choosing better actions
             that derive greater "value"/advantage.
 
-
         Args:
             states (torch.Tensor): Batch of one-hot encoded tensors representing the current states.
             actions (torch.Tensor): Batch of actions taken.
@@ -729,35 +728,41 @@ class PPOAgent:
             states, actions, rewards, next_states, dones, old_probs
         ):
             # Compute advantage with TD error. Advantage is how much better is this action
-            # compared to the "average" action in the state. Implicitly,
-            # self.value_network(state) estimates the expected return across all actions,
+            # compared to the "average" action in the state (default output of the value network.
+            # Implicitly, self.value_network(state) estimates the expected return across all actions,
             # similar to "averaging". In practice, I think PPO uses something
             # called GAE. Keeping it simple for now.
             td_target = reward + (1 - episode_done) * self.value_network(next_state)
             advantage = td_target - self.value_network(state)
 
             # Compute policy loss
-            # Existence of advantage in the loss fn: Encourage the policy to increase
-            # the probability of actions with positive advantage (good actions) = more
-            # loss values, and decrease the probability of actions with negative
-            # advantage (bad actions) = more positive loss values.
-            # The use of ratio/clamped ratio scales the loss value and acts to create a
+            # Scale advantage in a trusted direction, according to what direction the network
+            # has been moving.
+            # The use of clamped ratio scales the loss value and acts to create a
             # "trust region". Trust regions stabilize training and work by trust regions
             # magnifying changes that align with past policy changes and reducing changes
             # that do not align.
-            # Consider the following scenarios to understand trust regions:
-            # 1. If advantage is positive (good action) then the policy loss will be negative.
-            # If the ratio is high (network has made this action more likely) then we want to
+            # Consider the following scenarios to understand trust regions and why we scale `policy_loss`:
+            # 1. If advantage is positive (good action) then the `policy_loss` will be negative.
+            # If the ratio is high (network has made this action more likely over time) then we want to
             # scale the loss value to be more negative to keep the network moving in
             # this direction. In a "trusted" direction.
             # 2. If advantage is positive (good action) and the ratio is low
             # (network has made this action less likely), then we want to scale the loss
             # value "up" (less negative) to slow down the network's movement in this
             # direction. In an "untrusted" direction.
+
+            # Get the current probability of the action taken
             prob = self.policy_network(state)[action]
+
+            # Calculate ratio between current probability and the probabily at the time of action
             ratio = prob / old_prob
+            
+            # Clamp ratio to be within 1 +/- episolon
             clamped_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
 
+            # Scale advantage by the ratio. This is done to keep networks moving in a trusted direction
+            # (whatever was done in the past).
             policy_loss += -advantage * torch.min(ratio, clamped_ratio)
 
             # Compute value loss (MSE)
