@@ -25,6 +25,7 @@ class Environment:
             tuple: A tuple containing the reward and a boolean indicating whether the
                 sequence has reached its maximum length.
         """
+        # TODO: Can we remove the self.generated_sequence stuff?
         self.generated_sequence = torch.cat((self.generated_sequence, torch.tensor([action])))
 
         if len(self.generated_sequence) >= self.max_seq_length:

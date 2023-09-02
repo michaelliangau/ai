@@ -13,7 +13,7 @@ max_seq_length = 100
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 model = GPT2LMHeadModel.from_pretrained('gpt2')
 env = environment.Environment(max_seq_length=max_seq_length)
-ppo_agent = agent.PPOAgent(model, tokenizer)
+ppo_agent = agent.SimpleAgent(model, tokenizer)
 
 # Dataset
 huggingface_dataset = datasets.load_dataset('squad')
@@ -33,8 +33,9 @@ for epoch in range(epochs):
         # Generate sequence
         for _ in range(env.max_seq_length):
             action, log_prob = ppo_agent.select_action(generated_sequence)
+            print(tokenizer.decode(action))
             IPython.embed()
-            # TODO working through this to give the model a reward and then update the model based on the reward.
+            # TODO: Working on the reward and loss function.
             reward, done = env.step(action)
             log_probs.append(log_prob)
             rewards.append(reward)

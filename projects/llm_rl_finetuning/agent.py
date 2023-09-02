@@ -5,10 +5,10 @@ from torch.distributions import Categorical
 import IPython
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
-class PPOAgent:
-    """Class representing a Proximal Policy Optimization (PPO) agent."""
+class SimpleAgent:
+    """Class representing a simple RL agent."""
     def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, learning_rate: float = 1e-4):
-        """Initialize the PPOAgent.
+        """Initialize the SimpleAgent.
         
         Args:
             model: The model to be used by the agent.
@@ -48,6 +48,12 @@ class PPOAgent:
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
+
+        TODO Update this loss, I think the way to go about this is to build a mixed CE loss
+        (normal LM loss) and then layer on top an adversarial loss that is based on the
+        outputs of https://huggingface.co/roberta-base-openai-detector (GPT-2 detector).
+        This way we can maintain LM performance while also making it harder for the detector
+        to detect it.
 
         Args:
             log_probs: The log probabilities of the actions taken.
