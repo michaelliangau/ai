@@ -66,13 +66,19 @@ class SimpleAgent:
         """
 
         # Calculate policy loss
-        # TODO I'm a bit confused how policy loss works... It seems to imply that we optimize for high probability, low reward actions?? Do I have something wrong here?
         policy_loss = []
         for log_prob, reward in zip(log_probs, rewards):
             # Policy loss calculations try to maximise expected return (prob * reward),
-            # and we assume reward is a non-controllable factor in this. So we want to
-            # push the network towards high probability actions (small negative log_prob
-            # values) that generate high rewards.
+            # and we assume reward is a non-controllable factor in this. We can think of
+            # it as if loss is categorical to the specific action in question. Each action
+            # has its own unique loss value. So we want the network to have higher loss for
+            # low probability/high reward action, to make bigger update. Conversely, low
+            # reward/high probability actions should have low loss, to relatively make smaller
+            # weight update.
+            # This line of thinking is different to how we think of supervised training.
+            # The main difference being that it's easier to think of each action having
+            # it's own loss fn as opposed to the entire network optimizing for a single
+            # north star loss value.
             policy_loss.append(-log_prob * reward)
         policy_loss = torch.cat(policy_loss).sum()
 
