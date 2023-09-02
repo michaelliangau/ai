@@ -49,11 +49,13 @@ class SimpleAgent:
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
 
-        TODO Update this loss, I think the way to go about this is to build a mixed CE loss
+        I think the way to go about this is to build a mixed CE loss
         (normal LM loss) and then layer on top an adversarial loss that is based on the
         outputs of https://huggingface.co/roberta-base-openai-detector (GPT-2 detector).
         This way we can maintain LM performance while also making it harder for the detector
         to detect it.
+
+        As an MVP lets just do the classifier adversarial loss from rewards.
 
         Args:
             log_probs: The log probabilities of the actions taken.
@@ -62,18 +64,18 @@ class SimpleAgent:
         Returns:
             torch.Tensor: The computed loss.
         """
-        R = 0
-        returns = []
-        for r in rewards[::-1]:
-            R = r + 0.99 * R  # Discount factor
-            returns.insert(0, R)
 
-        returns = torch.tensor(returns)
-        returns = (returns - returns.mean()) / (returns.std() + 1e-5)
+        # Calculate policy loss
+        # TODO I'm a bit confused how policy loss works... It seems to imply that we optimize for high probability, low reward actions?? Do I have something wrong here?
         policy_loss = []
-        for log_prob, R in zip(log_probs, returns):
-            policy_loss.append(-log_prob * R)
+        for log_prob, reward in zip(log_probs, rewards):
+            # Policy loss calculations try to maximise expected return (prob * reward),
+            # and we assume reward is a non-controllable factor in this. So we want to
+            # push the network towards high probability actions (small negative log_prob
+            # values) that generate high rewards.
+            policy_loss.append(-log_prob * reward)
+        policy_loss = torch.cat(policy_loss).sum()
 
-        return torch.stack(policy_loss).sum()
+        return policy_loss
 
 

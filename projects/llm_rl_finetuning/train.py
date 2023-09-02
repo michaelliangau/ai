@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import datasets
 import torch
@@ -7,7 +8,7 @@ import IPython
 
 # Hyperparameters
 epochs = 10
-max_seq_length = 500
+max_seq_length = 100
 
 # Initialize environment and agent
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
@@ -29,21 +30,22 @@ for epoch in range(epochs):
         env.reset()
         full_sequence = tokenizer.encode(question, return_tensors='pt')
         log_probs = []
-        rewards = []
 
         # Generate sequence
-        for _ in range(env.max_seq_length):
+        for _ in tqdm(range(env.max_seq_length)):
             action, log_prob = ppo_agent.select_action(full_sequence)
             reward = env.step(action)
             
             # TODO do we need this?
             log_probs.append(log_prob)
-            rewards.append(reward)
 
             # Add action to full sequence
             full_sequence = torch.cat((full_sequence, torch.tensor([[action]])), dim=-1)
-            print(tokenizer.decode(full_sequence[0]))
-
+        print(tokenizer.decode(full_sequence[0]))
+        
+        # Backfill rewards
+        rewards = [reward] * env.max_seq_length
+        
         # Compute loss and update policy
         loss = ppo_agent.compute_loss(log_probs, rewards)
         ppo_agent.optimizer.zero_grad()
