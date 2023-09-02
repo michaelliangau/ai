@@ -43,7 +43,7 @@ class SimpleAgent:
             logits = self.model(input_ids=input_tensor).logits
             probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
             m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
-            action = m.sample() # Sample from the categorical distribution
+            action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
             return action.item(), m.log_prob(action)
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
