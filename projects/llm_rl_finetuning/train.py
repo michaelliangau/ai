@@ -45,9 +45,12 @@ for epoch in range(epochs):
 
         # Generate sequence
         for _ in range(env.max_seq_length):
+            # Produce a token
             action, log_prob = ppo_agent.select_action(full_sequence)
-            reward = env.step(action)
             log_probs.append(log_prob)
+            
+            # Get reward from environment
+            reward = env.step(action)
 
             # Add action to full sequence
             full_sequence = torch.cat((full_sequence, torch.tensor([[action]]).to(torch_device)), dim=-1)
@@ -60,6 +63,8 @@ for epoch in range(epochs):
         ppo_agent.optimizer.zero_grad()
         loss.backward()
         ppo_agent.optimizer.step()
+
+        # Log loss
         common_utils.log_wandb({"epoch": epoch, "loss": loss})
         print(f'Loss {loss.item()}')
     print(f'Epoch {epoch}: Loss {loss.item()}')
