@@ -39,12 +39,11 @@ class SimpleAgent:
         Returns:
             tuple: The selected action and the log probability of the action.
         """
-        with torch.no_grad():
-            logits = self.model(input_ids=input_tensor).logits
-            probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
-            m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
-            action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
-            return action.item(), m.log_prob(action)
+        logits = self.model(input_ids=input_tensor).logits
+        probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
+        m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
+        action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
+        return action.item(), m.log_prob(action)
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
@@ -66,7 +65,7 @@ class SimpleAgent:
         """
 
         # Calculate policy loss
-        policy_loss = []
+        policy_losses = []
         for log_prob, reward in zip(log_probs, rewards):
             # Policy loss calculations try to maximise expected return (prob * reward),
             # and we assume reward is a non-controllable factor in this. We can think of
@@ -79,8 +78,8 @@ class SimpleAgent:
             # The main difference being that it's easier to think of each action having
             # it's own loss fn as opposed to the entire network optimizing for a single
             # north star loss value.
-            policy_loss.append(-log_prob * reward)
-        policy_loss = torch.cat(policy_loss).sum()
+            policy_losses.append(-log_prob * reward)
+        policy_loss = torch.cat(policy_losses).sum()
 
         return policy_loss
 

@@ -1,26 +1,23 @@
 import torch
 from typing import Tuple
-from transformers import pipeline
+import transformers
 import IPython
-from transformers import GPT2Tokenizer
 
 class Environment:
-    """This class represents the environment in which the RL agent operates.
-    
-    TODO This is currently an MVP that returns an arbitrary reward based on arbitrary actions.
-    We need to make it meaningfully alter the LLM to get closer to a target sequence.
-    """
-    def __init__(self, tokenizer: GPT2Tokenizer, max_seq_length: int):
+    """This class represents the environment in which the RL agent operates."""
+    def __init__(self, tokenizer: transformers.GPT2Tokenizer, max_seq_length: int, device: str = 'cuda'):
         """Initialize the environment.
 
         Args:
             tokenizer: The tokenizer to be used by the environment.
             max_seq_length (int): The maximum length of the sequence that can be generated.
+            device (str, optional): The device to be used for computations. Defaults to 'cuda'.
         """
         self.tokenizer = tokenizer
         self.max_seq_length = max_seq_length
-        self.generated_sequence = torch.tensor([])
-        self.ai_classifier = pipeline("text-classification", model="roberta-base-openai-detector")
+        self.device = torch.device(device)
+        self.generated_sequence = torch.tensor([]).to(self.device)
+        self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector")
 
     def step(self, action: int) -> float:
         """Perform a step in the environment with the given action.

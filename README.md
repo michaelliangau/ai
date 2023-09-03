@@ -40,10 +40,10 @@ sys.path.append("../..")
 import common.utils as common_utils
 ```
 
-## Comet Logging
+## Training run logging
 
 ```python
-common_utils.start_comet_ml_logging("michaelliang-dev")
+common_utils.start_wandb_logging(project_name="ai", config_dict={})
 ```
 
 ## Formatting code

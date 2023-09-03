@@ -8,9 +8,9 @@ from comet_ml import Experiment
 import torch
 import IPython
 import datasets
+import wandb
 
 hf_dataset_row = datasets.arrow_dataset.Dataset
-
 
 def start_comet_ml_logging(project_name: str) -> Experiment:
     """Starts comet logging.
@@ -26,10 +26,48 @@ def start_comet_ml_logging(project_name: str) -> Experiment:
         experiment = Experiment(comet_api_key, project_name=project_name)
     return experiment
 
+def start_wandb_logging(project_name: str, config_dict: Dict[str, Any] = {}):
+    """Starts Weights & Biases logging.
 
-def get_device():
-    """Returns the device to be used for training."""
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    Args:
+        project_name (str): The Weights & Biases project name.
+        config_dict (dict): The configuration dictionary.
+    """
+    wandb.init(
+        project=project_name,
+        config=config_dict
+    )
+
+def end_wandb_logging():
+    """Ends Weights & Biases run."""
+    wandb.finish()
+
+def log_wandb(params: Dict[str, Any]):
+    """Logs parameters to Weights & Biases.
+
+    Args:
+        params (dict): The parameters to log.
+    """
+    wandb.log(params)
+
+
+def get_device(device: str = "cuda"):
+    """Returns the device to be used for training.
+
+    Args:
+        device (str): The device to be used for training. Default is "cuda".
+    """
+    if device == "cuda":
+        chosen_device = torch.device("cuda" if torch.cuda.is_available() else torch.device("cpu"))
+    elif device == "mps":
+        chosen_device = torch.device("mps") if torch.has_mps else torch.device("cpu")
+    elif device == "cpu":
+        chosen_device = torch.device("cpu")
+    else:
+        raise ValueError("Invalid device. Choose either 'cuda', 'mps', or 'cpu'.")
+    
+    print(f"Chosen device for training: {chosen_device}")
+    return chosen_device
 
 
 def create_folder(folder_name: str):

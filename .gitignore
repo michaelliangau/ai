@@ -309,5 +309,5 @@ frontend/next-env.d.ts
 
 # Custom
 projects/asr_finetune_w2v2/outputs/*
-
 *.DS_store
+*wandb*
