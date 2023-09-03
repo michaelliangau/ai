@@ -67,7 +67,33 @@ for epoch in range(epochs):
         # Log loss
         common_utils.log_wandb({"epoch": epoch, "loss": loss})
         print(f'Loss {loss.item()}')
-    print(f'Epoch {epoch}: Loss {loss.item()}')
 
-        # TODO: Eval every 100 steps
+        # Evaluation step every 100 steps
+        if step % 1 == 0:
+            print("Evaluation Step:")
+            # Use a subset of the squad test set as the benchmark dataset
+            benchmark_dataset = huggingface_dataset['validation'][:10]
+            rewards = []
+            for example in benchmark_dataset:
+                benchmark_text = example['question']
+                # Feed the text into the AI classifier
+                classifier_output = env.ai_classifier(benchmark_text)
+                # Print the output
+                print(f"Classifier Output: {classifier_output}")
+                # Calculate reward from classifier output
+                if classifier_output[0]['label'] == 'Fake':
+                    reward = 1 - classifier_output[0]['score']
+                elif classifier_output[0]['label'] == 'Real':
+                    reward = classifier_output[0]['score']
+                rewards.append(reward)
+            # Calculate mean reward
+            mean_reward = sum(rewards) / len(rewards)
+            # Log mean reward to wandb
+            common_utils.log_wandb({"mean_reward": mean_reward})
+                
+
+
+        
+
+    print(f'Epoch {epoch}: Loss {loss.item()}')
 common_utils.end_wandb_logging()
