@@ -5,6 +5,9 @@ import torch
 import agent
 import environment
 import IPython
+import random
+# Set a seed for the random number generator to ensure reproducibility
+random.seed(0)
 
 import sys
 sys.path.append("../..")
@@ -15,6 +18,7 @@ epochs = 10
 max_seq_length = 100
 learning_rate = 1e-4
 device = "cpu"
+eval_steps = 100
 
 # Start wandb logging
 common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
@@ -69,17 +73,16 @@ for epoch in range(epochs):
         print(f'Loss {loss.item()}')
 
         # Evaluation step every 100 steps
-        if step % 1 == 0:
-            print("Evaluation Step:")
+        if step % eval_steps == 0:
+            print("Evaluation Step")
             # Use a subset of the squad test set as the benchmark dataset
-            benchmark_dataset = huggingface_dataset['validation'][:10]
+            indices = random.sample(range(1, 10001), 10)
+            # Use a subset of the squad test set as the benchmark dataset
+            benchmark_dataset = [huggingface_dataset['validation'][i] for i in indices]
             rewards = []
-            for example in benchmark_dataset:
-                benchmark_text = example['question']
+            for data in benchmark_dataset:
                 # Feed the text into the AI classifier
-                classifier_output = env.ai_classifier(benchmark_text)
-                # Print the output
-                print(f"Classifier Output: {classifier_output}")
+                classifier_output = env.ai_classifier(data['question'])
                 # Calculate reward from classifier output
                 if classifier_output[0]['label'] == 'Fake':
                     reward = 1 - classifier_output[0]['score']
@@ -88,12 +91,9 @@ for epoch in range(epochs):
                 rewards.append(reward)
             # Calculate mean reward
             mean_reward = sum(rewards) / len(rewards)
+            print(f"Mean reward: {mean_reward}")
             # Log mean reward to wandb
             common_utils.log_wandb({"mean_reward": mean_reward})
-                
-
-
-        
 
     print(f'Epoch {epoch}: Loss {loss.item()}')
 common_utils.end_wandb_logging()
