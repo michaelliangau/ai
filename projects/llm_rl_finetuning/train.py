@@ -20,6 +20,9 @@ learning_rate = 1e-4
 device = "cpu"
 eval_steps = 100
 
+# Create outputs folder
+common_utils.create_folder("outputs")
+
 # Start wandb logging
 common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
@@ -94,6 +97,9 @@ for epoch in range(epochs):
             print(f"Mean reward: {mean_reward}")
             # Log mean reward to wandb
             common_utils.log_wandb({"mean_reward": mean_reward})
+
+            # Save model checkpoint
+            torch.save(model.state_dict(), f'outputs/checkpoint_{step}.pt')
 
     print(f'Epoch {epoch}: Loss {loss.item()}')
 common_utils.end_wandb_logging()

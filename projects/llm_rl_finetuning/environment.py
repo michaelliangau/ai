@@ -17,7 +17,7 @@ class Environment:
         self.max_seq_length = max_seq_length
         self.device = torch.device(device)
         self.generated_sequence = torch.tensor([]).to(self.device)
-        self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector")
+        self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=self.device)
 
     def step(self, action: int) -> float:
         """Perform a step in the environment with the given action.
