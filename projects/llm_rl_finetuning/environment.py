@@ -39,16 +39,6 @@ class Environment:
             reward = ai_classifier_output[0]['score']
             return reward
 
-    def _get_reward(self) -> int:
-        """Calculate the reward for the current sequence.
-
-        Returns:
-            int: The reward for the current sequence.
-        """
-        # TODO: Calculate a more meaningful reward.
-        reward = 0
-        return reward
-
     def reset(self) -> torch.Tensor:
         """Reset the environment to its initial state."""
         self.generated_sequence = torch.tensor([])

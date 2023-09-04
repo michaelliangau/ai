@@ -92,9 +92,11 @@ for epoch in range(epochs):
                 elif classifier_output[0]['label'] == 'Real':
                     reward = classifier_output[0]['score']
                 rewards.append(reward)
+            
             # Calculate mean reward
             mean_reward = sum(rewards) / len(rewards)
             print(f"Mean reward: {mean_reward}")
+            
             # Log mean reward to wandb
             common_utils.log_wandb({"mean_reward": mean_reward})
 
