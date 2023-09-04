@@ -79,7 +79,9 @@ class SimpleAgent:
         This way we can maintain LM performance while also making it harder for the detector
         to detect it.
 
-        As an MVP lets just do the classifier adversarial loss from rewards.
+        As an MVP lets just do the classifier adversarial loss from rewards. It is
+        just the summed total of the terminal reward multiplied by the log_prob of each
+        action.
 
         Args:
             log_probs: The log probabilities of the actions taken.

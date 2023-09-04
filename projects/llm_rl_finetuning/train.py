@@ -42,6 +42,7 @@ questions = []
 for example in huggingface_dataset['train']:
     question = f"{example['question']}\n"
     questions.append(question)
+random.shuffle(questions)
 
 # Train loop
 for epoch in range(epochs):
@@ -73,7 +74,6 @@ for epoch in range(epochs):
 
         # Log loss
         common_utils.log_wandb({"epoch": epoch, "loss": loss})
-        print(f'Loss {loss.item()}')
 
         # Evaluation step every 100 steps
         if step % eval_steps == 0:
