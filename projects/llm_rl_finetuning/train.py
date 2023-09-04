@@ -105,7 +105,7 @@ for epoch in range(epochs):
             common_utils.log_wandb({"mean_reward": mean_reward})
 
             # Save model checkpoint
-            torch.save(model.state_dict(), f'outputs/checkpoint_{step}.pt')
+            torch.save(model.state_dict(), f'outputs/checkpoint_{epoch}_{step}.pt')
 
     print(f'Epoch {epoch}: Loss {loss.item()}')
 common_utils.end_wandb_logging()
