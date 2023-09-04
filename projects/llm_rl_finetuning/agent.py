@@ -57,20 +57,18 @@ class SimpleAgent:
         """
         # Initialize the sequence with the last token of the input tensor
         sequence = input_tensor
-        output_sequence = torch.tensor([[]])
+        output_sequence = torch.tensor([[]]).to(input_tensor.device)
 
         # Generate the sequence
         for _ in range(iterations):
             action, _ = self.select_action(sequence)
-            sequence = torch.cat((sequence, torch.tensor([[action]])), dim=-1)
-            output_sequence = torch.cat((output_sequence, torch.tensor([[action]])), dim=-1)
+            sequence = torch.cat((sequence, torch.tensor([[action]]).to(input_tensor.device)), dim=-1)
+            output_sequence = torch.cat((output_sequence, torch.tensor([[action]]).to(input_tensor.device)), dim=-1)
 
         # Decode the sequence
         output_sequence = self.tokenizer.decode(output_sequence[0].tolist())
 
         return output_sequence
-
-    
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
