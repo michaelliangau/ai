@@ -31,7 +31,7 @@ torch_device = common_utils.get_device(device)
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 model = GPT2LMHeadModel.from_pretrained('gpt2')
 env = environment.Environment(tokenizer=tokenizer, max_seq_length=max_seq_length, device=torch_device)
-ppo_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate=learning_rate)
+simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate=learning_rate)
 
 # Move model components to device
 model.to(torch_device)
@@ -53,7 +53,7 @@ for epoch in range(epochs):
         # Generate sequence
         for _ in range(env.max_seq_length):
             # Produce a token
-            action, log_prob = ppo_agent.select_action(full_sequence)
+            action, log_prob = simple_agent.select_action(full_sequence)
             log_probs.append(log_prob)
             
             # Get reward from environment
@@ -66,10 +66,10 @@ for epoch in range(epochs):
         rewards = [reward] * env.max_seq_length
         
         # Compute loss and update policy
-        loss = ppo_agent.compute_loss(log_probs, rewards)
-        ppo_agent.optimizer.zero_grad()
+        loss = simple_agent.compute_loss(log_probs, rewards)
+        simple_agent.optimizer.zero_grad()
         loss.backward()
-        ppo_agent.optimizer.step()
+        simple_agent.optimizer.step()
 
         # Log loss
         common_utils.log_wandb({"epoch": epoch, "loss": loss})
@@ -85,7 +85,11 @@ for epoch in range(epochs):
             rewards = []
             for data in benchmark_dataset:
                 # Feed the text into the AI classifier
-                classifier_output = env.ai_classifier(data['question'])
+                question = data['question']
+                question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
+                model_output = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
+                classifier_output = env.ai_classifier(model_output)
+                
                 # Calculate reward from classifier output
                 if classifier_output[0]['label'] == 'Fake':
                     reward = 1 - classifier_output[0]['score']

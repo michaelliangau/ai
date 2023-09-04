@@ -45,6 +45,33 @@ class SimpleAgent:
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
         return action.item(), m.log_prob(action)
 
+    def generate_sequence(self, input_tensor: torch.Tensor, iterations: int) -> str:
+        """Generate a sequence based on a given input tensor.
+
+        Args:
+            input_tensor (torch.Tensor): The input tensor to be used for sequence generation.
+            iterations (int): The number of iterations to generate the sequence.
+
+        Returns:
+            str: The generated sequence.
+        """
+        # Initialize the sequence with the last token of the input tensor
+        sequence = input_tensor
+        output_sequence = torch.tensor([[]])
+
+        # Generate the sequence
+        for _ in range(iterations):
+            action, _ = self.select_action(sequence)
+            sequence = torch.cat((sequence, torch.tensor([[action]])), dim=-1)
+            output_sequence = torch.cat((output_sequence, torch.tensor([[action]])), dim=-1)
+
+        # Decode the sequence
+        output_sequence = self.tokenizer.decode(output_sequence[0].tolist())
+
+        return output_sequence
+
+    
+
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
 

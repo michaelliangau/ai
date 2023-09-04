@@ -43,6 +43,3 @@ class Environment:
         """Reset the environment to its initial state."""
         self.generated_sequence = torch.tensor([])
         return self.generated_sequence
-
-
-
