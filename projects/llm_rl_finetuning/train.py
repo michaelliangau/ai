@@ -18,7 +18,7 @@ epochs = 10
 max_seq_length = 100
 learning_rate = 1e-4
 device = "cpu"
-eval_steps = 100
+eval_steps = 10
 
 # Create outputs folder
 common_utils.create_folder("outputs")
@@ -28,8 +28,8 @@ common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-model = GPT2LMHeadModel.from_pretrained('gpt2')
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2-xl')
+model = GPT2LMHeadModel.from_pretrained('gpt2-xl')
 env = environment.Environment(tokenizer=tokenizer, max_seq_length=max_seq_length, device=torch_device)
 simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate=learning_rate)
 
@@ -37,32 +37,25 @@ simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate
 model.to(torch_device)
 
 # Dataset
-huggingface_dataset = datasets.load_dataset('squad')
-questions = []
-for example in huggingface_dataset['train']:
-    question = f"{example['question']}\n"
-    questions.append(question)
-random.shuffle(questions)
+# huggingface_dataset = datasets.load_dataset('squad')
+# questions = []
+# for example in huggingface_dataset['train']:
+#     question = f"{example['question']}"
+#     questions.append(question)
+# random.shuffle(questions)
+questions = ["Once upon a time in a quiet village, "] * 100
+
+# TODO run a training run on colab.
 
 # Train loop
 for epoch in range(epochs):
     for step, question in tqdm(enumerate((questions)), total=len(questions)):
-        env.reset()
-        full_sequence = tokenizer.encode(question, return_tensors='pt').to(torch_device)
+        question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
         log_probs = []
 
-        # Generate sequence
-        for _ in range(env.max_seq_length):
-            # Produce a token
-            action, log_prob = simple_agent.select_action(full_sequence)
-            log_probs.append(log_prob)
-            
-            # Get reward from environment
-            reward = env.step(action)
-
-            # Add action to full sequence
-            full_sequence = torch.cat((full_sequence, torch.tensor([[action]]).to(torch_device)), dim=-1)
-        
+        generated_sequence = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
+        IPython.embed()
+        reward = env.get_reward(generated_sequence)
         # Backfill rewards (terminal reward at end of sequence)
         rewards = [reward] * env.max_seq_length
         
@@ -81,7 +74,7 @@ for epoch in range(epochs):
             # Use a subset of the squad test set as the benchmark dataset
             indices = random.sample(range(1, 10001), 10)
             # Use a subset of the squad test set as the benchmark dataset
-            benchmark_dataset = [huggingface_dataset['validation'][i] for i in indices]
+            benchmark_dataset = questions[:10]
             rewards = []
             for data in benchmark_dataset:
                 # Feed the text into the AI classifier

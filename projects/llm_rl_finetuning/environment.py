@@ -15,22 +15,18 @@ class Environment:
         """
         self.tokenizer = tokenizer
         self.max_seq_length = max_seq_length
-        self.device = torch.device(device)
-        self.generated_sequence = torch.tensor([]).to(self.device)
-        self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=self.device)
+        self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=device)
 
-    def step(self, action: int) -> float:
-        """Perform a step in the environment with the given action.
+    def get_reward(self, sequence: torch.Tensor) -> float:
+        """Calculate the reward for a given sequence.
 
         Args:
-            action: The action to be performed.
+            sequence: The sequence of actions.
 
         Returns:
-            float: The reward for the action.
+            float: The reward for the sequence.
         """
-        self.generated_sequence = torch.cat((self.generated_sequence, torch.tensor([action])))
-        text = self.tokenizer.decode(self.generated_sequence)
-        ai_classifier_output = self.ai_classifier(text)
+        ai_classifier_output = self.ai_classifier(sequence)
 
         if ai_classifier_output[0]['label'] == 'Fake':
             reward = 1 - ai_classifier_output[0]['score']
@@ -39,7 +35,3 @@ class Environment:
             reward = ai_classifier_output[0]['score']
             return reward
 
-    def reset(self) -> torch.Tensor:
-        """Reset the environment to its initial state."""
-        self.generated_sequence = torch.tensor([])
-        return self.generated_sequence
