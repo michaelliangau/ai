@@ -28,8 +28,8 @@ common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-model = GPT2LMHeadModel.from_pretrained('gpt2')
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2-xl')
+model = GPT2LMHeadModel.from_pretrained('gpt2-xl')
 env = environment.Environment(tokenizer=tokenizer, max_seq_length=max_seq_length, device=torch_device)
 simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate=learning_rate)
 
