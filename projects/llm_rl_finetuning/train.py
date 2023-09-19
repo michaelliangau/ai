@@ -14,10 +14,10 @@ import common.utils as common_utils
 
 # Hyperparameters
 epochs = 10
-max_seq_length = 10
+max_seq_length = 100
 learning_rate = 1e-4
 device = "cpu"
-eval_steps = 10
+eval_steps = 100
 save_steps = 500
 
 # Create outputs folder
