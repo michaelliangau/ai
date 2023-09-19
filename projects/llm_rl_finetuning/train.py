@@ -3,7 +3,6 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import torch
 import agent
 import environment
-import IPython
 import random
 # Set a seed for the random number generator to ensure reproducibility
 random.seed(0)
@@ -37,14 +36,15 @@ simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate
 model.to(torch_device)
 
 # Dataset
-questions = ["Once upon a time in a quiet village, "] * 1
+train_dataset = ["Once upon a time in a quiet village, "] * 100
+eval_dataset = ["Once upon a time in a quiet village, "] * 50
 
 # Train loop
 for epoch in range(epochs):
-    for step, question in tqdm(enumerate((questions)), total=len(questions)):
-        question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
+    for step, prompt in tqdm(enumerate((train_dataset)), total=len(train_dataset)):
+        prompt_tensor = tokenizer.encode(prompt, return_tensors='pt').to(torch_device)
 
-        output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
+        output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=prompt_tensor, iterations=env.max_seq_length)
         reward = env.get_reward(output_decoded)
         # Backfill rewards (terminal reward at end of sequence)
         rewards = reward.repeat(env.max_seq_length)
@@ -58,16 +58,16 @@ for epoch in range(epochs):
         # Log loss
         common_utils.log_wandb({"epoch": epoch, "loss": loss})
 
-        # Evaluation step every 100 steps
+        # Evaluation step every X steps
         if step % eval_steps == 0:
             print("Evaluation Step")
             rewards = []
             with torch.no_grad():
-                for question in tqdm(questions, total=len(questions)):
+                for prompt in tqdm(eval_dataset, total=len(eval_dataset)):
                     # Feed the text into the AI classifier
-                    question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
+                    prompt_tensor = tokenizer.encode(prompt, return_tensors='pt').to(torch_device)
 
-                    output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
+                    output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=prompt_tensor, iterations=env.max_seq_length)
                     reward = env.get_reward(output_decoded)
 
                     rewards.append(reward)
