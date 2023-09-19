@@ -18,6 +18,7 @@ class SimpleAgent:
         self.model = model
         self.tokenizer = tokenizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.action_history = []
 
     def tokenize_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
@@ -51,9 +52,17 @@ class SimpleAgent:
             tuple: The selected action and the log probability of the action.
         """
         logits = self.model(input_ids=input_tensor).logits
-        probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
+        probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logitsk
         m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
+        action_count = 0
+        while action_count < 3:
+            if action in self.action_history:
+                action = m.sample()
+                action_count += 1
+            else:
+                self.action_history.append(action)
+                break
         return action.item(), m.log_prob(action)
 
     def generate_sequence(self, input_tensor: torch.Tensor, iterations: int) -> Tuple[torch.Tensor, str]:

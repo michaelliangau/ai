@@ -27,6 +27,7 @@ class Environment:
         Returns:
             torch.Tensor: The reward for the sequence.
         """
+        # TODO May need a better reward fn, model is hacking it.
         ai_classifier_output = self.ai_classifier(sequence)
 
         if ai_classifier_output[0]['label'] == 'Fake':

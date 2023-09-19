@@ -6,6 +6,7 @@ import environment
 import random
 # Set a seed for the random number generator to ensure reproducibility
 random.seed(0)
+torch.autograd.set_detect_anomaly(True)
 
 import sys
 sys.path.append("../..")
@@ -42,21 +43,6 @@ eval_dataset = ["Once upon a time in a quiet village, "] * 50
 # Train loop
 for epoch in range(epochs):
     for step, prompt in tqdm(enumerate((train_dataset)), total=len(train_dataset)):
-        prompt_tensor = tokenizer.encode(prompt, return_tensors='pt').to(torch_device)
-
-        output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=prompt_tensor, iterations=env.max_seq_length)
-        reward = env.get_reward(output_decoded)
-        # Backfill rewards (terminal reward at end of sequence)
-        rewards = reward.repeat(env.max_seq_length)
-        
-        # Compute loss and update policy
-        loss = simple_agent.compute_loss(log_probs, rewards)
-        simple_agent.optimizer.zero_grad()
-        loss.backward()
-        simple_agent.optimizer.step()
-
-        # Log loss
-        common_utils.log_wandb({"epoch": epoch, "loss": loss})
 
         # Evaluation step every X steps
         if step % eval_steps == 0:
@@ -80,6 +66,25 @@ for epoch in range(epochs):
             
             # Log mean reward to wandb
             common_utils.log_wandb({"mean_reward": mean_reward})
+
+
+        # Train step
+        prompt_tensor = tokenizer.encode(prompt, return_tensors='pt').to(torch_device)
+
+        output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=prompt_tensor, iterations=env.max_seq_length)
+        print(output_decoded)
+        reward = env.get_reward(output_decoded)
+        # Backfill rewards (terminal reward at end of sequence)
+        rewards = reward.repeat(env.max_seq_length)
+        
+        # Compute loss and update policy
+        loss = simple_agent.compute_loss(log_probs, rewards)
+        simple_agent.optimizer.zero_grad()
+        loss.backward()
+        simple_agent.optimizer.step()
+
+        # Log loss
+        common_utils.log_wandb({"epoch": epoch, "loss": loss})
 
         if step % save_steps == 0 and step != 0:
             # Save model checkpoint
