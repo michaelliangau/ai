@@ -1,6 +1,5 @@
 from tqdm import tqdm
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import datasets
 import torch
 import agent
 import environment
@@ -15,10 +14,11 @@ import common.utils as common_utils
 
 # Hyperparameters
 epochs = 10
-max_seq_length = 100
+max_seq_length = 10
 learning_rate = 1e-4
 device = "cpu"
 eval_steps = 10
+save_steps = 500
 
 # Create outputs folder
 common_utils.create_folder("outputs")
@@ -37,27 +37,17 @@ simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate
 model.to(torch_device)
 
 # Dataset
-# huggingface_dataset = datasets.load_dataset('squad')
-# questions = []
-# for example in huggingface_dataset['train']:
-#     question = f"{example['question']}"
-#     questions.append(question)
-# random.shuffle(questions)
-questions = ["Once upon a time in a quiet village, "] * 100
-
-# TODO run a training run on colab.
+questions = ["Once upon a time in a quiet village, "] * 1
 
 # Train loop
 for epoch in range(epochs):
     for step, question in tqdm(enumerate((questions)), total=len(questions)):
         question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
-        log_probs = []
 
-        generated_sequence = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
-        IPython.embed()
-        reward = env.get_reward(generated_sequence)
+        output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
+        reward = env.get_reward(output_decoded)
         # Backfill rewards (terminal reward at end of sequence)
-        rewards = [reward] * env.max_seq_length
+        rewards = reward.repeat(env.max_seq_length)
         
         # Compute loss and update policy
         loss = simple_agent.compute_loss(log_probs, rewards)
@@ -71,34 +61,32 @@ for epoch in range(epochs):
         # Evaluation step every 100 steps
         if step % eval_steps == 0:
             print("Evaluation Step")
-            # Use a subset of the squad test set as the benchmark dataset
-            indices = random.sample(range(1, 10001), 10)
-            # Use a subset of the squad test set as the benchmark dataset
-            benchmark_dataset = questions[:10]
             rewards = []
-            for data in benchmark_dataset:
-                # Feed the text into the AI classifier
-                question = data['question']
-                question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
-                model_output = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
-                classifier_output = env.ai_classifier(model_output)
-                
-                # Calculate reward from classifier output
-                if classifier_output[0]['label'] == 'Fake':
-                    reward = 1 - classifier_output[0]['score']
-                elif classifier_output[0]['label'] == 'Real':
-                    reward = classifier_output[0]['score']
-                rewards.append(reward)
+            with torch.no_grad():
+                for question in tqdm(questions, total=len(questions)):
+                    # Feed the text into the AI classifier
+                    question_tensor = tokenizer.encode(question, return_tensors='pt').to(torch_device)
+
+                    output, log_probs, output_decoded = simple_agent.generate_sequence(input_tensor=question_tensor, iterations=env.max_seq_length)
+                    reward = env.get_reward(output_decoded)
+
+                    rewards.append(reward)
             
+            # Convert rewards list of tensors into a single tensor
+            rewards_tensor = torch.stack(rewards)
             # Calculate mean reward
-            mean_reward = sum(rewards) / len(rewards)
+            mean_reward = torch.mean(rewards_tensor).item()
             print(f"Mean reward: {mean_reward}")
             
             # Log mean reward to wandb
             common_utils.log_wandb({"mean_reward": mean_reward})
 
+        if step % save_steps == 0 and step != 0:
             # Save model checkpoint
             torch.save(model.state_dict(), f'outputs/checkpoint_{epoch}_{step}.pt')
 
     print(f'Epoch {epoch}: Loss {loss.item()}')
+    # Save model at the end of every epoch
+    torch.save(model.state_dict(), f'outputs/checkpoint_{epoch}_final.pt')
+    
 common_utils.end_wandb_logging()

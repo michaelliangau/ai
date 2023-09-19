@@ -30,6 +30,17 @@ class SimpleAgent:
         """
         return self.tokenizer.encode(sequence)
 
+    def decode_sequence(self, sequence: List[int]) -> str:
+        """Decode a sequence using the agent's tokenizer.
+
+        Args:
+            sequence (List[int]): The sequence to be decoded.
+
+        Returns:
+            str: The decoded sequence.
+        """
+        return self.tokenizer.decode(sequence)
+    
     def select_action(self, input_tensor: torch.Tensor) -> Tuple[int, torch.Tensor]:
         """Select an action based on the current sequence.
 
@@ -45,7 +56,7 @@ class SimpleAgent:
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
         return action.item(), m.log_prob(action)
 
-    def generate_sequence(self, input_tensor: torch.Tensor, iterations: int) -> str:
+    def generate_sequence(self, input_tensor: torch.Tensor, iterations: int) -> Tuple[torch.Tensor, str]:
         """Generate a sequence based on a given input tensor.
 
         Args:
@@ -53,22 +64,24 @@ class SimpleAgent:
             iterations (int): The number of iterations to generate the sequence.
 
         Returns:
-            str: The generated sequence.
+            Tuple[torch.Tensor, str]: The generated sequence as a tensor and as a decoded string.
         """
         # Initialize the sequence with the last token of the input tensor
         sequence = input_tensor
         output_sequence = torch.tensor([[]]).to(input_tensor.device)
 
         # Generate the sequence
+        log_probs = torch.tensor([]).to(input_tensor.device)
         for _ in range(iterations):
-            action, _ = self.select_action(sequence)
+            action, log_prob = self.select_action(sequence)
             sequence = torch.cat((sequence, torch.tensor([[action]]).to(input_tensor.device)), dim=-1)
             output_sequence = torch.cat((output_sequence, torch.tensor([[action]]).to(input_tensor.device)), dim=-1)
+            log_probs = torch.cat((log_probs, log_prob.unsqueeze(0)), dim=-1)
 
         # Decode the sequence
-        output_sequence = self.tokenizer.decode(output_sequence[0].tolist())
+        decoded_sequence = self.decode_sequence(output_sequence[0].tolist())
 
-        return output_sequence
+        return output_sequence, log_probs, decoded_sequence
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
@@ -92,21 +105,24 @@ class SimpleAgent:
         """
 
         # Calculate policy loss
-        policy_losses = []
-        for log_prob, reward in zip(log_probs, rewards):
-            # Policy loss calculations try to maximise expected return (prob * reward),
-            # and we assume reward is a non-controllable factor in this. We can think of
-            # it as if loss is categorical to the specific action in question. Each action
-            # has its own unique loss value. So we want the network to have higher loss for
-            # low probability/high reward action, to make bigger update. Conversely, low
-            # reward/high probability actions should have low loss, to relatively make smaller
-            # weight update.
-            # This line of thinking is different to how we think of supervised training.
-            # The main difference being that it's easier to think of each action having
-            # it's own loss fn as opposed to the entire network optimizing for a single
-            # north star loss value.
-            policy_losses.append(-log_prob * reward)
-        policy_loss = torch.cat(policy_losses).sum()
+        # Policy loss calculations try to maximise expected return (prob * reward),
+        # and we assume reward is a non-controllable factor in this. We can think of
+        # it as if loss is categorical to the specific action in question. Each action
+        # has its own unique loss value. So we want the network to have higher loss for
+        # low probability/high reward action, to make bigger update. Conversely, low
+        # reward/high probability actions should have low loss, to relatively make smaller
+        # weight update. Numerically:
+        # High reward and low probability = large negative log_prob value * high reward
+        # Low reward and high probability = small negative log_prob value * low reward
+        # The network will converge towards high probability actions (low scaling of reward)
+        # that get chosen again and again. Assuming reward is constant.
+        # You can also think of log_probs as scaling the reward value.
+        # This line of thinking is different to how we think of supervised training.
+        # The main difference being that it's easier to think of each action having
+        # it's own loss fn as opposed to the entire network optimizing for a single
+        # north star loss value.
+        # Ideally would like to get another set of eyes on this.
+        policy_loss = -(log_probs * rewards).sum()
 
         return policy_loss
 

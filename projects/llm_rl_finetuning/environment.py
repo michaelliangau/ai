@@ -16,22 +16,23 @@ class Environment:
         self.tokenizer = tokenizer
         self.max_seq_length = max_seq_length
         self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=device)
+        self.device = device
 
-    def get_reward(self, sequence: torch.Tensor) -> float:
+    def get_reward(self, sequence: str) -> torch.Tensor:
         """Calculate the reward for a given sequence.
 
         Args:
             sequence: The sequence of actions.
 
         Returns:
-            float: The reward for the sequence.
+            torch.Tensor: The reward for the sequence.
         """
         ai_classifier_output = self.ai_classifier(sequence)
 
         if ai_classifier_output[0]['label'] == 'Fake':
-            reward = 1 - ai_classifier_output[0]['score']
+            reward = torch.tensor([1 - ai_classifier_output[0]['score']], device=self.device)
             return reward
         elif ai_classifier_output[0]['label'] == 'Real':
-            reward = ai_classifier_output[0]['score']
+            reward = torch.tensor([ai_classifier_output[0]['score']], device=self.device)
             return reward
 
