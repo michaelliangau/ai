@@ -18,7 +18,6 @@ class SimpleAgent:
         self.model = model
         self.tokenizer = tokenizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
-        self.action_history = []
 
     def tokenize_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
@@ -52,45 +51,55 @@ class SimpleAgent:
             tuple: The selected action and the log probability of the action.
         """
         logits = self.model(input_ids=input_tensor).logits
-        probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logitsk
+        probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
+        IPython.embed()
         m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
-        action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
-        action_count = 0
-        while action_count < 3:
-            if action in self.action_history:
-                action = m.sample()
-                action_count += 1
-            else:
-                self.action_history.append(action)
-                break
-        return action.item(), m.log_prob(action)
+        actions = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
+        prob = m.probs[:, actions][0] # Experimenting with not using log probs
+        return actions, prob
 
-    def generate_sequence(self, input_tensor: torch.Tensor, iterations: int) -> Tuple[torch.Tensor, str]:
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, str]:
         """Generate a sequence based on a given input tensor.
 
         Args:
-            input_tensor (torch.Tensor): The input tensor to be used for sequence generation.
-            iterations (int): The number of iterations to generate the sequence.
+            input_ids (torch.Tensor): The input tensor to be used for sequence generation.
+            attention_mask (torch.Tensor): The attention mask to be used for sequence generation.
 
         Returns:
             Tuple[torch.Tensor, str]: The generated sequence as a tensor and as a decoded string.
         """
+        results = []
+        for i in range(input_ids.shape[-1]): # TODO: Vectorize this to make it faster.
+            print(i)
+            input_tensor = input_ids[:, :i+1]
+            actions, probs = self.select_action(input_tensor)
+
+            # TODO working on this, figure out what to do with the actions that come out? do we store them in a list? immediately compute loss? probs not right...maybe we have to vectorise this immediately.
+            IPython.embed()
+
+
+        
+
+
+
+
+
         # Initialize the sequence with the last token of the input tensor
-        sequence = input_tensor
-        output_sequence = torch.tensor([[]]).to(input_tensor.device)
+        output_sequence = torch.tensor([[]]).to(input_ids.device)
+
 
         # Generate the sequence
-        log_probs = torch.tensor([]).to(input_tensor.device)
-        for _ in range(iterations):
-            action, log_prob = self.select_action(sequence)
-            sequence = torch.cat((sequence, torch.tensor([[action]]).to(input_tensor.device)), dim=-1)
-            output_sequence = torch.cat((output_sequence, torch.tensor([[action]]).to(input_tensor.device)), dim=-1)
-            log_probs = torch.cat((log_probs, log_prob.unsqueeze(0)), dim=-1)
+        probs = torch.tensor([]).to(input_ids.device)
+        for _ in range(input_ids.shape[-1]):
+            action, prob = self.select_action(sequence)
+            sequence = torch.cat((sequence, torch.tensor([[action]]).to(input_ids.device)), dim=-1)
+            output_sequence = torch.cat((output_sequence, torch.tensor([[action]]).to(input_ids.device)), dim=-1)
+            probs = torch.cat((probs, prob.unsqueeze(0)), dim=-1)
 
         # Decode the sequence
         decoded_sequence = self.decode_sequence(output_sequence[0].tolist())
 
-        return output_sequence, log_probs, decoded_sequence
+        return output_sequence, probs, decoded_sequence
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
@@ -121,8 +130,8 @@ class SimpleAgent:
         # low probability/high reward action, to make bigger update. Conversely, low
         # reward/high probability actions should have low loss, to relatively make smaller
         # weight update. Numerically:
-        # High reward and low probability = large negative log_prob value * high reward
-        # Low reward and high probability = small negative log_prob value * low reward
+        # High reward and low probability = large value * high reward = large loss
+        # Low reward and high probability = small value * low reward = small loss
         # The network will converge towards high probability actions (low scaling of reward)
         # that get chosen again and again. Assuming reward is constant.
         # You can also think of log_probs as scaling the reward value.
@@ -131,7 +140,9 @@ class SimpleAgent:
         # it's own loss fn as opposed to the entire network optimizing for a single
         # north star loss value.
         # Ideally would like to get another set of eyes on this.
-        policy_loss = -(log_probs * rewards).sum()
+        IPython.embed()
+        # policy_loss = -(log_probs * rewards).mean()
+        policy_loss = 1 - (rewards * log_probs).mean()
 
         return policy_loss
 
