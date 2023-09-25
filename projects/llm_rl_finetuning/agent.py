@@ -70,45 +70,4 @@ class SimpleAgent:
         action, log_probs = self.select_action(input_ids, attention_mask)
         return action, log_probs
 
-    def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
-        """Compute the loss based on the log probabilities and rewards.
-
-        I think the way to go about this is to build a mixed CE loss
-        (normal LM loss) and then layer on top an adversarial loss that is based on the
-        outputs of https://huggingface.co/roberta-base-openai-detector (GPT-2 detector).
-        This way we can maintain LM performance while also making it harder for the detector
-        to detect it.
-
-        Args:
-            log_probs: The log probabilities of the actions taken.
-            rewards: The rewards received for the actions taken.
-
-        Returns:
-            torch.Tensor: The computed loss.
-        """
-
-        # Calculate policy loss
-        # Policy loss calculations try to maximise expected return (prob * reward),
-        # and we assume reward is a non-controllable factor in this. We can think of
-        # it as if loss is categorical to the specific action in question. Each action
-        # has its own unique loss value. So we want the network to have higher loss for
-        # low probability/high reward action, to make bigger update. Conversely, low
-        # reward/high probability actions should have low loss, to relatively make smaller
-        # weight update. Numerically:
-        # High reward and low probability = large value * high reward = large loss
-        # Low reward and high probability = small value * low reward = small loss
-        # The network will converge towards high probability actions (low scaling of reward)
-        # that get chosen again and again. Assuming reward is constant.
-        # You can also think of log_probs as scaling the reward value.
-        # This line of thinking is different to how we think of supervised training.
-        # The main difference being that it's easier to think of each action having
-        # it's own loss fn as opposed to the entire network optimizing for a single
-        # north star loss value.
-        # Ideally would like to get another set of eyes on this.
-        IPython.embed()
-        # policy_loss = -(log_probs * rewards).mean()
-        policy_loss = 1 - (rewards * log_probs).mean()
-
-        return policy_loss
-
 

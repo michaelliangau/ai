@@ -31,7 +31,7 @@ batch_size = 2
 common_utils.create_folder("outputs")
 
 # Start wandb logging
-# common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
+common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
@@ -86,8 +86,13 @@ for epoch in range(epochs):
         text = batch['text']
         inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt").to(torch_device)
 
+        # Initialize loss accumulators
+        total_nll_loss = 0
+        total_classifier_loss = 0
+        num_tokens = 0
+
         # Iterate over each token in the sequence
-        for i in range(inputs.input_ids.size(1)):
+        for i in tqdm(range(inputs.input_ids.size(1))):
             # Compute NLL loss (next token prediction for current token)
             # Create attention mask for current token
             current_attention_mask = inputs.attention_mask[:, :i+1]
@@ -103,28 +108,35 @@ for epoch in range(epochs):
             nll_loss = F.nll_loss(log_probs, inputs.input_ids[:, i])
 
             # Compute AI classifier loss
-            IPython.embed()
-            classifier_loss = env.get_rewards(output_decoded)
+            classifier_loss = env.compute_classifier_loss(output_decoded)
             mean_classifier_loss = torch.mean(classifier_loss)
 
             # Compute total loss
             loss = nll_loss + mean_classifier_loss
 
+            # Backward pass
+            simple_agent.optimizer.zero_grad()
+            loss.backward()
+            simple_agent.optimizer.step()
 
-        reward = env.get_reward(output_decoded)
-        # Backfill rewards (terminal reward at end of sequence)
-        rewards = reward.repeat(env.max_seq_length)
-        
-        # TODO Student forward pass (for classifier loss)
+            # Accumulate loss and increment token counter
+            total_nll_loss += nll_loss.item()
+            total_classifier_loss += mean_classifier_loss.item()
+            num_tokens += 1      
 
-        # Compute loss and update policy
-        loss = simple_agent.compute_loss(log_probs, rewards)
-        simple_agent.optimizer.zero_grad()
-        loss.backward()
-        simple_agent.optimizer.step()
+            if i == 10:
+                break
 
-        # Log loss
-        common_utils.log_wandb({"epoch": epoch, "loss": loss})
+        # Calculate mean loss across the entire sample
+        mean_nll_loss = total_nll_loss / num_tokens
+        mean_classifier_loss = total_classifier_loss / num_tokens
+
+        # Calculate what % of the total loss is nll or mean classifier loss
+        total_loss = mean_nll_loss + mean_classifier_loss
+        classifier_loss_percentage = (mean_classifier_loss / total_loss) * 100
+
+        # Log the losses, their percentages, and the epoch loss to wandb
+        common_utils.log_wandb({"mean_nll_loss": mean_nll_loss, "mean_classifier_loss": mean_classifier_loss, "classifier_loss_percentage": classifier_loss_percentage, "epoch": epoch, "total_loss": total_loss})
 
         if step % save_steps == 0 and step != 0:
             # Save model checkpoint

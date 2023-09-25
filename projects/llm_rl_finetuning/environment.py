@@ -18,23 +18,22 @@ class Environment:
         self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=device)
         self.device = device
 
-    def get_rewards(self, sequences: List[str]) -> torch.Tensor:
-        """Calculate the rewards for a list of sequences.
+    def compute_classifier_loss(self, sequences: List[str]) -> torch.Tensor:
+        """Calculate the loss for a list of sequences based on the AI classifier.
 
         Args:
             sequences: The list of sequences of actions.
 
         Returns:
-            torch.Tensor: The rewards for the sequences.
+            torch.Tensor: The loss for the sequences.
         """
-        rewards = []
+        losses = []
         for sequence in sequences:
             ai_classifier_output = self.ai_classifier(sequence)
-            if ai_classifier_output[0]['label'] == 'Fake':
-                reward = torch.tensor([1 - ai_classifier_output[0]['score']], device=self.device)
-                rewards.append(reward)
-            elif ai_classifier_output[0]['label'] == 'Real':
-                reward = torch.tensor([ai_classifier_output[0]['score']], device=self.device)
-                rewards.append(reward)
-        return torch.stack(rewards)
+            if ai_classifier_output[0]['label'] == 'Real':
+                loss = torch.tensor([1 - ai_classifier_output[0]['score']], device=self.device)
+            else:
+                loss = torch.tensor([ai_classifier_output[0]['score']], device=self.device)
+            losses.append(loss)
+        return torch.stack(losses)
 
