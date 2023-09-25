@@ -7,6 +7,7 @@ import environment
 import random
 import IPython
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 
 # Set a seed for the random number generator to ensure reproducibility
 random.seed(0)
@@ -30,7 +31,7 @@ batch_size = 2
 common_utils.create_folder("outputs")
 
 # Start wandb logging
-common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
+# common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
@@ -85,9 +86,30 @@ for epoch in range(epochs):
         text = batch['text']
         inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt").to(torch_device)
 
-        # Teacher forced forward pass (for MLM loss)
-        output, log_probs, output_decoded = simple_agent.forward(input_ids=inputs.input_ids, attention_mask=inputs.attention_mask)
-        print(output_decoded)
+        # Iterate over each token in the sequence
+        for i in range(inputs.input_ids.size(1)):
+            # Compute NLL loss (next token prediction for current token)
+            # Create attention mask for current token
+            current_attention_mask = inputs.attention_mask[:, :i+1]
+
+            # Forward pass for current token
+            action, log_probs = simple_agent.forward(input_ids=inputs.input_ids[:, :i+1], attention_mask=current_attention_mask)
+            
+            # Append action to the current input_tensor
+            output = torch.cat((inputs.input_ids[:, :i+1], action.unsqueeze(-1)), dim=-1)
+            output_decoded = simple_agent.decode_sequence(output)
+
+            # Compute NLL loss for current token
+            nll_loss = F.nll_loss(log_probs, inputs.input_ids[:, i])
+
+            # Compute AI classifier loss
+            IPython.embed()
+            classifier_loss = env.get_rewards(output_decoded)
+            mean_classifier_loss = torch.mean(classifier_loss)
+
+            # Compute total loss
+            loss = nll_loss + mean_classifier_loss
+
 
         reward = env.get_reward(output_decoded)
         # Backfill rewards (terminal reward at end of sequence)

@@ -1,5 +1,5 @@
 import torch
-from typing import Tuple
+from typing import Tuple, List
 import transformers
 import IPython
 
@@ -18,22 +18,23 @@ class Environment:
         self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=device)
         self.device = device
 
-    def get_reward(self, sequence: str) -> torch.Tensor:
-        """Calculate the reward for a given sequence.
+    def get_rewards(self, sequences: List[str]) -> torch.Tensor:
+        """Calculate the rewards for a list of sequences.
 
         Args:
-            sequence: The sequence of actions.
+            sequences: The list of sequences of actions.
 
         Returns:
-            torch.Tensor: The reward for the sequence.
+            torch.Tensor: The rewards for the sequences.
         """
-        # TODO incorporate a NTP loss
-        ai_classifier_output = self.ai_classifier(sequence)
-
-        if ai_classifier_output[0]['label'] == 'Fake':
-            reward = torch.tensor([1 - ai_classifier_output[0]['score']], device=self.device)
-            return reward
-        elif ai_classifier_output[0]['label'] == 'Real':
-            reward = torch.tensor([ai_classifier_output[0]['score']], device=self.device)
-            return reward
+        rewards = []
+        for sequence in sequences:
+            ai_classifier_output = self.ai_classifier(sequence)
+            if ai_classifier_output[0]['label'] == 'Fake':
+                reward = torch.tensor([1 - ai_classifier_output[0]['score']], device=self.device)
+                rewards.append(reward)
+            elif ai_classifier_output[0]['label'] == 'Real':
+                reward = torch.tensor([ai_classifier_output[0]['score']], device=self.device)
+                rewards.append(reward)
+        return torch.stack(rewards)
 

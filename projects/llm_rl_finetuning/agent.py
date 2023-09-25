@@ -30,76 +30,45 @@ class SimpleAgent:
         """
         return self.tokenizer.encode(sequence)
 
-    def decode_sequence(self, sequence: List[int]) -> str:
+    def decode_sequence(self, sequence: torch.Tensor) -> List[str]:
         """Decode a sequence using the agent's tokenizer.
 
         Args:
-            sequence (List[int]): The sequence to be decoded.
+            sequence (torch.Tensor): The sequence to be decoded. Shape: (batch, len)
 
         Returns:
-            str: The decoded sequence.
+            List[str]: The decoded sequences.
         """
-        return self.tokenizer.decode(sequence)
+        return [self.tokenizer.decode(seq.tolist()) for seq in sequence]
     
-    def select_action(self, input_tensor: torch.Tensor) -> Tuple[int, torch.Tensor]:
+    def select_action(self, input_tensor: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Select an action based on the current sequence.
 
         Args:
-            input_tensor: The current sequence as a tokenized tensor.
+            input_tensor (torch.Tensor): The current sequence as a tokenized tensor.
+            attention_mask (torch.Tensor): The attention mask for the input tensor.
 
         Returns:
-            tuple: The selected action and the log probability of the action.
+            Tuple[torch.Tensor, torch.Tensor]: The selected action as a tensor, and the log probability of the action as a tensor.
         """
-        logits = self.model(input_ids=input_tensor).logits
-        probs = F.softmax(logits[:, -1, :], dim=-1) # Softmax logits
-        IPython.embed()
-        m = Categorical(probs) # Converts this into a categorial distribution that can be sampled
-        actions = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
-        prob = m.probs[:, actions][0] # Experimenting with not using log probs
-        return actions, prob
+        logits = self.model(input_ids=input_tensor, attention_mask=attention_mask).logits
+        log_probs = F.log_softmax(logits[:, -1, :], dim=-1) # Log softmax logits
+        m = Categorical(logits=log_probs.exp()) # Converts this into a categorial distribution that can be sampled
+        action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
+        return action, log_probs
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, str]:
-        """Generate a sequence based on a given input tensor.
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Generate the next token based on a given input tensor.
 
         Args:
             input_ids (torch.Tensor): The input tensor to be used for sequence generation.
-            attention_mask (torch.Tensor): The attention mask to be used for sequence generation.
+            attention_mask (torch.Tensor): The attention mask for the input tensor.
 
         Returns:
-            Tuple[torch.Tensor, str]: The generated sequence as a tensor and as a decoded string.
+            Tuple[torch.Tensor, torch.Tensor]: The generated token as a tensor, and its log probability as a tensor.
         """
-        results = []
-        for i in range(input_ids.shape[-1]): # TODO: Vectorize this to make it faster.
-            print(i)
-            input_tensor = input_ids[:, :i+1]
-            actions, probs = self.select_action(input_tensor)
-
-            # TODO working on this, figure out what to do with the actions that come out? do we store them in a list? immediately compute loss? probs not right...maybe we have to vectorise this immediately.
-            IPython.embed()
-
-
-        
-
-
-
-
-
-        # Initialize the sequence with the last token of the input tensor
-        output_sequence = torch.tensor([[]]).to(input_ids.device)
-
-
-        # Generate the sequence
-        probs = torch.tensor([]).to(input_ids.device)
-        for _ in range(input_ids.shape[-1]):
-            action, prob = self.select_action(sequence)
-            sequence = torch.cat((sequence, torch.tensor([[action]]).to(input_ids.device)), dim=-1)
-            output_sequence = torch.cat((output_sequence, torch.tensor([[action]]).to(input_ids.device)), dim=-1)
-            probs = torch.cat((probs, prob.unsqueeze(0)), dim=-1)
-
-        # Decode the sequence
-        decoded_sequence = self.decode_sequence(output_sequence[0].tolist())
-
-        return output_sequence, probs, decoded_sequence
+        action, log_probs = self.select_action(input_ids, attention_mask)
+        return action, log_probs
 
     def compute_loss(self, log_probs: List[torch.Tensor], rewards: List[float]) -> torch.Tensor:
         """Compute the loss based on the log probabilities and rewards.
@@ -109,10 +78,6 @@ class SimpleAgent:
         outputs of https://huggingface.co/roberta-base-openai-detector (GPT-2 detector).
         This way we can maintain LM performance while also making it harder for the detector
         to detect it.
-
-        As an MVP lets just do the classifier adversarial loss from rewards. It is
-        just the summed total of the terminal reward multiplied by the log_prob of each
-        action.
 
         Args:
             log_probs: The log probabilities of the actions taken.
