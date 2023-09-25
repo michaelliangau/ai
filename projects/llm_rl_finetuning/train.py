@@ -24,7 +24,7 @@ learning_rate = 1e-4
 device = "cpu"
 eval_steps = 100
 save_steps = 500
-eval = False
+do_eval = True
 batch_size = 2
 
 # Create outputs folder
@@ -59,44 +59,8 @@ eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True)
 # Train loop
 for epoch in range(epochs):
     for step, batch in enumerate(tqdm(train_dataloader)):
-        # # Evaluation step every X steps
-        # if eval is True and step % eval_steps == 0:
-        #     print("Evaluation Step")
-        #     rewards = []
-        #     with torch.no_grad():
-        #         for prompt in tqdm(eval_dataset, total=len(eval_dataset)):
-        #             # Feed the text into the AI classifier
-        #             prompt_tensor = tokenizer.encode(prompt, return_tensors='pt').to(torch_device)
-
-        #             _, _, output_decoded = simple_agent.generate_sequence(input_tensor=prompt_tensor, iterations=env.max_seq_length)
-        #             reward = env.get_reward(output_decoded)
-
-        #             rewards.append(reward)
-            
-        #     # Convert rewards list of tensors into a single tensor
-        #     rewards_tensor = torch.stack(rewards)
-        #     # Calculate mean reward
-        #     mean_reward = torch.mean(rewards_tensor).item()
-        #     print(f"Mean reward: {mean_reward}")
-            
-        #     # Log mean reward to wandb
-        #     common_utils.log_wandb({"mean_reward": mean_reward})
-
-        # Tokenize text
-        text = batch['text']
-        inputs = tokenizer(text, padding=True, truncation=True, return_tensors="pt").to(torch_device)
-
-        # Initialize loss accumulators
-        total_nll_loss = 0
-        total_classifier_loss = 0
-        num_tokens = 0
-
-        # Iterate over each token in the sequence
-        for i in tqdm(range(inputs.input_ids.size(1))):
-            # Compute NLL loss (next token prediction for current token)
-            # Create attention mask for current token
-            current_attention_mask = inputs.attention_mask[:, :i+1]
-
+            # TODO Evaluation step
+        
             # Forward pass for current token
             action, log_probs = simple_agent.forward(input_ids=inputs.input_ids[:, :i+1], attention_mask=current_attention_mask)
             
@@ -104,10 +68,8 @@ for epoch in range(epochs):
             output = torch.cat((inputs.input_ids[:, :i+1], action.unsqueeze(-1)), dim=-1)
             output_decoded = simple_agent.decode_sequence(output)
 
-            # Compute NLL loss for current token
-            nll_loss = F.nll_loss(log_probs, inputs.input_ids[:, i])
-
             # Compute AI classifier loss
+            # TODO: Classifier loss is WRONG. You have to make the model generate something new.
             classifier_loss = env.compute_classifier_loss(output_decoded)
             mean_classifier_loss = torch.mean(classifier_loss)
 
@@ -123,9 +85,6 @@ for epoch in range(epochs):
             total_nll_loss += nll_loss.item()
             total_classifier_loss += mean_classifier_loss.item()
             num_tokens += 1      
-
-            if i == 10:
-                break
 
         # Calculate mean loss across the entire sample
         mean_nll_loss = total_nll_loss / num_tokens
@@ -145,5 +104,3 @@ for epoch in range(epochs):
     print(f'Epoch {epoch}: Loss {loss.item()}')
     # Save model at the end of every epoch
     torch.save(model.state_dict(), f'outputs/checkpoint_{epoch}_final.pt')
-    
-common_utils.end_wandb_logging()
