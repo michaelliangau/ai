@@ -4,6 +4,7 @@ import torch
 import agent
 import datasets
 import environment
+import utils
 import random
 import IPython
 from torch.utils.data import DataLoader
@@ -31,7 +32,7 @@ batch_size = 2
 common_utils.create_folder("outputs")
 
 # Start wandb logging
-common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
+# common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
@@ -52,39 +53,51 @@ dataset = datasets.load_dataset("alistvt/coqa-stories")
 train_dataset = dataset['train']
 eval_dataset = dataset['validation']
 
+# Preprocess data
+train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), num_proc=8)
+eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), num_proc=8)
+train_dataset = train_dataset.remove_columns(['id', 'text'])
+eval_dataset = eval_dataset.remove_columns(['id', 'text'])
+train_dataset = train_dataset.rename_column('input_ids', 'input_values')
+eval_dataset = eval_dataset.rename_column('input_ids', 'input_values')
+
 # Create data loaders
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=utils.collate_fn)
+eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, collate_fn=utils.collate_fn)
 
 # Train loop
 for epoch in range(epochs):
     for step, batch in enumerate(tqdm(train_dataloader)):
-            # TODO Evaluation step
+        # TODO: Evaluation step
+    
+        # Define variables
+        input_values = batch['input_values'].to(torch_device)
+        labels = batch['labels'].to(torch_device)
         
-            # Forward pass for current token
-            action, log_probs = simple_agent.forward(input_ids=inputs.input_ids[:, :i+1], attention_mask=current_attention_mask)
-            
-            # Append action to the current input_tensor
-            output = torch.cat((inputs.input_ids[:, :i+1], action.unsqueeze(-1)), dim=-1)
-            output_decoded = simple_agent.decode_sequence(output)
+        # Forward pass for current token
+        action, log_probs = simple_agent.forward(input_values=input_values)
+        
+        # TODO: Compute NLL loss against target
+        # WIP Up to here
 
-            # Compute AI classifier loss
-            # TODO: Classifier loss is WRONG. You have to make the model generate something new.
-            classifier_loss = env.compute_classifier_loss(output_decoded)
-            mean_classifier_loss = torch.mean(classifier_loss)
 
-            # Compute total loss
-            loss = nll_loss + mean_classifier_loss
+        # Compute AI classifier loss
+        # TODO: Classifier loss is WRONG. You have to make the model generate something new.
+        classifier_loss = env.compute_classifier_loss(output_decoded)
+        mean_classifier_loss = torch.mean(classifier_loss)
 
-            # Backward pass
-            simple_agent.optimizer.zero_grad()
-            loss.backward()
-            simple_agent.optimizer.step()
+        # Compute total loss
+        loss = nll_loss + mean_classifier_loss
 
-            # Accumulate loss and increment token counter
-            total_nll_loss += nll_loss.item()
-            total_classifier_loss += mean_classifier_loss.item()
-            num_tokens += 1      
+        # Backward pass
+        simple_agent.optimizer.zero_grad()
+        loss.backward()
+        simple_agent.optimizer.step()
+
+        # Accumulate loss and increment token counter
+        total_nll_loss += nll_loss.item()
+        total_classifier_loss += mean_classifier_loss.item()
+        num_tokens += 1      
 
         # Calculate mean loss across the entire sample
         mean_nll_loss = total_nll_loss / num_tokens

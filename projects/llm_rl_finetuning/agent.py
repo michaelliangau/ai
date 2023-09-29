@@ -41,33 +41,31 @@ class SimpleAgent:
         """
         return [self.tokenizer.decode(seq.tolist()) for seq in sequence]
     
-    def select_action(self, input_tensor: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def select_action(self, input_tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Select an action based on the current sequence.
 
         Args:
             input_tensor (torch.Tensor): The current sequence as a tokenized tensor.
-            attention_mask (torch.Tensor): The attention mask for the input tensor.
 
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The selected action as a tensor, and the log probability of the action as a tensor.
         """
-        logits = self.model(input_ids=input_tensor, attention_mask=attention_mask).logits
+        logits = self.model(input_ids=input_tensor).logits
         log_probs = F.log_softmax(logits[:, -1, :], dim=-1) # Log softmax logits
         m = Categorical(logits=log_probs.exp()) # Converts this into a categorial distribution that can be sampled
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
         return action, log_probs
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, input_values: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generate the next token based on a given input tensor.
 
         Args:
-            input_ids (torch.Tensor): The input tensor to be used for sequence generation.
-            attention_mask (torch.Tensor): The attention mask for the input tensor.
+            input_values (torch.Tensor): The input tensor to be used for sequence generation.
 
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The generated token as a tensor, and its log probability as a tensor.
         """
-        action, log_probs = self.select_action(input_ids, attention_mask)
+        action, log_probs = self.select_action(input_values)
         return action, log_probs
 
 
