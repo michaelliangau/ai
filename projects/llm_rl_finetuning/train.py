@@ -12,7 +12,6 @@ import torch.nn.functional as F
 
 # Set a seed for the random number generator to ensure reproducibility
 random.seed(0)
-torch.autograd.set_detect_anomaly(True)
 
 import sys
 sys.path.append("../..")
@@ -26,7 +25,8 @@ device = "cpu"
 eval_steps = 100
 save_steps = 500
 do_eval = True
-batch_size = 2
+train_batch_size = 10
+eval_batch_size = 10
 num_token_generations = 100
 
 # Create outputs folder
@@ -57,15 +57,34 @@ eval_dataset = dataset['validation']
 # Preprocess data
 train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=train_dataset.column_names)
 eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=eval_dataset.column_names)
+eval_dataset = eval_dataset.select(range(20)) # Small subset for quicker evaluation
 
 # Create data loaders
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
-eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
+train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
+eval_dataloader = DataLoader(eval_dataset, batch_size=eval_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
 
 # Train loop
 for epoch in range(epochs):
     for step, batch in enumerate(tqdm(train_dataloader)):
-        # TODO: Evaluation step
+
+        # Evaluate model
+        if step % eval_steps == 0 and do_eval:
+            print(f'Evaluating at step {step}...')
+            eval_loss = 0
+            eval_steps_count = 0
+            for eval_batch in tqdm(eval_dataloader):
+                eval_input_values = eval_batch['input_values'].to(torch_device)
+                eval_attention_mask = eval_batch['attention_mask'].to(torch_device)
+                eval_actions = simple_agent.forward_autoregressive(input_values=eval_input_values, attention_mask=eval_attention_mask, num_actions=num_token_generations)
+                eval_input_values_no_pad = [eval_input_values[i][eval_attention_mask[i] != 0] for i in range(eval_input_values.size(0))]
+                eval_actions = eval_actions.transpose(0, 1)
+                eval_full_generation = [torch.cat((eval_input_values_no_pad[i], eval_actions[i]), dim=-1) for i in range(len(eval_input_values_no_pad))]
+                eval_decoded_sequence = simple_agent.decode_sequence(eval_full_generation)
+                eval_classifier_loss = env.compute_classifier_loss(eval_decoded_sequence)
+                eval_loss += eval_classifier_loss.mean().item()
+                eval_steps_count += 1
+            eval_loss /= eval_steps_count
+            common_utils.log_wandb({"eval_loss": eval_loss, "epoch": epoch})
     
         # Define variables
         input_values = batch['input_values'].to(torch_device)
@@ -103,7 +122,7 @@ for epoch in range(epochs):
         classifier_loss_percentage = (mean_classifier_loss / loss) * 100
 
         # Log the losses, their percentages, and the epoch loss to wandb
-        common_utils.log_wandb({"mean_classifier_loss": mean_classifier_loss, "cross_entropy_loss": ce_loss, "classifier_loss_percentage": classifier_loss_percentage, "epoch": epoch, "total_loss": loss})
+        common_utils.log_wandb({"classifier_loss": mean_classifier_loss, "cross_entropy_loss": ce_loss, "classifier_loss_percentage": classifier_loss_percentage, "epoch": epoch, "total_loss": loss})
 
         if step % save_steps == 0 and step != 0:
             # Save model checkpoint
