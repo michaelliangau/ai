@@ -54,8 +54,10 @@ train_dataset = dataset['train']
 eval_dataset = dataset['validation']
 
 # Preprocess data
-train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), num_proc=8)
-eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), num_proc=8)
+train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=train_dataset.column_names)
+eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=eval_dataset.column_names)
+IPython.embed()
+
 train_dataset = train_dataset.remove_columns(['id', 'text'])
 eval_dataset = eval_dataset.remove_columns(['id', 'text'])
 train_dataset = train_dataset.rename_column('input_ids', 'input_values')
@@ -73,12 +75,12 @@ for epoch in range(epochs):
         # Define variables
         input_values = batch['input_values'].to(torch_device)
         labels = batch['labels'].to(torch_device)
-        
+
         # Forward pass for current token
         action, log_probs = simple_agent.forward(input_values=input_values)
         
         # TODO: Compute NLL loss against target
-        # WIP Up to here
+        IPython.embed()
 
 
         # Compute AI classifier loss
