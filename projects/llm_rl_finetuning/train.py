@@ -33,7 +33,7 @@ num_token_generations = 100
 common_utils.create_folder("outputs")
 
 # Start wandb logging
-# common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
+common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
