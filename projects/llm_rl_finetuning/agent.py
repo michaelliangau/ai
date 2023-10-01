@@ -2,6 +2,7 @@ import torch
 from typing import List, Tuple
 import torch.nn.functional as F
 from torch.distributions import Categorical
+from tqdm import tqdm
 import IPython
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
@@ -57,7 +58,7 @@ class SimpleAgent:
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
         return action, logits
 
-    def forward(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates the next token based on a given input tensor.
 
         Args:
@@ -65,9 +66,30 @@ class SimpleAgent:
             attention_mask (torch.Tensor): The attention mask for the input tensor.
 
         Returns:
-            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The generated token represented as a tensor, its log probability represented as a tensor, and the logits represented as a tensor.
+            Tuple[torch.Tensor, torch.Tensor]: The generated token represented as a tensor, and the logits represented as a tensor.
         """
         action, logits = self.select_action(input_values, attention_mask)
         return action, logits
+
+    def forward_autoregressive(self, input_values: torch.Tensor, attention_mask: torch.Tensor, num_actions: int = 100) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Generates multiple tokens autoregressively based on a given input tensor.
+
+        Args:
+            input_values (torch.Tensor): The input tensor to be used for sequence generation.
+            attention_mask (torch.Tensor): The attention mask for the input tensor.
+            num_actions (int): The number of actions to be generated. Default 100.
+
+        Returns:
+            torch.Tensor: The generated tokens represented as a tensor.
+        """
+        actions = []
+        for _ in tqdm(range(num_actions)):
+            action, _ = self.select_action(input_values, attention_mask)
+            actions.append(action)
+            input_values = torch.cat((input_values, action.unsqueeze(-1)), dim=-1)
+            attention_mask = torch.cat((attention_mask, torch.ones_like(action).unsqueeze(-1)), dim=-1)
+        return torch.stack(actions)
+    
+    
 
 

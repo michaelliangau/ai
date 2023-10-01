@@ -27,6 +27,7 @@ eval_steps = 100
 save_steps = 500
 do_eval = True
 batch_size = 2
+num_token_generations = 100
 
 # Create outputs folder
 common_utils.create_folder("outputs")
@@ -72,39 +73,37 @@ for epoch in range(epochs):
         attention_mask = batch['attention_mask'].to(torch_device)
 
         # Forward pass for current token
-        action, logits = simple_agent.forward(input_values=input_values, attention_mask=attention_mask)
+        action, logits = simple_agent.forward_single(input_values=input_values, attention_mask=attention_mask)
         pred = logits[:, -1, :]
 
         # Compute Cross Entropy loss against target
         ce_loss = torch.nn.functional.cross_entropy(pred, labels.squeeze())
 
-        # Compute AI classifier loss
+        # Generate 100 tokens from the input_values
+        actions = simple_agent.forward_autoregressive(input_values=input_values, attention_mask=attention_mask, num_actions=num_token_generations)
         
+        # Decode the actions
+        input_values_no_pad = [input_values[i][attention_mask[i] != 0] for i in range(input_values.size(0))]
+        actions = actions.transpose(0, 1)
+        full_generation = [torch.cat((input_values_no_pad[i], actions[i]), dim=-1) for i in range(len(input_values_no_pad))]
+        decoded_sequence = simple_agent.decode_sequence(full_generation)
 
+        # Compute classifier loss
+        classifier_loss = env.compute_classifier_loss(decoded_sequence)
+        mean_classifier_loss = classifier_loss.mean()
 
         # Compute total loss
-        loss = nll_loss + mean_classifier_loss
+        loss = ce_loss + mean_classifier_loss
 
         # Backward pass
         simple_agent.optimizer.zero_grad()
         loss.backward()
         simple_agent.optimizer.step()
 
-        # Accumulate loss and increment token counter
-        total_nll_loss += nll_loss.item()
-        total_classifier_loss += mean_classifier_loss.item()
-        num_tokens += 1      
-
-        # Calculate mean loss across the entire sample
-        mean_nll_loss = total_nll_loss / num_tokens
-        mean_classifier_loss = total_classifier_loss / num_tokens
-
-        # Calculate what % of the total loss is nll or mean classifier loss
-        total_loss = mean_nll_loss + mean_classifier_loss
-        classifier_loss_percentage = (mean_classifier_loss / total_loss) * 100
+        classifier_loss_percentage = (mean_classifier_loss / loss) * 100
 
         # Log the losses, their percentages, and the epoch loss to wandb
-        common_utils.log_wandb({"mean_nll_loss": mean_nll_loss, "mean_classifier_loss": mean_classifier_loss, "classifier_loss_percentage": classifier_loss_percentage, "epoch": epoch, "total_loss": total_loss})
+        common_utils.log_wandb({"mean_classifier_loss": mean_classifier_loss, "cross_entropy_loss": ce_loss, "classifier_loss_percentage": classifier_loss_percentage, "epoch": epoch, "total_loss": loss})
 
         if step % save_steps == 0 and step != 0:
             # Save model checkpoint
