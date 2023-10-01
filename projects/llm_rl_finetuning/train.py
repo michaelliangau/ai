@@ -42,8 +42,8 @@ env = environment.Environment(tokenizer=tokenizer, max_seq_length=max_seq_length
 simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate=learning_rate)
 
 # Set EOS token as pad token
-tokenizer.pad_token = tokenizer.eos_token
-tokenizer.pad_token_id = tokenizer.eos_token_id
+tokenizer.pad_token = tokenizer.eos_token # <|endoftext|>
+tokenizer.pad_token_id = tokenizer.eos_token_id # 50256
 
 # Move model components to device
 model.to(torch_device)
@@ -58,8 +58,8 @@ train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(example
 eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=eval_dataset.column_names)
 
 # Create data loaders
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=utils.collate_fn)
-eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, collate_fn=utils.collate_fn)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
+eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
 
 # Train loop
 for epoch in range(epochs):
@@ -69,18 +69,18 @@ for epoch in range(epochs):
         # Define variables
         input_values = batch['input_values'].to(torch_device)
         labels = batch['labels'].to(torch_device)
+        attention_mask = batch['attention_mask'].to(torch_device)
 
         # Forward pass for current token
-        action, log_probs = simple_agent.forward(input_values=input_values)
-        
-        # TODO: Compute NLL loss against target
-        IPython.embed()
+        action, logits = simple_agent.forward(input_values=input_values, attention_mask=attention_mask)
+        pred = logits[:, -1, :]
 
+        # Compute Cross Entropy loss against target
+        ce_loss = torch.nn.functional.cross_entropy(pred, labels.squeeze())
 
         # Compute AI classifier loss
-        # TODO: Classifier loss is WRONG. You have to make the model generate something new.
-        classifier_loss = env.compute_classifier_loss(output_decoded)
-        mean_classifier_loss = torch.mean(classifier_loss)
+        
+
 
         # Compute total loss
         loss = nll_loss + mean_classifier_loss

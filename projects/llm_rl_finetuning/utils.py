@@ -34,15 +34,21 @@ def preprocess_data(dataset: Dataset, tokenizer: PreTrainedTokenizer, max_seq_le
     return result
 
 
-def collate_fn(batch: List[dict]) -> Dict[str, torch.Tensor]:
+def collate_fn(batch: List[dict], pad_token_id: int) -> Dict[str, torch.Tensor]:
     """Collates the input batch into a dictionary of tensors.
 
     Args:
         batch (list): The input batch to collate.
+        pad_token_id (int): The id of the pad token.
 
     Returns:
-        dict: A dictionary containing the input_values and labels tensors.
+        dict: A dictionary containing the input_values, labels and attention_mask tensors.
     """
-    input_values = torch.tensor([item['input_values'] for item in batch])
-    labels = torch.tensor([item['labels'] for item in batch])
-    return {'input_values': input_values, 'labels': labels}
+    input_values = [torch.tensor(item['input_values']) for item in batch]
+    labels = [torch.tensor(item['labels']) for item in batch]
+
+    # Pad sequences to max sequence length
+    input_values = torch.nn.utils.rnn.pad_sequence(input_values, batch_first=True, padding_value=pad_token_id)
+    labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=pad_token_id)
+    attention_mask = (input_values != pad_token_id).type(torch.long)
+    return {'input_values': input_values, 'labels': labels, 'attention_mask': attention_mask}
