@@ -10,7 +10,7 @@ def preprocess_data(dataset: Dataset, tokenizer: PreTrainedTokenizer, max_seq_le
 
     This is a fan out operation, more output rows are created than input rows. Having
     batch mode and remove_columns in the map function is critical to this succeeding.
-    
+
     Args:
         dataset (Dataset): The dataset to preprocess.
         tokenizer (PreTrainedTokenizer): The tokenizer to use for tokenization.
@@ -28,7 +28,7 @@ def preprocess_data(dataset: Dataset, tokenizer: PreTrainedTokenizer, max_seq_le
             labels = [tokens[i]]
             new_dataset.append({'input_ids': input_ids, 'labels': labels})
     result = {
-        'input_ids': [torch.tensor(item['input_ids']) for item in new_dataset],
+        'input_values': [torch.tensor(item['input_ids']) for item in new_dataset],
         'labels': [torch.tensor(item['labels']) for item in new_dataset]
     }
     return result

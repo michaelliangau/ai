@@ -56,12 +56,6 @@ eval_dataset = dataset['validation']
 # Preprocess data
 train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=train_dataset.column_names)
 eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=eval_dataset.column_names)
-IPython.embed()
-
-train_dataset = train_dataset.remove_columns(['id', 'text'])
-eval_dataset = eval_dataset.remove_columns(['id', 'text'])
-train_dataset = train_dataset.rename_column('input_ids', 'input_values')
-eval_dataset = eval_dataset.rename_column('input_ids', 'input_values')
 
 # Create data loaders
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=utils.collate_fn)
