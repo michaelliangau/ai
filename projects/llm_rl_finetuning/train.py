@@ -119,7 +119,7 @@ for epoch in range(epochs):
 
         # Compute classifier loss
         classifier_loss = env.compute_classifier_loss(decoded_sequence)
-        mean_classifier_loss = 5 * classifier_loss.mean()
+        mean_classifier_loss = 10 * classifier_loss.mean()
 
         # Compute total loss
         loss = ce_loss + mean_classifier_loss
@@ -131,9 +131,10 @@ for epoch in range(epochs):
         scheduler.step()
 
         classifier_loss_percentage = (mean_classifier_loss / loss) * 100
+        learning_rate = scheduler.get_last_lr()[0]
 
-        # Log the losses, their percentages, and the epoch loss to wandb
-        common_utils.log_wandb({"classifier_loss": mean_classifier_loss, "cross_entropy_loss": ce_loss, "classifier_loss_percentage": classifier_loss_percentage, "epoch": epoch, "total_loss": loss})
+        # Log the losses, their percentages, the learning rate, and the epoch loss to wandb
+        common_utils.log_wandb({"classifier_loss": mean_classifier_loss, "cross_entropy_loss": ce_loss, "classifier_loss_percentage": classifier_loss_percentage, "learning_rate": learning_rate, "epoch": epoch, "total_loss": loss})
 
         if step % save_steps == 0 and step != 0:
             # Save model checkpoint
