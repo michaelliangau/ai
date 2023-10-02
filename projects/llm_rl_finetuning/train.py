@@ -8,7 +8,7 @@ import utils
 import random
 import IPython
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
+import transformers
 
 # Set a seed for the random number generator to ensure reproducibility
 random.seed(0)
@@ -28,6 +28,7 @@ do_eval = True
 train_batch_size = 10
 eval_batch_size = 10
 num_token_generations = 100
+warmup_steps = 100
 
 # Create outputs folder
 common_utils.create_folder("outputs")
@@ -40,7 +41,7 @@ torch_device = common_utils.get_device(device)
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 model = GPT2LMHeadModel.from_pretrained('gpt2')
 env = environment.Environment(tokenizer=tokenizer, max_seq_length=max_seq_length, device=torch_device)
-simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer, learning_rate=learning_rate)
+simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer)
 
 # Set EOS token as pad token
 tokenizer.pad_token = tokenizer.eos_token # <|endoftext|>
@@ -63,6 +64,11 @@ eval_dataset = eval_dataset.select(range(20)) # Small subset for quicker evaluat
 train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
 eval_dataloader = DataLoader(eval_dataset, batch_size=eval_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
 
+# Optimizer and scheduler
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+num_training_steps = epochs * len(train_dataloader)
+scheduler = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_training_steps)
+
 # Train loop
 for epoch in range(epochs):
     for step, batch in enumerate(tqdm(train_dataloader)):
@@ -74,6 +80,7 @@ for epoch in range(epochs):
             eval_steps_count = 0
             for eval_batch in tqdm(eval_dataloader):
                 eval_input_values = eval_batch['input_values'].to(torch_device)
+                eval_labels = eval_batch['labels'].to(torch_device)
                 eval_attention_mask = eval_batch['attention_mask'].to(torch_device)
                 eval_actions = simple_agent.forward_autoregressive(input_values=eval_input_values, attention_mask=eval_attention_mask, num_actions=num_token_generations)
                 eval_input_values_no_pad = [eval_input_values[i][eval_attention_mask[i] != 0] for i in range(eval_input_values.size(0))]
@@ -81,7 +88,10 @@ for epoch in range(epochs):
                 eval_full_generation = [torch.cat((eval_input_values_no_pad[i], eval_actions[i]), dim=-1) for i in range(len(eval_input_values_no_pad))]
                 eval_decoded_sequence = simple_agent.decode_sequence(eval_full_generation)
                 eval_classifier_loss = env.compute_classifier_loss(eval_decoded_sequence)
-                eval_loss += eval_classifier_loss.mean().item()
+                eval_action, eval_logits = simple_agent.forward_single(input_values=eval_input_values, attention_mask=eval_attention_mask)
+                eval_pred = eval_logits[:, -1, :]
+                eval_ce_loss = torch.nn.functional.cross_entropy(eval_pred, eval_labels.squeeze())
+                eval_loss += (eval_classifier_loss.mean().item() + eval_ce_loss.item())
                 eval_steps_count += 1
             eval_loss /= eval_steps_count
             common_utils.log_wandb({"eval_loss": eval_loss, "epoch": epoch})
@@ -112,12 +122,13 @@ for epoch in range(epochs):
         mean_classifier_loss = classifier_loss.mean()
 
         # Compute total loss
-        loss = ce_loss + mean_classifier_loss
+        loss = ce_loss + 5 * mean_classifier_loss
 
         # Backward pass
-        simple_agent.optimizer.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
-        simple_agent.optimizer.step()
+        optimizer.step()
+        scheduler.step()
 
         classifier_loss_percentage = (mean_classifier_loss / loss) * 100
 

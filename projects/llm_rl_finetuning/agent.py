@@ -8,17 +8,15 @@ from transformers import PreTrainedModel, PreTrainedTokenizer
 
 class SimpleAgent:
     """Class representing a simple RL agent."""
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, learning_rate: float = 1e-4):
+    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer):
         """Initialize the SimpleAgent.
         
         Args:
             model: The model to be used by the agent.
             tokenizer: The tokenizer to be used by the agent.
-            learning_rate (float, optional): The learning rate for the optimizer. Defaults to 1e-4.
         """
         self.model = model
         self.tokenizer = tokenizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
     def tokenize_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
