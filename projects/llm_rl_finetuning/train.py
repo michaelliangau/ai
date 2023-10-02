@@ -20,13 +20,13 @@ import common.utils as common_utils
 # Hyperparameters
 epochs = 10
 max_seq_length = 100
-learning_rate = 1e-4
-device = "cpu"
+learning_rate = 4e-3
+device = "cuda"
 eval_steps = 100
 save_steps = 500
 do_eval = True
-train_batch_size = 10
-eval_batch_size = 10
+train_batch_size = 16
+eval_batch_size = 16
 num_token_generations = 100
 warmup_steps = 100
 

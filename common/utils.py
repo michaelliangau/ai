@@ -4,27 +4,12 @@ import subprocess
 from typing import List, Dict, Tuple, Any, Optional
 
 # Third party imports.
-from comet_ml import Experiment
 import torch
 import IPython
 import datasets
 import wandb
 
 hf_dataset_row = datasets.arrow_dataset.Dataset
-
-def start_comet_ml_logging(project_name: str) -> Experiment:
-    """Starts comet logging.
-
-    Args:
-        project_name (str): The comet project name.
-
-    Returns:
-        experiment (Experiment): The comet experiment object.
-    """
-    with open("../../../comet_api_key.txt") as f:
-        comet_api_key = f.readline()
-        experiment = Experiment(comet_api_key, project_name=project_name)
-    return experiment
 
 def start_wandb_logging(project_name: str, config_dict: Dict[str, Any] = {}):
     """Starts Weights & Biases logging.
