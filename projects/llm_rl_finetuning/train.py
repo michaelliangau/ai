@@ -25,8 +25,9 @@ device = "cuda"
 eval_steps = 100
 save_steps = 500
 do_eval = True
-train_batch_size = 16
-eval_batch_size = 16
+train_batch_size = 24
+eval_batch_size = 24
+eval_dataset_size = 96
 num_token_generations = 100
 warmup_steps = 100
 
@@ -58,7 +59,7 @@ eval_dataset = dataset['validation']
 # Preprocess data
 train_dataset = train_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=train_dataset.column_names)
 eval_dataset = eval_dataset.map(lambda examples: utils.preprocess_data(examples, tokenizer, max_seq_length), batched=True, batch_size=1, num_proc=8, remove_columns=eval_dataset.column_names)
-eval_dataset = eval_dataset.select(range(20)) # Small subset for quicker evaluation
+eval_dataset = eval_dataset.select(range(eval_dataset_size)) # Small subset for quicker evaluation
 
 # Create data loaders
 train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
