@@ -119,10 +119,10 @@ for epoch in range(epochs):
 
         # Compute classifier loss
         classifier_loss = env.compute_classifier_loss(decoded_sequence)
-        mean_classifier_loss = classifier_loss.mean()
+        mean_classifier_loss = 5 * classifier_loss.mean()
 
         # Compute total loss
-        loss = ce_loss + 5 * mean_classifier_loss
+        loss = ce_loss + mean_classifier_loss
 
         # Backward pass
         optimizer.zero_grad()
