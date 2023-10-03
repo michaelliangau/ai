@@ -11,14 +11,16 @@ import wandb
 
 hf_dataset_row = datasets.arrow_dataset.Dataset
 
-def start_wandb_logging(project_name: str, config_dict: Dict[str, Any] = {}):
+def start_wandb_logging(name: str, project_name: str, config_dict: Dict[str, Any] = {}):
     """Starts Weights & Biases logging.
 
     Args:
+        name (str): The name of the run.
         project_name (str): The Weights & Biases project name.
         config_dict (dict): The configuration dictionary.
     """
     wandb.init(
+        name=name,
         project=project_name,
         config=config_dict
     )

@@ -18,6 +18,7 @@ sys.path.append("../..")
 import common.utils as common_utils
 
 # Hyperparameters
+experiment_name = "base"
 epochs = 10
 max_seq_length = 100
 learning_rate = 4e-3
@@ -35,7 +36,7 @@ warmup_steps = 100
 common_utils.create_folder("outputs")
 
 # Start wandb logging
-common_utils.start_wandb_logging(project_name="llm_rl_finetuning")
+common_utils.start_wandb_logging(project_name="llm_rl_finetuning", name=experiment_name)
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
