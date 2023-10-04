@@ -1,3 +1,10 @@
+"""1st pass attempt at solving this using a supervised training paradigm.
+
+- Tried to first just use classifier loss only but the model was gaming the classifier
+- Tried then to add a cross entropy loss to the model related to next token prediction
+but the model only learned to predict the next token and mostly ignored the classifier
+loss.
+"""
 from tqdm import tqdm
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import torch
