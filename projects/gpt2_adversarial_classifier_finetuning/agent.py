@@ -119,13 +119,20 @@ class SimpleAgent:
             attention_mask = torch.cat((attention_mask, torch.ones_like(action).unsqueeze(-1)), dim=-1)
         return torch.stack(actions)
     
-    def compute_loss_ppo_rl(states, rewards, log_probs, gamma=0.99, epsilon=0.2):
-        
-        IPython.embed() # TODO: Build this function
+    def compute_loss_ppo_rl(self, states: List[torch.Tensor], rewards: List[float], log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
+        """Computes the loss for Proximal Policy Optimization (PPO) reinforcement learning.
+
+        Args:
+            states (List[torch.Tensor]): List of states.
+            rewards (List[float]): List of rewards.
+            log_probs (List[torch.Tensor]): List of log probabilities.
+            gamma (float, optional): Discount factor for future rewards. Default is 0.99.
+            epsilon (float, optional): Clipping parameter for PPO. Default is 0.2.
+        """
         R = 0
         discounted_rewards = []
         
-        # Compute discounted rewards
+        # Compute expected return in each state. Return = discounted future reward
         for r in reversed(rewards):
             R = r + gamma * R
             discounted_rewards.insert(0, R)
@@ -133,6 +140,11 @@ class SimpleAgent:
         # Update policy by PPO
         log_probs = torch.stack(log_probs)
         discounted_rewards = torch.Tensor(discounted_rewards)
+        # Advantage: How much better was this action compared to the average action in
+        # this state?
+        # TODO: Understanding advantage
+        IPython.embed()
+
         advantages = discounted_rewards - log_probs.exp()
         
         ratio = (log_probs - log_probs.detach()).exp()
