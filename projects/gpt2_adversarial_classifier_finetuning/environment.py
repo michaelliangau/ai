@@ -53,10 +53,10 @@ class Environment:
         for sequence in sequences:
             ai_classifier_output = self.ai_classifier(sequence)
             if ai_classifier_output[0]['label'] == 'Real':
-                reward = torch.tensor([ai_classifier_output[0]['score']], 
+                reward = torch.tensor(ai_classifier_output[0]['score'], 
                                       device=self.device)
             else:
-                reward = torch.tensor([1 - ai_classifier_output[0]['score']], 
+                reward = torch.tensor(1 - ai_classifier_output[0]['score'], 
                                       device=self.device)
             rewards.append(reward)
         return torch.stack(rewards)

@@ -4,19 +4,54 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 from tqdm import tqdm
 import IPython
-from transformers import PreTrainedModel, PreTrainedTokenizer
+import transformers
 import random
-class SimpleAgent:
+from torch import nn
+
+class ValueNetwork(nn.Module):
+    """Class representing a value network for GPT2."""
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int = 1):
+        """Initialize the ValueNetwork.
+        
+        Args:
+            input_dim (int): The input dimension for the value network.
+            hidden_dim (int): The hidden dimension for the value network.
+            output_dim (int): The output dimension for the value network. Default 1.
+        """
+        super().__init__()
+        self.value_head = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, output_dim)
+        )
+
+    def forward(self, input_values: torch.Tensor) -> torch.Tensor:
+        """Compute the value estimate for a given state.
+
+        Args:
+            input_values (torch.Tensor): The current state represented as a tokenized tensor.
+
+        Returns:
+            torch.Tensor: The value estimate for the current state.
+        """
+        value_estimate = self.value_head(input_values)
+        return value_estimate
+
+class SimpleAgent(transformers.GPT2LMHeadModel):
     """Class representing a simple RL agent."""
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer):
+    def __init__(self, model: transformers.PreTrainedModel, tokenizer: transformers.PreTrainedTokenizer):
         """Initialize the SimpleAgent.
         
         Args:
             model: The model to be used by the agent.
             tokenizer: The tokenizer to be used by the agent.
+            value_network: The value network to be used by the agent.
+            device: The device to be used by the agent.
         """
-        self.model = model
+        super().__init__(config=model.config)
+        self.model = model  
         self.tokenizer = tokenizer
+        self.value_head = ValueNetwork(input_dim=model.config.hidden_size, hidden_dim=256, output_dim=1)
 
     def encode_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
@@ -69,7 +104,8 @@ class SimpleAgent:
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: Selected action and its log probability.
         """
-        logits = self.model(input_ids=state_encoded).logits
+        outputs, _ = self.forward(input_values=state_encoded)
+        logits = outputs.logits[:, -1, :] # Shape: (batch_size, sequence_length, vocab_size)
         probs = torch.softmax(logits, dim=-1)
         
         # Epsilon-greedy exploration strategy
@@ -83,9 +119,67 @@ class SimpleAgent:
         # Log probability for training
         dist = Categorical(probs)
         log_prob = dist.log_prob(action)
-        log_prob = log_prob[-1]
         
         return action, log_prob
+    
+    def forward(self, input_values: torch.Tensor) -> torch.Tensor:
+        """Get the output of the value head.
+
+        Args:
+            input_values (torch.Tensor): The input tensor to be used for sequence generation.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: The output of the model and the output of the value head.
+        """
+        outputs = self.model(input_ids=input_values, output_hidden_states=True)
+        last_hidden_state = outputs.hidden_states[-1]  # Shape: (batch_size, sequence_length, hidden_size)
+        value_pred = self.value_head(last_hidden_state[:, -1, :]).squeeze()  # Shape: (batch_size, sequence_length, 1)
+        return outputs, value_pred
+    
+    def compute_loss_ppo_rl(self, states: List[torch.Tensor], rewards: List[float], old_log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
+        """Computes the loss for Proximal Policy Optimization (PPO) reinforcement learning.
+
+        Args:
+            states (List[torch.Tensor]): List of states.
+            rewards (List[float]): List of rewards.
+            old_log_probs (List[torch.Tensor]): List of log probabilities from the old policy.
+            gamma (float, optional): Discount factor for future rewards. Default is 0.99.
+            epsilon (float, optional): Clipping parameter for PPO. Default is 0.2.
+        """
+        R = 0
+        discounted_rewards = []
+        
+        # Compute expected return in each state. Return = discounted future reward
+        for r in reversed(rewards):
+            R = r + gamma * R
+            discounted_rewards.insert(0, R)
+        
+        # Update policy by PPO
+        old_log_probs = torch.stack(old_log_probs).squeeze()
+        discounted_rewards = torch.Tensor(discounted_rewards)
+
+        # Compute value estimates for each state
+        IPython.embed() #TODO: Why are there 6 advantages?
+        _, value_pred = self.forward(input_values=states[0])
+        advantages = discounted_rewards - value_pred.detach()
+        
+        # # Compute new log probabilities for each state-action pair
+        # new_log_probs = []
+        # for state in states:
+        #     _, log_prob = self.select_action(state)
+        #     new_log_probs.append(log_prob)
+        # new_log_probs = torch.stack(new_log_probs)
+        
+        # ratio = (new_log_probs - old_log_probs.detach()).exp()
+        # surr1 = ratio * advantages
+        # surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
+        
+        # loss = -torch.min(surr1, surr2).mean()
+        
+        # self.optimizer.zero_grad()
+        # loss.backward()
+        # self.optimizer.step()
+
 
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates the next token based on a given input tensor.
@@ -118,42 +212,3 @@ class SimpleAgent:
             input_values = torch.cat((input_values, action.unsqueeze(-1)), dim=-1)
             attention_mask = torch.cat((attention_mask, torch.ones_like(action).unsqueeze(-1)), dim=-1)
         return torch.stack(actions)
-    
-    def compute_loss_ppo_rl(self, states: List[torch.Tensor], rewards: List[float], log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
-        """Computes the loss for Proximal Policy Optimization (PPO) reinforcement learning.
-
-        Args:
-            states (List[torch.Tensor]): List of states.
-            rewards (List[float]): List of rewards.
-            log_probs (List[torch.Tensor]): List of log probabilities.
-            gamma (float, optional): Discount factor for future rewards. Default is 0.99.
-            epsilon (float, optional): Clipping parameter for PPO. Default is 0.2.
-        """
-        R = 0
-        discounted_rewards = []
-        
-        # Compute expected return in each state. Return = discounted future reward
-        for r in reversed(rewards):
-            R = r + gamma * R
-            discounted_rewards.insert(0, R)
-        
-        # Update policy by PPO
-        log_probs = torch.stack(log_probs)
-        discounted_rewards = torch.Tensor(discounted_rewards)
-        # Advantage: How much better was this action compared to the average action in
-        # this state?
-        # TODO: Understanding advantage
-        IPython.embed()
-
-        advantages = discounted_rewards - log_probs.exp()
-        
-        ratio = (log_probs - log_probs.detach()).exp()
-        surr1 = ratio * advantages
-        surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
-        
-        loss = -torch.min(surr1, surr2).mean()
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-

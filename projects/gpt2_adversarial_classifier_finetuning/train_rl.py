@@ -78,7 +78,8 @@ episode_states = []
 
 for episode in range(num_episodes):
     state = "Hello, how are you?"
-    current_state = simple_agent.encode_sequence(state).to(torch_device)
+    encoded_state = simple_agent.encode_sequence(state).unsqueeze(0).to(torch_device)
+    current_state = encoded_state
     done = False
     rewards = []
     log_probs = []
@@ -86,6 +87,7 @@ for episode in range(num_episodes):
     while not done:
         # Take action
         action, log_prob = simple_agent.get_action_and_log_prob_rl(current_state)
+        action = action.unsqueeze(0).to(torch_device)
 
         # Get reward
         current_state = torch.cat((current_state, action), dim=-1)
@@ -100,10 +102,10 @@ for episode in range(num_episodes):
         # Episode termination condition
         if len(rewards) >= max_episode_length:
             done = True
-    
+
     episode_rewards.append(rewards)
     episode_log_probs.append(log_probs)
-    episode_states.append(state)
+    episode_states.append(encoded_state)
 
     # Policy update
     simple_agent.compute_loss_ppo_rl(episode_states, episode_rewards[-1], episode_log_probs[-1])
