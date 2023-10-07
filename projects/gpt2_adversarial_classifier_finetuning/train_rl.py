@@ -18,9 +18,9 @@ sys.path.append("../..")
 import common.utils as common_utils
 
 # Hyperparameters
-experiment_name = "dev"
+experiment_name = "dev-cuda"
 num_episodes = 100
-max_seq_length = 10
+max_seq_length = 50
 learning_rate = 4e-3
 device = "cuda"
 eval_steps = 100
@@ -70,16 +70,13 @@ policy_scheduler = transformers.get_linear_schedule_with_warmup(policy_optimizer
 value_scheduler = transformers.get_linear_schedule_with_warmup(value_optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_training_steps)
 
 # Train loop
-episode_rewards, episode_log_probs, episode_states, episode_actions = [], [], [], []
-
 for episode in tqdm(range(num_episodes)):
     state = "Hello, how are you?"
     encoded_state = actor_critic_agent.encode_sequence(state).unsqueeze(0).to(torch_device)
     current_state = encoded_state
-    done = False
     rewards, log_probs, states, actions = [], [], [], []
 
-    while not done:
+    for _ in tqdm(range(max_seq_length)):
         # Take action
         action, log_prob = actor_critic_agent.get_action_and_log_prob_rl(current_state)
         action = action.unsqueeze(0).to(torch_device)
@@ -96,17 +93,8 @@ for episode in tqdm(range(num_episodes)):
         log_probs.append(log_prob)
         actions.append(action)
 
-        # Episode termination condition
-        if len(rewards) >= max_seq_length:
-            done = True
-
-    episode_rewards.append(rewards)
-    episode_log_probs.append(log_probs)
-    episode_states.append(states)
-    episode_actions.append(actions)
-
-    # Policy update
-    loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=episode_states[-1], rewards=episode_rewards[-1], old_log_probs=episode_log_probs[-1], actions=episode_actions[-1])
+    # Calculate losses
+    loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
     print(f"Loss: {loss.item()}, Value Loss: {value_loss.item()}")
 
     # Policy Backward pass
@@ -115,13 +103,14 @@ for episode in tqdm(range(num_episodes)):
     policy_optimizer.step()
     policy_scheduler.step()
 
+    # Value Backward pass
     value_optimizer.zero_grad()
     value_loss.backward()
     value_optimizer.step()
     value_scheduler.step()
 
     # Log the losses, their percentages, the learning rate, and the epoch loss to wandb
-    common_utils.log_wandb({"Loss": loss.item(), "Value Loss": value_loss.item()})
+    common_utils.log_wandb({"Loss": loss.item(), "Value Loss": value_loss.item(), "Learning Rate": policy_optimizer.param_groups[0]['lr']})
 
     if episode % save_steps == 0 and episode != 0:
         # Save model checkpoint

@@ -48,7 +48,8 @@ class ActorCriticAgent():
         """
         self.policy_network = transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device)
         self.tokenizer = tokenizer
-        self.value_network = ValueNetwork(input_dim=self.policy_network.config.hidden_size, hidden_dim=256, output_dim=1)
+        self.value_network = ValueNetwork(input_dim=self.policy_network.config.hidden_size, hidden_dim=256, output_dim=1).to(device)
+        self.device = device
 
     def encode_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
@@ -115,8 +116,9 @@ class ActorCriticAgent():
                 action = action[-1:]
 
         # Log probability for training
+        action = torch.tensor([action]).to(self.device)
         dist = Categorical(probs)
-        log_prob = dist.log_prob(torch.tensor([action]))
+        log_prob = dist.log_prob(action)
         
         return action, log_prob
     
@@ -158,7 +160,7 @@ class ActorCriticAgent():
         
         # Fix tensors
         old_log_probs = torch.stack(old_log_probs).squeeze()
-        discounted_rewards = torch.Tensor(discounted_rewards)
+        discounted_rewards = torch.Tensor(discounted_rewards).to(self.device)
 
         # Compute value estimates for each state
         advantages, value_preds = [], []
