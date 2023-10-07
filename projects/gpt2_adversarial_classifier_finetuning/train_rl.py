@@ -94,8 +94,8 @@ for episode in tqdm(range(num_episodes)):
         actions.append(action)
 
     # Calculate losses
-    loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
-    print(f"Loss: {loss.item()}, Value Loss: {value_loss.item()}, Cumulative Reward: {cumulative_reward}")
+    policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
+    print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Cumulative Reward: {cumulative_reward}")
     print(f"Every 10th reward: {[rewards[i] for i in range(0, len(rewards), 10)]}")
 
     # Calculate cumulative reward
@@ -103,7 +103,7 @@ for episode in tqdm(range(num_episodes)):
 
     # Policy Backward pass
     policy_optimizer.zero_grad()
-    loss.backward()
+    policy_loss.backward()
     policy_optimizer.step()
     policy_scheduler.step()
 
@@ -114,13 +114,13 @@ for episode in tqdm(range(num_episodes)):
     value_scheduler.step()
 
     # Log the losses, their percentages, the learning rate, and the epoch loss to wandb
-    common_utils.log_wandb({"Loss": loss.item(), "Value Loss": value_loss.item(), "Learning Rate": policy_optimizer.param_groups[0]['lr'], "Cumulative Reward": cumulative_reward})
+    common_utils.log_wandb({"Policy Loss": policy_loss.item(), "Value Loss": value_loss.item(), "Learning Rate": policy_optimizer.param_groups[0]['lr'], "Cumulative Reward": cumulative_reward})
 
     if episode % save_steps == 0 and episode != 0:
         # Save model checkpoint
         torch.save(actor_critic_agent.state_dict(), f'outputs/checkpoint_{episode}.pt')
 
-    print(f'Episode {episode}: Loss {loss.item()}, Value Loss: {value_loss.item()}')
+    print(f'Episode {episode}: Loss {policy_loss.item()}, Value Loss: {value_loss.item()}')
 
 # Save model at the end of training
 torch.save(actor_critic_agent.state_dict(), f'outputs/checkpoint_{episode}_final.pt')

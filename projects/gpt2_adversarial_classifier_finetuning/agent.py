@@ -186,11 +186,11 @@ class ActorCriticAgent():
         ratio = (new_log_probs - old_log_probs.detach()).exp() # exp() converts log probs to probs
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
-        loss = -torch.min(surr1, surr2).mean() # This should become more negative with time?
+        policy_loss = -torch.min(surr1, surr2).mean() # This should become more negative with time?
 
         # Calculate value loss
         value_loss = F.mse_loss(discounted_rewards, value_preds)
-        return loss, value_loss
+        return policy_loss, value_loss
 
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates the next token based on a given input tensor.
