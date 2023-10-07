@@ -1,5 +1,5 @@
 import torch
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import torch.nn.functional as F
 from torch.distributions import Categorical
 from tqdm import tqdm
@@ -93,32 +93,33 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
         return action, logits
 
-    def get_action_and_log_prob_rl(self, state_encoded: torch.Tensor, epsilon: float = 0.1) -> Tuple[int, torch.Tensor]:
-        """Get action and log probability for reinforcement learning.
+    def get_action_and_log_prob_rl(self, state: torch.Tensor, action: Optional[torch.Tensor] = None, epsilon: float = 0.1) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get action and log probability for a specific action-state pair.
 
         Args:
-            state_encoded (torch.Tensor): Encoded state.
-            epsilon (float, optional): Epsilon for epsilon-greedy exploration. 
-                Defaults to 0.1.
+            state (torch.Tensor): Encoded state.
+            action (Optional[torch.Tensor]): The specific action to be taken. If None, an action is selected based on epsilon-greedy exploration.
+            epsilon (float, optional): Epsilon for epsilon-greedy exploration. Defaults to 0.1.
 
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: Selected action and its log probability.
         """
-        outputs, _ = self.forward(input_values=state_encoded)
+        outputs, _ = self.forward(input_values=state)
         logits = outputs.logits[:, -1, :] # Shape: (batch_size, sequence_length, vocab_size)
         probs = torch.softmax(logits, dim=-1)
         
         # Epsilon-greedy exploration strategy
-        if random.random() < epsilon:
-            action = torch.randint(0, logits.shape[-1], (1,))
-        else:
-            dist = Categorical(probs)
-            action = dist.sample()
-            action = action[-1:]
+        if action is None:
+            if random.random() < epsilon:
+                action = torch.randint(0, logits.shape[-1], (1,))
+            else:
+                dist = Categorical(probs)
+                action = dist.sample()
+                action = action[-1:]
 
         # Log probability for training
         dist = Categorical(probs)
-        log_prob = dist.log_prob(action)
+        log_prob = dist.log_prob(torch.tensor([action]))
         
         return action, log_prob
     
@@ -136,49 +137,56 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
         value_pred = self.value_head(last_hidden_state[:, -1, :]).squeeze()  # Shape: (batch_size, sequence_length, 1)
         return outputs, value_pred
     
-    def compute_loss_ppo_rl(self, states: List[torch.Tensor], rewards: List[float], old_log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
+    def compute_loss_ppo_rl(self, states: List[torch.Tensor], actions: List[torch.Tensor], rewards: List[float], old_log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
         """Computes the loss for Proximal Policy Optimization (PPO) reinforcement learning.
 
         Args:
             states (List[torch.Tensor]): List of states.
+            actions (List[torch.Tensor]): List of actions.
             rewards (List[float]): List of rewards.
             old_log_probs (List[torch.Tensor]): List of log probabilities from the old policy.
             gamma (float, optional): Discount factor for future rewards. Default is 0.99.
             epsilon (float, optional): Clipping parameter for PPO. Default is 0.2.
         """
+        # TODO: I don't think this works with batching right now.
+        # Compute expected return in each state. Return = discounted future reward
         R = 0
         discounted_rewards = []
-        
-        # Compute expected return in each state. Return = discounted future reward
         for r in reversed(rewards):
             R = r + gamma * R
             discounted_rewards.insert(0, R)
         
-        # Update policy by PPO
+        # Fix tensors
         old_log_probs = torch.stack(old_log_probs).squeeze()
         discounted_rewards = torch.Tensor(discounted_rewards)
 
         # Compute value estimates for each state
-        IPython.embed() #TODO: Why are there 6 advantages?
-        _, value_pred = self.forward(input_values=states[0])
-        advantages = discounted_rewards - value_pred.detach()
+
+        advantages = []
+        for idx, state in enumerate(states):
+            # TODO: Kill the for loop, use an attention mask to make this faster
+            _, value_pred = self.forward(input_values=state)
+            advantage = discounted_rewards[idx] - value_pred.detach()
+            advantages.append(advantage)
+        advantages = torch.stack(advantages).squeeze()
         
-        # # Compute new log probabilities for each state-action pair
-        # new_log_probs = []
-        # for state in states:
-        #     _, log_prob = self.select_action(state)
-        #     new_log_probs.append(log_prob)
-        # new_log_probs = torch.stack(new_log_probs)
+        # Compute new log probabilities for each state-action pair
+        new_log_probs = []
+        for state, action in zip(states, actions):
+            _, log_prob = self.get_action_and_log_prob_rl(state=state, action=action)
+            new_log_probs.append(log_prob)
+        new_log_probs = torch.stack(new_log_probs).squeeze()
+        IPython.embed()
         
-        # ratio = (new_log_probs - old_log_probs.detach()).exp()
-        # surr1 = ratio * advantages
-        # surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
+        ratio = (new_log_probs - old_log_probs.detach()).exp()
+        surr1 = ratio * advantages
+        surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
         
-        # loss = -torch.min(surr1, surr2).mean()
+        loss = -torch.min(surr1, surr2).mean()
         
-        # self.optimizer.zero_grad()
-        # loss.backward()
-        # self.optimizer.step()
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
 
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

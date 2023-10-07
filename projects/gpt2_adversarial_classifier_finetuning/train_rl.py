@@ -31,6 +31,7 @@ eval_batch_size = 24
 eval_dataset_size = 96
 max_episode_length = 5
 warmup_steps = 100
+# TODO: Add episolon gamma, beta from agent
 
 # Create outputs folder
 common_utils.create_folder("outputs")
@@ -72,17 +73,14 @@ eval_dataset = dataset['validation']
 # scheduler = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_training_steps)
 
 # Train loop
-episode_rewards = []
-episode_log_probs = []
-episode_states = []
+episode_rewards, episode_log_probs, episode_states, episode_actions = [], [], [], []
 
 for episode in range(num_episodes):
     state = "Hello, how are you?"
     encoded_state = simple_agent.encode_sequence(state).unsqueeze(0).to(torch_device)
     current_state = encoded_state
     done = False
-    rewards = []
-    log_probs = []
+    rewards, log_probs, states, actions = [], [], [], []
 
     while not done:
         # Take action
@@ -90,6 +88,7 @@ for episode in range(num_episodes):
         action = action.unsqueeze(0).to(torch_device)
 
         # Get reward
+        states.append(current_state)
         current_state = torch.cat((current_state, action), dim=-1)
         decoded_state = simple_agent.decode_sequence(current_state)
         decoded_state = ' '.join(decoded_state)
@@ -98,6 +97,7 @@ for episode in range(num_episodes):
         # Append reward and log probability
         rewards.append(reward)
         log_probs.append(log_prob)
+        actions.append(action)
 
         # Episode termination condition
         if len(rewards) >= max_episode_length:
@@ -105,10 +105,11 @@ for episode in range(num_episodes):
 
     episode_rewards.append(rewards)
     episode_log_probs.append(log_probs)
-    episode_states.append(encoded_state)
+    episode_states.append(states)
+    episode_actions.append(actions)
 
     # Policy update
-    simple_agent.compute_loss_ppo_rl(episode_states, episode_rewards[-1], episode_log_probs[-1])
+    simple_agent.compute_loss_ppo_rl(states=episode_states[-1], rewards=episode_rewards[-1], old_log_probs=episode_log_probs[-1], actions=episode_actions[-1])
 
 
 
