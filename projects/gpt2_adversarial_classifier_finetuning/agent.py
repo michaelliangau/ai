@@ -171,6 +171,8 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
         advantages = torch.stack(advantages).squeeze()
         
         # Compute new log probabilities for each state-action pair
+        # This should be the same as old_log_probs if loss is computed right after episode
+        # finish for the most recent episode.
         new_log_probs = []
         for state, action in zip(states, actions):
             _, log_prob = self.get_action_and_log_prob_rl(state=state, action=action)
