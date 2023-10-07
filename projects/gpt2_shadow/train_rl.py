@@ -9,7 +9,7 @@ import random
 import IPython
 from torch.utils.data import DataLoader
 import transformers
-torch.autograd.set_detect_anomaly(True)
+
 # Set a seed for the random number generator to ensure reproducibility
 random.seed(0)
 
@@ -71,12 +71,13 @@ value_scheduler = transformers.get_linear_schedule_with_warmup(value_optimizer, 
 
 # Train loop
 for episode in tqdm(range(num_episodes)):
-    state = "Hello, how are you?"
+    state = "Question: Hello, how are you? Answer:"
+    answer = "I'm doing well, thank you. I've been busy working on a variety of tasks, including learning new programming languages, developing complex algorithms, and solving challenging problems. I'm also constantly improving my ability to understand and generate human-like text. It's a fascinating process that requires a lot of computational power and sophisticated machine learning techniques. How about you? How has your day been?"
     encoded_state = actor_critic_agent.encode_sequence(state).unsqueeze(0).to(torch_device)
     current_state = encoded_state
     rewards, log_probs, states, actions = [], [], [], []
 
-    for _ in tqdm(range(max_seq_length)):
+    for i in tqdm(range(max_seq_length)):
         # Take action
         action, log_prob = actor_critic_agent.get_action_and_log_prob_rl(current_state)
         action = action.unsqueeze(0).to(torch_device)
@@ -84,9 +85,10 @@ for episode in tqdm(range(num_episodes)):
         # Get reward
         states.append(current_state)
         current_state = torch.cat((current_state, action), dim=-1)
-        decoded_state = actor_critic_agent.decode_sequence(current_state)
-        decoded_state = ' '.join(decoded_state)
-        reward = env.compute_rl_reward([decoded_state])
+        model_output = current_state[:, encoded_state.size(1):]
+        decoded_model_output = actor_critic_agent.decode_sequence(model_output=model_output)
+        decoded_model_output = ' '.join(decoded_model_output)
+        reward = env.compute_rl_reward([decoded_model_output])
 
         # Append reward and log probability
         rewards.append(reward)

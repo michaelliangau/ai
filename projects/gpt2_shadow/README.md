@@ -18,4 +18,9 @@ But the model is gaming the classifier. It's producing outputs that are non-sens
 Hello, how are you? ( ( MTA OPEN ( Silent ( ( ( ( ( ( ( ( ( (Break ( ( ( ( ( ( ( ( monog ( ( ( Ignore ( ( ( ( ( ( ( ( ( Tr ( ( ( stoolENTSpret ( ( ( civilians']
 ```
 
+To try fix this, I'm going to try add an additional loss from the RL environment that is comparing cosine similarity between the sentence embeddings of the generated output and original prompt up to that token. This should encourage the model to produce outputs that are similar in meaning to the prompt. Not sure how we handle the case that the input prompt is shorter than the generated output tho.
+
 ## Resources
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+https://huggingface.co/gpt2
+https://huggingface.co/roberta-base-openai-detector
