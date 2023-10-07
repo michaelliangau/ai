@@ -37,21 +37,18 @@ class ValueNetwork(nn.Module):
         value_estimate = self.value_network(input_values)
         return value_estimate
 
-class ActorCriticAgent(transformers.GPT2LMHeadModel):
+class ActorCriticAgent():
     """Class representing a simple RL agent."""
-    def __init__(self, model: transformers.PreTrainedModel, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(self, tokenizer: transformers.PreTrainedTokenizer, device: str = 'cuda'):
         """Initialize the ActorCriticAgent.
         
         Args:
-            model: The model to be used by the agent.
             tokenizer: The tokenizer to be used by the agent.
-            value_network: The value network to be used by the agent.
             device: The device to be used by the agent.
         """
-        super().__init__(config=model.config)
-        self.policy_network = model  
+        self.policy_network = transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device)
         self.tokenizer = tokenizer
-        self.value_network = ValueNetwork(input_dim=model.config.hidden_size, hidden_dim=256, output_dim=1)
+        self.value_network = ValueNetwork(input_dim=self.policy_network.config.hidden_size, hidden_dim=256, output_dim=1)
 
     def encode_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
@@ -133,7 +130,7 @@ class ActorCriticAgent(transformers.GPT2LMHeadModel):
             Tuple[torch.Tensor, torch.Tensor]: The output of the model and the output of the value head.
         """
         outputs = self.policy_network(input_ids=input_values, output_hidden_states=True)
-        last_hidden_state = outputs.hidden_states[-1]  # Shape: (batch_size, sequence_length, hidden_size)
+        last_hidden_state = outputs.hidden_states[-1].detach()  # Shape: (batch_size, sequence_length, hidden_size)
         value_pred = self.value_network(last_hidden_state[:, -1, :]).squeeze()  # Shape: (batch_size, sequence_length, 1)
         return outputs, value_pred
     
@@ -187,11 +184,10 @@ class ActorCriticAgent(transformers.GPT2LMHeadModel):
         ratio = (new_log_probs - old_log_probs.detach()).exp() # exp() converts log probs to probs
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
-        loss = -torch.min(surr1, surr2).mean()
+        loss = -torch.min(surr1, surr2).mean() # This should become more negative with time?
 
         # Calculate value loss
         value_loss = F.mse_loss(discounted_rewards, value_preds)
-
         return loss, value_loss
 
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

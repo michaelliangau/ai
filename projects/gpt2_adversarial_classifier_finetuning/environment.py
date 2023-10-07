@@ -5,16 +5,14 @@ import IPython
 
 class Environment:
     """This class represents the environment in which the RL agent operates."""
-    def __init__(self, tokenizer: transformers.GPT2Tokenizer, max_seq_length: int, device: str = 'cuda'):
+    def __init__(self, tokenizer: transformers.GPT2Tokenizer, device: str = 'cuda'):
         """Initialize the environment.
 
         Args:
             tokenizer: The tokenizer to be used by the environment.
-            max_seq_length (int): The maximum length of the sequence that can be generated.
             device (str, optional): The device to be used for computations. Defaults to 'cuda'.
         """
         self.tokenizer = tokenizer
-        self.max_seq_length = max_seq_length
         self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=device)
         self.device = device
 
