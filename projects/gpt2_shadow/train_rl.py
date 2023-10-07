@@ -93,13 +93,16 @@ for episode in tqdm(range(num_episodes)):
         log_probs.append(log_prob)
         actions.append(action)
 
+    # Calculate cumulative reward
+    cumulative_reward = sum(rewards)
+
     # Calculate losses
     policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
     print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Cumulative Reward: {cumulative_reward}")
     print(f"Every 10th reward: {[rewards[i] for i in range(0, len(rewards), 10)]}")
-
-    # Calculate cumulative reward
-    cumulative_reward = sum(rewards)
+    # Decode the generated sequence and print it out
+    decoded_sequence = actor_critic_agent.decode_sequence(current_state)
+    print(f"Decoded sequence: {decoded_sequence}")
 
     # Policy Backward pass
     policy_optimizer.zero_grad()
