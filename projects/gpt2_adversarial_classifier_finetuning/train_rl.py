@@ -109,9 +109,7 @@ for episode in range(num_episodes):
     episode_actions.append(actions)
 
     # Policy update
-    simple_agent.compute_loss_ppo_rl(states=episode_states[-1], rewards=episode_rewards[-1], old_log_probs=episode_log_probs[-1], actions=episode_actions[-1])
-
-
+    loss, value_loss = simple_agent.compute_loss_ppo_rl(states=episode_states[-1], rewards=episode_rewards[-1], old_log_probs=episode_log_probs[-1], actions=episode_actions[-1])
 
     #     # Backward pass
     #     optimizer.zero_grad()

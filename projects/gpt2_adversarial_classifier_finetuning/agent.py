@@ -147,6 +147,9 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
             old_log_probs (List[torch.Tensor]): List of log probabilities from the old policy.
             gamma (float, optional): Discount factor for future rewards. Default is 0.99.
             epsilon (float, optional): Clipping parameter for PPO. Default is 0.2.
+        
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: The loss and the value loss.
         """
         # TODO: I don't think this works with batching right now.
         # Compute expected return in each state. Return = discounted future reward
@@ -161,14 +164,15 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
         discounted_rewards = torch.Tensor(discounted_rewards)
 
         # Compute value estimates for each state
-
-        advantages = []
+        advantages, value_preds = [], []
         for idx, state in enumerate(states):
             # TODO: Kill the for loop, use an attention mask to make this faster
             _, value_pred = self.forward(input_values=state)
             advantage = discounted_rewards[idx] - value_pred.detach()
             advantages.append(advantage)
+            value_preds.append(value_pred)
         advantages = torch.stack(advantages).squeeze()
+        value_preds = torch.stack(value_preds).squeeze()
         
         # Compute new log probabilities for each state-action pair
         # This should be the same as old_log_probs if loss is computed right after episode
@@ -178,18 +182,17 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
             _, log_prob = self.get_action_and_log_prob_rl(state=state, action=action)
             new_log_probs.append(log_prob)
         new_log_probs = torch.stack(new_log_probs).squeeze()
-        IPython.embed()
         
-        ratio = (new_log_probs - old_log_probs.detach()).exp()
+        # Ensure the loss doesn't deviate too much from value network outputs
+        ratio = (new_log_probs - old_log_probs.detach()).exp() # exp() converts log probs to probs
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
-        
         loss = -torch.min(surr1, surr2).mean()
-        
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
 
+        # Calculate value loss
+        value_loss = F.mse_loss(discounted_rewards, value_preds)
+        
+        return loss, value_loss
 
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates the next token based on a given input tensor.
