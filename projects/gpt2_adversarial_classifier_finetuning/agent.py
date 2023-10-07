@@ -19,7 +19,7 @@ class ValueNetwork(nn.Module):
             output_dim (int): The output dimension for the value network. Default 1.
         """
         super().__init__()
-        self.value_head = nn.Sequential(
+        self.value_network = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim)
@@ -34,13 +34,13 @@ class ValueNetwork(nn.Module):
         Returns:
             torch.Tensor: The value estimate for the current state.
         """
-        value_estimate = self.value_head(input_values)
+        value_estimate = self.value_network(input_values)
         return value_estimate
 
-class SimpleAgent(transformers.GPT2LMHeadModel):
+class ActorCriticAgent(transformers.GPT2LMHeadModel):
     """Class representing a simple RL agent."""
     def __init__(self, model: transformers.PreTrainedModel, tokenizer: transformers.PreTrainedTokenizer):
-        """Initialize the SimpleAgent.
+        """Initialize the ActorCriticAgent.
         
         Args:
             model: The model to be used by the agent.
@@ -49,9 +49,9 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
             device: The device to be used by the agent.
         """
         super().__init__(config=model.config)
-        self.model = model  
+        self.policy_network = model  
         self.tokenizer = tokenizer
-        self.value_head = ValueNetwork(input_dim=model.config.hidden_size, hidden_dim=256, output_dim=1)
+        self.value_network = ValueNetwork(input_dim=model.config.hidden_size, hidden_dim=256, output_dim=1)
 
     def encode_sequence(self, sequence: str) -> torch.Tensor:
         """Tokenize a sequence using the agent's tokenizer.
@@ -87,7 +87,7 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The selected action represented as a tensor, and the log probability of the action represented as a tensor.
         """
-        logits = self.model(input_ids=input_values, attention_mask=attention_mask).logits
+        logits = self.policy_network(input_ids=input_values, attention_mask=attention_mask).logits
         log_probs = F.log_softmax(logits[:, -1, :], dim=-1) # Log softmax logits
         m = Categorical(logits=log_probs.exp()) # Converts this into a categorial distribution that can be sampled
         action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
@@ -132,9 +132,9 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The output of the model and the output of the value head.
         """
-        outputs = self.model(input_ids=input_values, output_hidden_states=True)
+        outputs = self.policy_network(input_ids=input_values, output_hidden_states=True)
         last_hidden_state = outputs.hidden_states[-1]  # Shape: (batch_size, sequence_length, hidden_size)
-        value_pred = self.value_head(last_hidden_state[:, -1, :]).squeeze()  # Shape: (batch_size, sequence_length, 1)
+        value_pred = self.value_network(last_hidden_state[:, -1, :]).squeeze()  # Shape: (batch_size, sequence_length, 1)
         return outputs, value_pred
     
     def compute_loss_ppo_rl(self, states: List[torch.Tensor], actions: List[torch.Tensor], rewards: List[float], old_log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
@@ -191,7 +191,7 @@ class SimpleAgent(transformers.GPT2LMHeadModel):
 
         # Calculate value loss
         value_loss = F.mse_loss(discounted_rewards, value_preds)
-        
+
         return loss, value_loss
 
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

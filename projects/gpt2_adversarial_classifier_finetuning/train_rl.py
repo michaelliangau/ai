@@ -44,7 +44,7 @@ torch_device = common_utils.get_device(device)
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 model = GPT2LMHeadModel.from_pretrained('gpt2')
 env = environment.Environment(tokenizer=tokenizer, max_seq_length=max_seq_length, device=torch_device)
-simple_agent = agent.SimpleAgent(model=model, tokenizer=tokenizer)
+simple_agent = agent.ActorCriticAgent(model=model, tokenizer=tokenizer)
 
 # Set EOS token as pad token
 tokenizer.pad_token = tokenizer.eos_token # <|endoftext|>
@@ -67,10 +67,11 @@ eval_dataset = dataset['validation']
 # train_dataloader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
 # eval_dataloader = DataLoader(eval_dataset, batch_size=eval_batch_size, shuffle=True, collate_fn=lambda batch: utils.collate_fn(batch, tokenizer.pad_token_id))
 
-# # Optimizer and scheduler
-# optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+# Optimizer and scheduler
+policy_optimizer = torch.optim.Adam(simple_agent.policy_network.parameters(), lr=learning_rate)
+value_optimizer = torch.optim.Adam(simple_agent.value_network.parameters(), lr=learning_rate)
 # num_training_steps = num_episodes * len(train_dataloader)
-# scheduler = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_training_steps)
+# scheduler = transformers.get_linear_schedule_with_warmup(policy_optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_training_steps)
 
 # Train loop
 episode_rewards, episode_log_probs, episode_states, episode_actions = [], [], [], []
@@ -110,12 +111,16 @@ for episode in range(num_episodes):
 
     # Policy update
     loss, value_loss = simple_agent.compute_loss_ppo_rl(states=episode_states[-1], rewards=episode_rewards[-1], old_log_probs=episode_log_probs[-1], actions=episode_actions[-1])
+    print(f"Loss: {loss.item()}, Value Loss: {value_loss.item()}")
 
-    #     # Backward pass
-    #     optimizer.zero_grad()
-    #     loss.backward()
-    #     optimizer.step()
-    #     scheduler.step()
+    # Backward pass
+    policy_optimizer.zero_grad()
+    value_optimizer.zero_grad()
+    loss.backward()
+    value_optimizer.step()
+    policy_optimizer.step()
+    # scheduler.step()
+
 
     #     classifier_loss_percentage = (mean_classifier_loss / loss) * 100
     #     learning_rate = scheduler.get_last_lr()[0]
