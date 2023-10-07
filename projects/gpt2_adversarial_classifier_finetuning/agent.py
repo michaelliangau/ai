@@ -195,6 +195,8 @@ class ActorCriticAgent():
     def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates the next token based on a given input tensor.
 
+        Depreciated: This is only used in the supervised experiments.
+
         Args:
             input_values (torch.Tensor): The input tensor to be used for sequence generation.
             attention_mask (torch.Tensor): The attention mask for the input tensor.
@@ -207,6 +209,8 @@ class ActorCriticAgent():
 
     def forward_autoregressive(self, input_values: torch.Tensor, attention_mask: torch.Tensor, num_actions: int = 100) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates multiple tokens autoregressively based on a given input tensor.
+
+        Depreciated: This is only used in the supervised experiments.
 
         Args:
             input_values (torch.Tensor): The input tensor to be used for sequence generation.
