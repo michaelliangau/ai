@@ -20,7 +20,7 @@ import common.utils as common_utils
 # Hyperparameters
 experiment_name = "dev"
 num_episodes = 100
-max_seq_length = 50
+max_seq_length = 60
 learning_rate = 4e-3
 device = "cuda"
 eval_steps = 100
@@ -98,7 +98,7 @@ for episode in tqdm(range(num_episodes)):
     actions_tensor = torch.cat(actions, dim=0).squeeze()
     actions_text = actor_critic_agent.decode_sequence(actions_tensor)
     actions_text = ''.join(actions_text)
-    rlhf_rewards = env.compute_rlhf_reward(model_outputs=[actions_text], states=[state])
+    rlhf_rewards = env.compute_rlhf_reward(model_outputs=[actions_text], states=[state]) / 10
 
     # Add RLHF reward to rewards
     summed_rewards = [r + rlhf_rewards for r in rewards]
@@ -111,7 +111,10 @@ for episode in tqdm(range(num_episodes)):
 
     # Calculate losses
     policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
-    print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Cumulative Reward: {cumulative_reward.item()}, RLHF Reward %: {rlhf_reward_perc}")
+    print(f"Policy Loss: {policy_loss.item()}")
+    print(f"Value Loss: {value_loss.item()}")
+    print(f"Cumulative Reward: {cumulative_reward.item()}")
+    print(f"RLHF Reward %: {rlhf_reward_perc}")
     print(f"Every 10th classifier reward: {[rewards[i].item() for i in range(0, len(rewards), 10)]}")
     print(f"RLHF rewards: {rlhf_rewards.item()}")
     # Decode the generated sequence and print it out
