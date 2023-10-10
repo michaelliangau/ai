@@ -18,7 +18,7 @@ sys.path.append("../..")
 import common.utils as common_utils
 
 # Hyperparameters
-experiment_name = "dev-cuda"
+experiment_name = "dev"
 num_episodes = 100
 max_seq_length = 50
 learning_rate = 4e-3
@@ -106,10 +106,14 @@ for episode in tqdm(range(num_episodes)):
     # Calculate cumulative reward
     cumulative_reward = sum(summed_rewards)
 
+    # Calculate RLHF reward percentage for metrics
+    rlhf_reward_perc = (abs(rlhf_rewards.item() * len(actions)) / (abs(rlhf_rewards.item() * len(actions)) + abs(sum(rewards).item()))) * 100
+
     # Calculate losses
     policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
-    print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Cumulative Reward: {cumulative_reward}")
-    print(f"Every 10th reward: {[rewards[i] for i in range(0, len(rewards), 10)]}")
+    print(f"Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}, Cumulative Reward: {cumulative_reward.item()}, RLHF Reward %: {rlhf_reward_perc}")
+    print(f"Every 10th classifier reward: {[rewards[i].item() for i in range(0, len(rewards), 10)]}")
+    print(f"RLHF rewards: {rlhf_rewards.item()}")
     # Decode the generated sequence and print it out
     decoded_sequence = actor_critic_agent.decode_sequence(current_state)
     print(f"Decoded sequence: {decoded_sequence}")
@@ -127,15 +131,11 @@ for episode in tqdm(range(num_episodes)):
     value_scheduler.step()
 
     # Log the losses, their percentages, the learning rate, and the epoch loss to wandb
-    rlhf_reward_perc = (rlhf_rewards / cumulative_reward) * 100
-    common_utils.log_wandb({"Policy Loss": policy_loss.item(), "Value Loss": value_loss.item(), "Learning Rate": policy_optimizer.param_groups[0]['lr'], "Cumulative Reward": cumulative_reward})
-    common_utils.log_wandb({"RLHF Reward %": rlhf_reward_perc})
+    common_utils.log_wandb({"Policy Loss": policy_loss.item(), "Value Loss": value_loss.item(), "Learning Rate": policy_optimizer.param_groups[0]['lr'], "Cumulative Reward": cumulative_reward, "RLHF Reward %": rlhf_reward_perc})
 
     if episode % save_steps == 0 and episode != 0:
         # Save model checkpoint
         torch.save(actor_critic_agent.state_dict(), f'outputs/checkpoint_{episode}.pt')
-
-    print(f'Episode {episode}: Loss {policy_loss.item()}, Value Loss: {value_loss.item()}')
 
 # Save model at the end of training
 torch.save(actor_critic_agent.state_dict(), f'outputs/checkpoint_{episode}_final.pt')
