@@ -26,6 +26,7 @@ Decoded sequence: ["Explain nuclear fusion like I'm five.\n\n\n\n\n\n\n\n\n\n\n\
 ```
 
 TODO: Could it be the model's issue or perhaps we do need some weak target to work towards like sentence embeddings?
+TODO: Maybe the reward model isn't acting so well on a bad model. Try a better model and better classifer combination?
 
 ## Resources
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
