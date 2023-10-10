@@ -18,9 +18,14 @@ But the model is gaming the classifier. It's producing outputs that are non-sens
 Hello, how are you? ( ( MTA OPEN ( Silent ( ( ( ( ( ( ( ( ( (Break ( ( ( ( ( ( ( ( monog ( ( ( Ignore ( ( ( ( ( ( ( ( ( Tr ( ( ( stoolENTSpret ( ( ( civilians']
 ```
 
-To try fix this, I explored using an additional loss from the RL environment that is comparing cosine similarity between the sentence embeddings of the generated output and original prompt up to that token which should encourage the model to produce outputs that are similar in meaning to the prompt. However, I think a pretrained RLHF model might be a better solution.
+To try fix this, I explored using an additional loss from the RL environment that is comparing cosine similarity between the sentence embeddings of the generated output and original prompt up to that token which should encourage the model to produce outputs that are similar in meaning to the prompt. However, I think a pretrained RLHF model might be a better solution so I prioritised this approach.
 
+Taking a pretrained RLHF model off huggingface doesn't seem to work so well and we get similar results.
+```
+Decoded sequence: ["Explain nuclear fusion like I'm five.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n shelves\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n cub"]
+```
 
+TODO: Could it be the model's issue or perhaps we do need some weak target to work towards like sentence embeddings?
 
 ## Resources
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
