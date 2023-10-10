@@ -71,32 +71,40 @@ value_scheduler = transformers.get_linear_schedule_with_warmup(value_optimizer, 
 
 # Train loop
 for episode in tqdm(range(num_episodes)):
-    state = "Question: Hello, how are you? Answer:"
-    answer = "I'm doing well, thank you. I've been busy working on a variety of tasks, including learning new programming languages, developing complex algorithms, and solving challenging problems. I'm also constantly improving my ability to understand and generate human-like text. It's a fascinating process that requires a lot of computational power and sophisticated machine learning techniques. How about you? How has your day been?"
-    encoded_state = actor_critic_agent.encode_sequence(state).unsqueeze(0).to(torch_device)
+    state = "Explain nuclear fusion like I'm five."
+    encoded_state = actor_critic_agent.encode_sequence(sequence=state).unsqueeze(0).to(torch_device)
     current_state = encoded_state
     rewards, log_probs, states, actions = [], [], [], []
 
     for i in tqdm(range(max_seq_length)):
         # Take action
-        action, log_prob = actor_critic_agent.get_action_and_log_prob_rl(current_state)
+        action, log_prob = actor_critic_agent.get_action_and_log_prob_rl(state=current_state)
         action = action.unsqueeze(0).to(torch_device)
 
         # Get reward
         states.append(current_state)
         current_state = torch.cat((current_state, action), dim=-1)
         model_output = current_state[:, encoded_state.size(1):]
-        decoded_model_output = actor_critic_agent.decode_sequence(model_output=model_output)
-        decoded_model_output = ' '.join(decoded_model_output)
-        reward = env.compute_rl_reward([decoded_model_output])
+        decoded_model_text = actor_critic_agent.decode_sequence(sequence=model_output)
+        decoded_model_text = ' '.join(decoded_model_text)
+        reward = env.compute_rl_classifier_reward(model_output=[decoded_model_text])
 
         # Append reward and log probability
         rewards.append(reward)
         log_probs.append(log_prob)
         actions.append(action)
 
+    # Compute RLHF reward across entire generated sequence
+    actions_tensor = torch.cat(actions, dim=0).squeeze()
+    actions_text = actor_critic_agent.decode_sequence(actions_tensor)
+    actions_text = ''.join(actions_text)
+    rlhf_rewards = env.compute_rlhf_reward(model_outputs=[actions_text], states=[state])
+
+    # Add RLHF reward to rewards
+    summed_rewards = [r + rlhf_rewards for r in rewards]
+
     # Calculate cumulative reward
-    cumulative_reward = sum(rewards)
+    cumulative_reward = sum(summed_rewards)
 
     # Calculate losses
     policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
@@ -119,7 +127,9 @@ for episode in tqdm(range(num_episodes)):
     value_scheduler.step()
 
     # Log the losses, their percentages, the learning rate, and the epoch loss to wandb
+    rlhf_reward_perc = (rlhf_rewards / cumulative_reward) * 100
     common_utils.log_wandb({"Policy Loss": policy_loss.item(), "Value Loss": value_loss.item(), "Learning Rate": policy_optimizer.param_groups[0]['lr'], "Cumulative Reward": cumulative_reward})
+    common_utils.log_wandb({"RLHF Reward %": rlhf_reward_perc})
 
     if episode % save_steps == 0 and episode != 0:
         # Save model checkpoint
