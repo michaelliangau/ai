@@ -186,9 +186,15 @@ class ActorCriticAgent():
         ratio = (new_log_probs - old_log_probs.detach()).exp() # exp() converts log probs to probs
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
-        policy_loss = -torch.min(surr1, surr2).mean() # This should become more negative with time?
+        
+        # Policy loss models how much better the actions taken were over the predicted values.
+        # Policy loss is negative if advantage is positive (we take better actions than expected).
+        # This will push the network towards better actions
+        # Policy loss should also tend towards 0 as value network gets better at predicting.
+        policy_loss = -torch.min(surr1, surr2).mean()
 
         # Calculate value loss
+        # Value loss tries to predict return based on current state. It should tend towards 0.
         value_loss = F.mse_loss(discounted_rewards, value_preds)
         return policy_loss, value_loss
 
