@@ -40,20 +40,9 @@ common_utils.start_wandb_logging(project_name="llm_rl_finetuning", name=experime
 
 # Initialize environment and agent
 torch_device = common_utils.get_device(device)
-# tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-tokenizer = transformers.AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1")
-# env = environment.Environment(tokenizer=tokenizer, device=torch_device)
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+env = environment.Environment(tokenizer=tokenizer, device=torch_device)
 actor_critic_agent = agent.ActorCriticAgent(tokenizer=tokenizer, device=torch_device)
-
-IPython.embed()
-messages = [
-    {"role": "user", "content": "What is your favourite condiment?"},
-]
-encodeds = tokenizer.apply_chat_template(messages, return_tensors="pt")
-model_inputs = encodeds.to(device)
-generated_ids = actor_critic_agent.policy_network.generate(model_inputs, max_new_tokens=1000, do_sample=True)
-decoded = tokenizer.batch_decode(generated_ids)
-
 
 # Set EOS token as pad token
 tokenizer.pad_token = tokenizer.eos_token # <|endoftext|>

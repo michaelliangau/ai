@@ -15,8 +15,8 @@ class Environment:
         self.tokenizer = tokenizer
         self.ai_classifier = transformers.pipeline("text-classification", model="roberta-base-openai-detector", device=device)
         self.device = device
-        self.reward_model = transformers.AutoModelForSequenceClassification.from_pretrained("OpenAssistant/reward-model-deberta-v3-large-v2").to(device)
-        self.reward_tokenizer = transformers.AutoTokenizer.from_pretrained("OpenAssistant/reward-model-deberta-v3-large-v2")
+        self.reward_model = transformers.AutoModelForSequenceClassification.from_pretrained("sugam11/gpt2-rlhf-reward").to(device)
+        self.reward_tokenizer = transformers.AutoTokenizer.from_pretrained("microsoft/DialogRPT-updown")
 
     def compute_rl_classifier_reward(self, model_output: List[str]) -> torch.Tensor:
         """Calculate the reward for a list of model_output based on the AI classifier.
@@ -52,8 +52,9 @@ class Environment:
         Returns:
             torch.Tensor: The reward for the model_outputs and states.
         """
-        encoded_inputs = self.reward_tokenizer(model_outputs, states, return_tensors='pt').to(self.device)
-        rewards = self.reward_model(**encoded_inputs).logits
+        encoded_inputs = self.reward_tokenizer(model_outputs, return_tensors='pt').to(self.device)
+        with torch.no_grad():
+            rewards = self.reward_model(**encoded_inputs).logits
         rewards = rewards.squeeze(-1)
         return rewards
 

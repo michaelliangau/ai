@@ -40,3 +40,4 @@ https://huggingface.co/roberta-base-openai-detector
 https://huggingface.co/OpenAssistant/reward-model-deberta-v3-large-v2
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1
+https://huggingface.co/sugam11/gpt2-rlhf-reward
