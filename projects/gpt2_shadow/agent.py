@@ -46,7 +46,9 @@ class ActorCriticAgent():
             tokenizer: The tokenizer to be used by the agent.
             device: The device to be used by the agent.
         """
-        self.policy_network = transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device)
+
+        self.policy_network = transformers.AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1").to(device)
+        # self.policy_network = transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device)
         self.tokenizer = tokenizer
         self.value_network = ValueNetwork(input_dim=self.policy_network.config.hidden_size, hidden_dim=256, output_dim=1).to(device)
         self.device = device

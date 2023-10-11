@@ -25,8 +25,8 @@ Taking a pretrained RLHF model off huggingface doesn't seem to work so well and 
 Decoded sequence: ["Explain nuclear fusion like I'm five.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n shelves\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n cub"]
 ```
 
-TODO: Could it be the model's issue or perhaps we do need some weak target to work towards like sentence embeddings?
-TODO: Maybe the reward model isn't acting so well on a bad model. Try a better model and better classifer combination?
+Potentially we could try a better LLM to get the RLHF flow working better, however something to watch out for is whether the AI detector will still be working well. Let's try Mistral7B.
+
 
 ## Resources
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
@@ -34,3 +34,4 @@ https://huggingface.co/gpt2
 https://huggingface.co/roberta-base-openai-detector
 https://huggingface.co/OpenAssistant/reward-model-deberta-v3-large-v2
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1
