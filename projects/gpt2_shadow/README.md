@@ -22,12 +22,12 @@ Hello, how are you? ( ( MTA OPEN ( Silent ( ( ( ( ( ( ( ( ( (Break ( ( ( ( ( ( (
 
 To try fix this, I explored using an additional loss from the RL environment that is comparing cosine similarity between the sentence embeddings of the generated output and original prompt up to that token which should encourage the model to produce outputs that are similar in meaning to the prompt. However, I think a pretrained RLHF model might be a better solution so I prioritised this approach.
 
-Taking a pretrained RLHF model off huggingface doesn't seem to work so well and we get similar results.
+Taking a pretrained GPT2RLHF model off huggingface doesn't seem to work so well and we get similar results. Model is hacking the reward function.
 ```
 Decoded sequence: ["Explain nuclear fusion like I'm five.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n shelves\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n cub"]
 ```
 
-Let's try a GPT2 RLHF model
+We can also try to build our own reward model as a proxy for fooling the classifier and perplexity.
 
 Potentially we could try a better LLM to get the RLHF flow working better, however one risk is that the openai gpt2 detector is not going to be very good at detecting Mistral7B outputs.
 

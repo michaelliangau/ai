@@ -21,7 +21,7 @@ import common.utils as common_utils
 experiment_name = "dev"
 num_episodes = 100
 max_seq_length = 60
-learning_rate = 4e-3
+learning_rate = 4e-1
 device = "cuda"
 eval_steps = 100
 save_steps = 500
@@ -30,7 +30,9 @@ train_batch_size = 24
 eval_batch_size = 24
 eval_dataset_size = 96
 warmup_steps = 100
-# TODO: Add episolon gamma, beta from agent
+exploration_epsilon = 0.1 # % Exploration
+ppo_gamma = 0.99 # Discount factor for future rewards
+ppo_epsilon = 0.2 # Clipping parameter for PPO
 
 # Create outputs folder
 common_utils.create_folder("outputs")
@@ -78,7 +80,7 @@ for episode in tqdm(range(num_episodes)):
 
     for i in tqdm(range(max_seq_length)):
         # Take action
-        action, log_prob = actor_critic_agent.get_action_and_log_prob_rl(state=current_state)
+        action, log_prob = actor_critic_agent.get_action_and_log_prob_rl(state=current_state, epsilon=exploration_epsilon)
         action = action.unsqueeze(0).to(torch_device)
 
         # Get reward
@@ -98,27 +100,27 @@ for episode in tqdm(range(num_episodes)):
     actions_tensor = torch.cat(actions, dim=0).squeeze()
     actions_text = actor_critic_agent.decode_sequence(actions_tensor)
     actions_text = ''.join(actions_text)
-    rlhf_rewards = env.compute_rlhf_reward(model_outputs=[actions_text], states=[state]) / 10
+    rlhf_rewards = env.compute_rlhf_reward(model_outputs=[actions_text], states=[state])
 
     # Add RLHF reward to rewards
     summed_rewards = [r + rlhf_rewards for r in rewards]
 
+    # Calculate losses
+    policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=summed_rewards, old_log_probs=log_probs, actions=actions, gamma=ppo_gamma, epsilon=ppo_epsilon)
+    
     # Calculate cumulative reward
     cumulative_reward = sum(summed_rewards)
 
-    # Calculate RLHF reward percentage for metrics
-    rlhf_reward_perc = (abs(rlhf_rewards.item() * len(actions)) / (abs(rlhf_rewards.item() * len(actions)) + abs(sum(rewards).item()))) * 100
-
-    # Calculate losses
-    policy_loss, value_loss = actor_critic_agent.compute_loss_ppo_rl(states=states, rewards=rewards, old_log_probs=log_probs, actions=actions)
-    print(f"Policy Loss: {policy_loss.item()}")
-    print(f"Value Loss: {value_loss.item()}")
-    print(f"Cumulative Reward: {cumulative_reward.item()}")
-    print(f"RLHF Reward %: {rlhf_reward_perc}")
-    print(f"Every 10th classifier reward: {[rewards[i].item() for i in range(0, len(rewards), 10)]}")
-    print(f"RLHF rewards: {rlhf_rewards.item()}")
     # Decode the generated sequence and print it out
     decoded_sequence = actor_critic_agent.decode_sequence(current_state)
+
+    # Print metrics
+    # Calculate RLHF reward percentage for metrics
+    rlhf_reward_perc = (abs(rlhf_rewards.item() * len(actions)) / (abs(rlhf_rewards.item() * len(actions)) + abs(sum(rewards).item()))) * 100    
+    print(f"Cumulative Reward: {cumulative_reward.item()}")
+    print(f"RLHF Reward %: {rlhf_reward_perc}")
+    print(f"Every 10th classifier reward value: {[rewards[i].item() for i in range(0, len(rewards), 10)]}")
+    print(f"RLHF rewards value: {rlhf_rewards.item()}")    
     print(f"Decoded sequence: {decoded_sequence}")
 
     # Policy Backward pass
