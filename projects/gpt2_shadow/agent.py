@@ -8,11 +8,13 @@ import transformers
 import random
 from torch import nn
 
+
 class ValueNetwork(nn.Module):
     """Class representing a value network for GPT2."""
+
     def __init__(self, input_dim: int, hidden_dim: int, output_dim: int = 1):
         """Initialize the ValueNetwork.
-        
+
         Args:
             input_dim (int): The input dimension for the value network.
             hidden_dim (int): The hidden dimension for the value network.
@@ -22,7 +24,7 @@ class ValueNetwork(nn.Module):
         self.value_network = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim)
+            nn.Linear(hidden_dim, output_dim),
         )
 
     def forward(self, input_values: torch.Tensor) -> torch.Tensor:
@@ -37,18 +39,28 @@ class ValueNetwork(nn.Module):
         value_estimate = self.value_network(input_values)
         return value_estimate
 
-class ActorCriticAgent():
+
+class ActorCriticAgent:
     """Class representing a simple RL agent."""
-    def __init__(self, tokenizer: transformers.PreTrainedTokenizer, device: str = 'cuda'):
+
+    def __init__(
+        self, tokenizer: transformers.PreTrainedTokenizer, device: str = "cuda"
+    ):
         """Initialize the ActorCriticAgent.
-        
+
         Args:
             tokenizer: The tokenizer to be used by the agent.
             device: The device to be used by the agent.
         """
-        self.policy_network = transformers.GPT2LMHeadModel.from_pretrained('gpt2').to(device)
+        self.policy_network = transformers.GPT2LMHeadModel.from_pretrained("gpt2").to(
+            device
+        )
         self.tokenizer = tokenizer
-        self.value_network = ValueNetwork(input_dim=self.policy_network.config.hidden_size, hidden_dim=256, output_dim=1).to(device)
+        self.value_network = ValueNetwork(
+            input_dim=self.policy_network.config.hidden_size,
+            hidden_dim=256,
+            output_dim=1,
+        ).to(device)
         self.device = device
 
     def encode_sequence(self, sequence: str) -> torch.Tensor:
@@ -72,8 +84,10 @@ class ActorCriticAgent():
             List[str]: The decoded sequences.
         """
         return [self.tokenizer.decode(seq.tolist()) for seq in sequence]
-    
-    def select_action(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+
+    def select_action(
+        self, input_values: torch.Tensor, attention_mask: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Selects an action based on the current sequence.
 
         Used in supervised training regime.
@@ -85,13 +99,24 @@ class ActorCriticAgent():
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The selected action represented as a tensor, and the log probability of the action represented as a tensor.
         """
-        logits = self.policy_network(input_ids=input_values, attention_mask=attention_mask).logits
-        log_probs = F.log_softmax(logits[:, -1, :], dim=-1) # Log softmax logits
-        m = Categorical(logits=log_probs.exp()) # Converts this into a categorial distribution that can be sampled
-        action = m.sample() # Sample from the categorical distribution, this is where LM stochasticity comes from.
+        logits = self.policy_network(
+            input_ids=input_values, attention_mask=attention_mask
+        ).logits
+        log_probs = F.log_softmax(logits[:, -1, :], dim=-1)  # Log softmax logits
+        m = Categorical(
+            logits=log_probs.exp()
+        )  # Converts this into a categorial distribution that can be sampled
+        action = (
+            m.sample()
+        )  # Sample from the categorical distribution, this is where LM stochasticity comes from.
         return action, logits
 
-    def get_action_and_log_prob_rl(self, state: torch.Tensor, action: Optional[torch.Tensor] = None, epsilon: float = 0.1) -> Tuple[torch.Tensor, torch.Tensor]:
+    def get_action_and_log_prob_rl(
+        self,
+        state: torch.Tensor,
+        action: Optional[torch.Tensor] = None,
+        epsilon: float = 0.1,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Get action and log probability for a specific action-state pair.
 
         Args:
@@ -103,9 +128,11 @@ class ActorCriticAgent():
             Tuple[torch.Tensor, torch.Tensor]: Selected action and its log probability.
         """
         outputs, _ = self.forward(input_values=state)
-        logits = outputs.logits[:, -1, :] # Shape: (batch_size, sequence_length, vocab_size)
+        logits = outputs.logits[
+            :, -1, :
+        ]  # Shape: (batch_size, sequence_length, vocab_size)
         probs = torch.softmax(logits, dim=-1)
-        
+
         # Epsilon-greedy exploration strategy
         if action is None:
             if random.random() < epsilon:
@@ -119,9 +146,9 @@ class ActorCriticAgent():
         action = torch.tensor([action]).to(self.device)
         dist = Categorical(probs)
         log_prob = dist.log_prob(action)
-        
+
         return action, log_prob
-    
+
     def forward(self, input_values: torch.Tensor) -> torch.Tensor:
         """Get the output of the value head.
 
@@ -132,11 +159,23 @@ class ActorCriticAgent():
             Tuple[torch.Tensor, torch.Tensor]: The output of the model and the output of the value head.
         """
         outputs = self.policy_network(input_ids=input_values, output_hidden_states=True)
-        last_hidden_state = outputs.hidden_states[-1].detach()  # Shape: (batch_size, sequence_length, hidden_size)
-        value_pred = self.value_network(last_hidden_state[:, -1, :]).squeeze()  # Shape: (batch_size, sequence_length, 1)
+        last_hidden_state = outputs.hidden_states[
+            -1
+        ].detach()  # Shape: (batch_size, sequence_length, hidden_size)
+        value_pred = self.value_network(
+            last_hidden_state[:, -1, :]
+        ).squeeze()  # Shape: (batch_size, sequence_length, 1)
         return outputs, value_pred
-    
-    def compute_loss_ppo_rl(self, states: List[torch.Tensor], actions: List[torch.Tensor], rewards: List[float], old_log_probs: List[torch.Tensor], gamma: float = 0.99, epsilon: float = 0.2) -> None:
+
+    def compute_loss_ppo_rl(
+        self,
+        states: List[torch.Tensor],
+        actions: List[torch.Tensor],
+        rewards: List[float],
+        old_log_probs: List[torch.Tensor],
+        gamma: float = 0.99,
+        epsilon: float = 0.2,
+    ) -> None:
         """Computes the loss for Proximal Policy Optimization (PPO) reinforcement learning.
 
         Args:
@@ -146,7 +185,7 @@ class ActorCriticAgent():
             old_log_probs (List[torch.Tensor]): List of log probabilities from the old policy.
             gamma (float, optional): Discount factor for future rewards. Default is 0.99.
             epsilon (float, optional): Clipping parameter for PPO. Default is 0.2.
-        
+
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: The loss and the value loss.
         """
@@ -157,7 +196,7 @@ class ActorCriticAgent():
         for r in reversed(rewards):
             R = r + gamma * R
             discounted_rewards.insert(0, R)
-        
+
         # Fix tensors
         old_log_probs = torch.stack(old_log_probs).squeeze()
         discounted_rewards = torch.Tensor(discounted_rewards).to(self.device)
@@ -172,7 +211,7 @@ class ActorCriticAgent():
             value_preds.append(value_pred)
         advantages = torch.stack(advantages).squeeze()
         value_preds = torch.stack(value_preds).squeeze()
-        
+
         # Compute new log probabilities for each state-action pair
         # This should be the same as old_log_probs if loss is computed right after episode
         # finish for the most recent episode.
@@ -181,12 +220,14 @@ class ActorCriticAgent():
             _, log_prob = self.get_action_and_log_prob_rl(state=state, action=action)
             new_log_probs.append(log_prob)
         new_log_probs = torch.stack(new_log_probs).squeeze()
-        
+
         # Ensure the loss doesn't deviate too much from value network outputs
-        ratio = (new_log_probs - old_log_probs.detach()).exp() # exp() converts log probs to probs
+        ratio = (
+            new_log_probs - old_log_probs.detach()
+        ).exp()  # exp() converts log probs to probs
         surr1 = ratio * advantages
-        surr2 = torch.clamp(ratio, 1-epsilon, 1+epsilon) * advantages
-        
+        surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advantages
+
         # Policy loss models how much better the actions taken were over the predicted values.
         # Policy loss is negative if advantage is positive (we take better actions than expected).
         # This will push the network towards better actions
@@ -198,7 +239,9 @@ class ActorCriticAgent():
         value_loss = F.mse_loss(discounted_rewards, value_preds)
         return policy_loss, value_loss
 
-    def forward_single(self, input_values: torch.Tensor, attention_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward_single(
+        self, input_values: torch.Tensor, attention_mask: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates the next token based on a given input tensor.
 
         Depreciated: This is only used in the supervised experiments.
@@ -213,7 +256,12 @@ class ActorCriticAgent():
         action, logits = self.select_action(input_values, attention_mask)
         return action, logits
 
-    def forward_autoregressive(self, input_values: torch.Tensor, attention_mask: torch.Tensor, num_actions: int = 100) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward_autoregressive(
+        self,
+        input_values: torch.Tensor,
+        attention_mask: torch.Tensor,
+        num_actions: int = 100,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Generates multiple tokens autoregressively based on a given input tensor.
 
         Depreciated: This is only used in the supervised experiments.
@@ -231,5 +279,7 @@ class ActorCriticAgent():
             action, _ = self.select_action(input_values, attention_mask)
             actions.append(action)
             input_values = torch.cat((input_values, action.unsqueeze(-1)), dim=-1)
-            attention_mask = torch.cat((attention_mask, torch.ones_like(action).unsqueeze(-1)), dim=-1)
+            attention_mask = torch.cat(
+                (attention_mask, torch.ones_like(action).unsqueeze(-1)), dim=-1
+            )
         return torch.stack(actions)
