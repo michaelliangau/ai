@@ -33,6 +33,8 @@ I'd like to train this on a model better than GPT2 because GPT2 outputs aren't t
 
 The only option to train these is to ping an API during training or create a dataset that we use to train our own classifier which is expensive (and likely violates T&C).
 
+This project has been awesome in building RL intuitions so it has served its purpose, archiving for now.
+
 ## Ideas
 - Could we use an LLM to produce the RLHF rewards? I just need a proxy for perplexity.
 
