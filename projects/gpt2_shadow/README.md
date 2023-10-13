@@ -20,18 +20,21 @@ But the model is gaming the classifier. It's producing outputs that are non-sens
 Hello, how are you? ( ( MTA OPEN ( Silent ( ( ( ( ( ( ( ( ( (Break ( ( ( ( ( ( ( ( monog ( ( ( Ignore ( ( ( ( ( ( ( ( ( Tr ( ( ( stoolENTSpret ( ( ( civilians']
 ```
 
-To try fix this, I explored using an additional loss from the RL environment that is comparing cosine similarity between the sentence embeddings of the generated output and original prompt up to that token which should encourage the model to produce outputs that are similar in meaning to the prompt. However, I think a pretrained RLHF model might be a better solution so I prioritised this approach.
+To try fix this, I explored using an additional loss from the RL environment that is comparing cosine similarity between the sentence embeddings of the generated output and original prompt up to that token which should encourage the model to produce outputs that are similar in meaning to the prompt. However, I think a pretrained RLHF model might be a better solution so I prioritised this.
 
-Taking a pretrained GPT2RLHF model off huggingface doesn't seem to work so well and we get similar results. Model is hacking the reward function.
+However, taking a pretrained GPT2RLHF model off huggingface doesn't seem to work so well and we get similar results. Model is hacking the reward function.
 ```
 Decoded sequence: ["Explain nuclear fusion like I'm five.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n shelves\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n cub"]
 ```
 
-We can also try to build our own reward model as a proxy for fooling the classifier and perplexity.
+We can also try to build our own reward model to combine classifier and language model perplexity.
 
-Potentially we could try a better LLM to get the RLHF flow working better, however one risk is that the openai gpt2 detector is not going to be very good at detecting Mistral7B outputs.
+I'd like to train this on a model better than GPT2 because GPT2 outputs aren't that great. However the bottleneck is that there are no other better OS AI classifier models out there.
 
-There are no other better OS AI classifier models out there that I can find. One option is to ping an API during training but we'll very likely hit rate limits it'll be expensive. Another option is to train a classifier by ourselves.
+The only option to train these is to ping an API during training or create a dataset that we use to train our own classifier which is expensive (and likely violates T&C).
+
+## Ideas
+- Could we use an LLM to produce the RLHF rewards? I just need a proxy for perplexity.
 
 ## Resources
 https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
