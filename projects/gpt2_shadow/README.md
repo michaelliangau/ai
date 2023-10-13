@@ -31,7 +31,7 @@ We can also try to build our own reward model to combine classifier and language
 
 I'd like to train this on a model better than GPT2 because GPT2 outputs aren't that great. However the bottleneck is that there are no other better OS AI classifier models out there.
 
-The only option to train these is to ping an API during training or create a dataset that we use to train our own classifier which is expensive (and likely violates T&C).
+The only option to train these is to ping an API during training or create a dataset that we use to train our own classifier.
 
 ## Ideas
 - Could we use an LLM to produce the RLHF rewards? I just need a proxy for perplexity.
