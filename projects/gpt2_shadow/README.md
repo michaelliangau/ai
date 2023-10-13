@@ -2,7 +2,7 @@
 
 Finetune a GPT2 model to produce outputs that will adversarially fool a GPT2 AI classifier. If this is achieved then we could have LLMs that are undetectable by other ML models.
 
-The primary objective of this project is to learn RL which we have achieved. To release a model that is undetectable by other off the shelf AI detectors, we'd need to loop in the detector's API into training which is expensive and not even sure if this is feasible (rate limits).
+This project has been awesome in building RL intuitions so it has served its purpose, archiving for now. To continue working on this, I'd need to invest more compute and money into buying data.
 
 ## Findings
 
@@ -32,8 +32,6 @@ We can also try to build our own reward model to combine classifier and language
 I'd like to train this on a model better than GPT2 because GPT2 outputs aren't that great. However the bottleneck is that there are no other better OS AI classifier models out there.
 
 The only option to train these is to ping an API during training or create a dataset that we use to train our own classifier which is expensive (and likely violates T&C).
-
-This project has been awesome in building RL intuitions so it has served its purpose, archiving for now.
 
 ## Ideas
 - Could we use an LLM to produce the RLHF rewards? I just need a proxy for perplexity.
