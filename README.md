@@ -28,6 +28,7 @@ All project specific code exists in the `projects` folder. These projects are or
 - `buffet_bot` - Algorithmic investing using LLMs
 - `silicron` - PyPI package to extend chat apps with context using vector stores.
 - `rl_primitives` - RL primitives, implement agents in grid world environment.
+- `gpt2_shadow` - Use RL to finetune an LLM to adversarially train against an AI text detector.
 
 ## Common utils
 
@@ -40,10 +41,10 @@ sys.path.append("../..")
 import common.utils as common_utils
 ```
 
-## Comet Logging
+## Training run logging
 
 ```python
-common_utils.start_comet_ml_logging("michaelliang-dev")
+common_utils.start_wandb_logging(project_name="ai", config_dict={})
 ```
 
 ## Formatting code
