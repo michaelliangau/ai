@@ -1,6 +1,8 @@
-# Diffusion model
+# Denoising Diffusion Primitives
 
-Diffusion model implementation in PyTorch. There is no text conditioning in this implementation.
+Text conditioned image diffusion model implementation in PyTorch.
+
+`diffusion_model_dev.ipynb` is built from a tutorial and does not include text conditioning.
 
 ## Resources
 - [MinImagen - Build Your Own Imagen Text-to-Image Model](https://www.assemblyai.com/blog/minimagen-build-your-own-imagen-text-to-image-model/)
