@@ -58,26 +58,33 @@ class BackwardProcess():
     def __init__(self):
         """Init the backward process."""
         self.unet = UNet()
+        self.downsample_text_embedding_layer = nn.Linear(512, 128)
     
     
-    def denoise(self, image, text, timestep):
+    def denoise(self, image: torch.Tensor, text: torch.Tensor, timestep: int) -> torch.Tensor:
         """Denoise an image at a specific timestep.
         
         Args:
-            image: The image to denoise.
-            timestep: The timestep to denoise at.
-        """
+            image (torch.Tensor): The image to denoise. Shape is (batch_size, channels, height, width).
+            text (torch.Tensor): The text embedding. Shape is (batch_size, embedding_dim).
+            timestep (int): The timestep to denoise at.
         
+        Returns:
+            torch.Tensor: The denoised image. Shape is (batch_size, channels, height, width).
+        """
         # Push image through UNet encoder
-
-        # Compute text embedding
+        image_embedding = self.unet.forward_encoder(image)
 
         # Expand text embedding into same dim as encoded_image
+        text_embedding = self.downsample_text_embedding_layer(text)
+        text_embedding = text_embedding.unsqueeze(-1).unsqueeze(-1)
+        text_embedding = text_embedding.expand(image_embedding.shape)
 
         # Concatenate encoded_image and text_embedding
+        concatenated_embedding = torch.cat((image_embedding, text_embedding), dim=1)
 
         # Run concatenated tensor through UNet decoder
-
+        # TODO: WIP
         # Return denoised image
 
 
@@ -85,8 +92,7 @@ class UNet(nn.Module):
     """This UNet is the main workhorse of the backward denoising process."""
 
     def __init__(self):
-        """Initialize the UNet model.
-        """
+        """Initialize the UNet model."""
         super(UNet, self).__init__()
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
@@ -96,21 +102,32 @@ class UNet(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(256, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 3, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU()
         )
 
-    def forward(self, x):
-        """Forward pass through the UNet model.
+    def forward_encoder(self, x):
+        """Forward pass through the UNet encoder.
         
         Args:
             x: The input tensor.
         
         Returns:
-            The output tensor after passing through the encoder and decoder.
+            The output tensor after passing through the encoder.
         """
         x = self.encoder(x)
+        return x
+
+    def forward_decoder(self, x):
+        """Forward pass through the UNet decoder.
+        
+        Args:
+            x: The input tensor.
+        
+        Returns:
+            The output tensor after passing through the decoder.
+        """
         x = self.decoder(x)
         return x
