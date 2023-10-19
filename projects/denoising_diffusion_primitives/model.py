@@ -4,7 +4,7 @@ import numpy as np
 
 class ForwardProcess():
     """Adds noise to an image in a forward process."""
-    def __init__(self, num_timesteps=100, initial_beta=0.2, decay_rate=0.98, torch_device=torch.device("cuda")):
+    def __init__(self, num_timesteps: int = 100, initial_beta: float = 0.2, decay_rate: float = 0.98, torch_device: torch.device = torch.device("cuda")) -> None:
         """Initialize the forward process.
 
         Args:
@@ -16,7 +16,7 @@ class ForwardProcess():
         """
         self.betas = self.generate_betas(num_timesteps, initial_beta, decay_rate).to(torch_device)
     
-    def generate_betas(self, num_timesteps, initial_beta, decay_rate):
+    def generate_betas(self, num_timesteps: int, initial_beta: float, decay_rate: float) -> torch.Tensor:
         """Generate an array of betas for diffusion.
         
         Q: Why is betas going from high values to low?
@@ -36,9 +36,9 @@ class ForwardProcess():
         # Compute the betas in a vectorized manner
         betas = initial_beta * (decay_rate ** indices)
         # Convert to a torch tensor and return
-        return torch.tensor(betas)
+        return torch.tensor(betas, dtype=torch.float32)
     
-    def sample(self, image, timestep):
+    def sample(self, image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
         """Sample from the forward process at a specific timestep.
         
         Args:
@@ -52,7 +52,7 @@ class ForwardProcess():
 
 class BackwardProcess():
     """Generates an image from a noised image in a backward process."""
-    def __init__(self, model, torch_device=torch.device("cuda")):
+    def __init__(self, model, torch_device=torch.device("cuda")) -> None:
         """
         Initialize the backward process.
 

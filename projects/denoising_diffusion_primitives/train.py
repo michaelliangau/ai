@@ -11,22 +11,25 @@ import sys
 sys.path.append("../..")
 import common.utils as common_utils
 
-# Outputs folder
-common_utils.create_folder("outputs")
-
-# Weights & Biases
-common_utils.start_wandb_logging(name='dev', project_name="denoising_diffusion_primitives")
-
-# Device
-torch_device = common_utils.get_device()
 
 # Hyperparameters
+experiment_name = "dev"
 forward_beta = 10.0
 forward_num_timesteps = 100
 forward_decay_rate = 0.93
 num_epochs = 10
 batch_size = 16
 learning_rate = 4e-3
+
+
+# Outputs folder
+common_utils.create_folder("outputs")
+
+# Weights & Biases
+common_utils.start_wandb_logging(name=experiment_name, project_name="denoising_diffusion_primitives")
+
+# Device
+torch_device = common_utils.get_device()
 
 # Tokenizer
 tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")
