@@ -31,15 +31,11 @@ class ForwardProcess():
         Returns:
             A torch.Tensor containing generated betas.
         """
-        betas = [initial_beta]
-        for _ in range(1, num_timesteps):
-            next_beta = betas[-1] * decay_rate
-            betas.append(next_beta)
-        
-        # Normalize betas so their sum is 1 (optional)
-        betas = np.array(betas)
-        betas /= np.sum(betas)
-
+        # Create an array of indices
+        indices = np.arange(num_timesteps)
+        # Compute the betas in a vectorized manner
+        betas = initial_beta * (decay_rate ** indices)
+        # Convert to a torch tensor and return
         return torch.tensor(betas)
     
     def sample(self, image, timestep):
@@ -55,22 +51,28 @@ class ForwardProcess():
 
 class BackwardProcess():
     """Generates an image from a noised image in a backward process."""
-    def __init__(self):
-        """Init the backward process."""
-        self.unet = UNet()
-        self.downsample_text_embedding_layer = nn.Linear(512, 128)
+    def __init__(self, model, torch_device=torch.device("cuda")):
+        """
+        Initialize the backward process.
+
+        Args:
+            model: The model to be used in the backward process.
+        """
+        self.unet = model
+        self.downsample_text_embedding_layer = nn.Linear(512, 128).to(torch_device)
+        self.torch_device = torch_device
     
-    
-    def denoise(self, image: torch.Tensor, text: torch.Tensor, timestep: int) -> torch.Tensor:
-        """Denoise an image at a specific timestep.
+    def predict(self, image: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
+        """Predict the amount of noise
         
+        TODO: You can also embed timestep into the upsampling.
+
         Args:
             image (torch.Tensor): The image to denoise. Shape is (batch_size, channels, height, width).
             text (torch.Tensor): The text embedding. Shape is (batch_size, embedding_dim).
-            timestep (int): The timestep to denoise at.
         
         Returns:
-            torch.Tensor: The denoised image. Shape is (batch_size, channels, height, width).
+            torch.Tensor: Predict the amount of noise. Shape is (batch_size, channels, height, width).
         """
         # Push image through UNet encoder
         image_embedding = self.unet.forward_encoder(image)
@@ -81,12 +83,12 @@ class BackwardProcess():
         text_embedding = text_embedding.expand(image_embedding.shape)
 
         # Concatenate encoded_image and text_embedding
-        concatenated_embedding = torch.cat((image_embedding, text_embedding), dim=1)
+        concatenated_embedding = torch.cat((image_embedding, text_embedding), dim=1).to(self.torch_device)
 
         # Run concatenated tensor through UNet decoder
-        denoised_image = self.unet.forward_decoder(concatenated_embedding)
+        predicted_noise = self.unet.forward_decoder(concatenated_embedding)
 
-        return denoised_image
+        return predicted_noise
 
 
 class UNet(nn.Module):
