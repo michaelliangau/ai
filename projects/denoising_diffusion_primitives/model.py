@@ -84,8 +84,9 @@ class BackwardProcess():
         concatenated_embedding = torch.cat((image_embedding, text_embedding), dim=1)
 
         # Run concatenated tensor through UNet decoder
-        # TODO: WIP
-        # Return denoised image
+        denoised_image = self.unet.forward_decoder(concatenated_embedding)
+
+        return denoised_image
 
 
 class UNet(nn.Module):
@@ -102,10 +103,9 @@ class UNet(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(256, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1),  # Output shape: [1, 128, 360, 640]
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 3, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.ReLU()
+            nn.ConvTranspose2d(128, 3, kernel_size=1)  # Output shape: [1, 3, 360, 640]
         )
 
     def forward_encoder(self, x):
