@@ -1,3 +1,4 @@
+from typing import List, Dict, Any
 import torchvision
 import torch
 import random
@@ -12,7 +13,7 @@ class Collator():
             torchvision.transforms.ToTensor() # Convert images to tensors
         ])    
 
-    def collate(self, batch):
+    def collate(self, batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Collate a batch of data by transforming images and selecting a random sentence from each item.
 
         Args:
