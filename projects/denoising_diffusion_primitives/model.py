@@ -4,7 +4,7 @@ import numpy as np
 
 class ForwardProcess():
     """Adds noise to an image in a forward process."""
-    def __init__(self, num_timesteps=100, initial_beta=0.2, decay_rate=0.98):
+    def __init__(self, num_timesteps=100, initial_beta=0.2, decay_rate=0.98, torch_device=torch.device("cuda")):
         """Initialize the forward process.
 
         Args:
@@ -14,7 +14,7 @@ class ForwardProcess():
                 the images at the first timestep (which has maximum noise).
             decay_rate: Decay rate for each subsequent beta.
         """
-        self.betas = self.generate_betas(num_timesteps, initial_beta, decay_rate)
+        self.betas = self.generate_betas(num_timesteps, initial_beta, decay_rate).to(torch_device)
     
     def generate_betas(self, num_timesteps, initial_beta, decay_rate):
         """Generate an array of betas for diffusion.
@@ -46,8 +46,9 @@ class ForwardProcess():
             timestep: The timestep to sample at.
         """
         noise_std = torch.sqrt(self.betas[timestep])
-        noise = torch.randn_like(image) * noise_std
-        return image + noise
+        noise = torch.randn_like(image) * noise_std.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+        noised_image = image + noise
+        return noised_image
 
 class BackwardProcess():
     """Generates an image from a noised image in a backward process."""

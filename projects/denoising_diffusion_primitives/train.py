@@ -36,7 +36,7 @@ text_embedding_model = transformers.T5EncoderModel.from_pretrained("t5-small").t
 unet = model.UNet().to(torch_device)
 
 # Forward/Backward Process
-forward_process = model.ForwardProcess(num_timesteps=forward_num_timesteps, initial_beta=forward_beta, decay_rate=forward_decay_rate)
+forward_process = model.ForwardProcess(num_timesteps=forward_num_timesteps, initial_beta=forward_beta, decay_rate=forward_decay_rate, torch_device=torch_device)
 backward_process = model.BackwardProcess(model=unet)
 
 # Data
@@ -61,7 +61,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         text = batch["sentences_raw"]
 
         # Forward Noising Step
-        timestep = torch.randint(0, 100, (1,)).item()
+        timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
         noised_image = forward_process.sample(image=image, timestep=timestep)
         noise_added = noised_image - image
 
