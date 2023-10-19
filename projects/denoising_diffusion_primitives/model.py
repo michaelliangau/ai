@@ -111,19 +111,19 @@ class UNet(nn.Module):
             nn.ConvTranspose2d(128, 3, kernel_size=1)  # Output shape: [1, 3, 360, 640]
         )
 
-    def forward_encoder(self, x):
+    def forward_encoder(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the UNet encoder.
         
         Args:
-            x: The input tensor.
+            x (torch.Tensor): The input tensor.
         
         Returns:
-            The output tensor after passing through the encoder.
+            torch.Tensor: The output tensor after passing through the encoder.
         """
         x = self.encoder(x)
         return x
 
-    def forward_decoder(self, x):
+    def forward_decoder(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the UNet decoder.
         
         Args:
