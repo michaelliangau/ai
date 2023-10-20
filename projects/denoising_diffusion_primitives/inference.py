@@ -9,10 +9,10 @@ sys.path.append("../..")
 import common.utils as common_utils
 
 # Inputs
-model_checkpoint = "./outputs/checkpoint_1.pt"
+model_checkpoint = "./outputs/checkpoint_0_200.pt"
 
 # Device
-torch_device = common_utils.get_device("cpu")
+torch_device = common_utils.get_device("cuda")
 
 # Text Embedding
 tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")
@@ -24,7 +24,7 @@ unet.load_state_dict(torch.load(model_checkpoint, map_location=torch_device)["mo
 backward_process = model.BackwardProcess(model=unet, torch_device=torch_device)
 
 # Get pure Gaussian noise image
-noised_image = torch.randn((1, 3, 480, 640))  # 480 by 640 RGB image of pure Gaussian noise
+noised_image = torch.randn((1, 3, 480, 640)).to(torch_device)  # 480 by 640 RGB image of pure Gaussian noise
 
 # Get text prompt
 text = "a man riding a red motorcycle"

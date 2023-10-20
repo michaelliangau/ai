@@ -22,9 +22,9 @@ num_epochs = 4
 batch_size = 12
 learning_rate = 4e-3
 device = "cuda"
-save_steps = 1000
+save_steps = 100
 do_eval = True
-eval_steps = 1000
+eval_steps = 200
 
 
 # Outputs folder
