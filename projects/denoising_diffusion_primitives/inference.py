@@ -8,11 +8,14 @@ import sys
 sys.path.append("../..")
 import common.utils as common_utils
 
+# Hyperparameters
+device = "cpu"
+
 # Inputs
-model_checkpoint = "./outputs/checkpoint_0_200.pt"
+model_checkpoint = "./outputs/checkpoint_0_100.pt"
 
 # Device
-torch_device = common_utils.get_device("cuda")
+torch_device = common_utils.get_device(device)
 
 # Text Embedding
 tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")

@@ -12,10 +12,12 @@ import sys
 sys.path.append("../..")
 import common.utils as common_utils
 
+# Environment variable
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Hyperparameters
 experiment_name = "dev"
-forward_beta = 10.0
+forward_beta = 100.0
 forward_num_timesteps = 100
 forward_decay_rate = 0.93
 num_epochs = 4
@@ -23,9 +25,8 @@ batch_size = 12
 learning_rate = 4e-3
 device = "cuda"
 save_steps = 100
-do_eval = True
+do_eval = False
 eval_steps = 200
-
 
 # Outputs folder
 common_utils.create_folder("outputs")
@@ -108,7 +109,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         })
 
         # Save checkpoint every `save_steps` steps
-        if i % save_steps == 0:
+        if i % save_steps == 0 and i != 0:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': unet.state_dict(),
