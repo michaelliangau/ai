@@ -48,7 +48,7 @@ train_ds = train_ds.remove_columns(['filepath', 'sentids', 'filename', 'imgid', 
 
 # Collator
 collate_fn = collator.Collator().collate
-data_loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=8)
+data_loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=8, drop_last=True)
 
 # Optimizer and Scheduler
 optimizer = Adam(list(unet.parameters()), lr=learning_rate)
