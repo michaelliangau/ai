@@ -27,7 +27,7 @@ backward_process = model.BackwardProcess(model=unet, torch_device=torch_device)
 noised_image = torch.randn((1, 3, 480, 640))  # 480 by 640 RGB image of pure Gaussian noise
 
 # Get text prompt
-text = "red car"
+text = "a man riding a red motorcycle"
 inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
 with torch.no_grad():
     outputs = text_embedding_model(**inputs)
@@ -40,5 +40,5 @@ for i in tqdm.tqdm(range(100)):
         predicted_noise = backward_process.predict(image=noised_image, text=mean_text_embedding)
     noised_image = noised_image - predicted_noise
     if i % 10 == 0:
-        utils.save_image(noised_image, f"examples/image_{i}.png")
-utils.save_image(noised_image, "examples/image_final.png")
+        utils.save_image(noised_image, f"./outputs/image_{i}.png")
+utils.save_image(noised_image, "./outputs/image_final.png")

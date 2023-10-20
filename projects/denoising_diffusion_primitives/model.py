@@ -60,7 +60,6 @@ class BackwardProcess():
             model: The model to be used in the backward process.
         """
         self.unet = model
-        self.downsample_text_embedding_layer = nn.Linear(512, 128).to(torch_device)
         self.torch_device = torch_device
     
     def predict(self, image: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
@@ -75,22 +74,8 @@ class BackwardProcess():
         Returns:
             torch.Tensor: Predict the amount of noise. Shape is (batch_size, channels, height, width).
         """
-        # Push image through UNet encoder
-        image_embedding = self.unet.forward_encoder(image)
-
-        # Expand text embedding into same dim as encoded_image
-        text_embedding = self.downsample_text_embedding_layer(text)
-        text_embedding = text_embedding.unsqueeze(-1).unsqueeze(-1)
-        text_embedding = text_embedding.expand(image_embedding.shape)
-
-        # Concatenate encoded_image and text_embedding
-        concatenated_embedding = torch.cat((image_embedding, text_embedding), dim=1).to(self.torch_device)
-
-        # Run concatenated tensor through UNet decoder
-        predicted_noise = self.unet.forward_decoder(concatenated_embedding)
-
-        return predicted_noise
-
+        output = self.unet(image, text)
+        return output
 
 class UNet(nn.Module):
     """This UNet is the main workhorse of the backward denoising process."""
@@ -98,39 +83,75 @@ class UNet(nn.Module):
     def __init__(self):
         """Initialize the UNet model."""
         super(UNet, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+        self.enc1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU()
         )
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1),  # Output shape: [1, 128, 360, 640]
+        self.pool1 = nn.MaxPool2d(2)
+
+        self.enc2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 3, kernel_size=1)  # Output shape: [1, 3, 360, 640]
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+        self.pool2 = nn.MaxPool2d(2)
+
+        self.enc3 = nn.Sequential(
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU()
         )
 
-    def forward_encoder(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the UNet encoder.
-        
-        Args:
-            x (torch.Tensor): The input tensor.
-        
-        Returns:
-            torch.Tensor: The output tensor after passing through the encoder.
-        """
-        x = self.encoder(x)
-        return x
+        self.up2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.dec2 = nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
 
-    def forward_decoder(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the UNet decoder.
-        
+        self.up1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.dec1 = nn.Sequential(
+            nn.Conv2d(128, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 3, kernel_size=1)
+        )
+
+        self.embedding_projector = nn.Linear(512, 256)
+
+
+    def forward(self, x: torch.Tensor, text_embedding: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the UNet model.
+
         Args:
-            x: The input tensor.
-        
+            x (torch.Tensor): The input tensor, typically an image.
+            text_embedding (torch.Tensor): The text embedding tensor.
+
         Returns:
-            The output tensor after passing through the decoder.
+            torch.Tensor: The output tensor after passing through the model.
         """
-        x = self.decoder(x)
-        return x
+        # Encode
+        enc1 = self.enc1(x)
+        enc2 = self.enc2(self.pool1(enc1))
+        enc3 = self.enc3(self.pool2(enc2))
+
+        # Project the text embedding to 256 dimensions
+        text_embedding = self.embedding_projector(text_embedding)
+
+        # Expand text embedding into same dim as enc3
+        text_embedding = text_embedding.unsqueeze(-1).unsqueeze(-1).expand(enc3.shape)
+
+        # Concatenate enc3 and text_embedding
+        enc3 = enc3 + text_embedding
+
+        # Decode
+        dec2 = self.dec2(torch.cat([self.up2(enc3), enc2], dim=1))
+        dec1 = self.dec1(torch.cat([self.up1(dec2), enc1], dim=1))
+
+        return dec1
