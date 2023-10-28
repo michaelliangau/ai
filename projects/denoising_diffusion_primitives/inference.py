@@ -1,6 +1,6 @@
 import torch
 import transformers
-import model
+import ai.projects.denoising_diffusion_primitives.diffusion as diffusion
 import utils
 import tqdm
 
@@ -22,9 +22,9 @@ tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")
 text_embedding_model = transformers.T5EncoderModel.from_pretrained("t5-small").to(torch_device)
 
 # Initialize model and load checkpoint
-unet = model.UNet().to(torch_device)
+unet = diffusion.UNet().to(torch_device)
 unet.load_state_dict(torch.load(model_checkpoint, map_location=torch_device)["model_state_dict"])
-backward_process = model.BackwardProcess(model=unet, torch_device=torch_device)
+backward_process = diffusion.BackwardProcess(model=unet, torch_device=torch_device)
 
 # Get pure Gaussian noise image
 noised_image = torch.randn((1, 3, 480, 640)).to(torch_device)  # 480 by 640 RGB image of pure Gaussian noise

@@ -1,6 +1,6 @@
 import datasets
 import transformers
-import model
+import ai.projects.denoising_diffusion_primitives.diffusion as diffusion
 import torch
 import os
 import collator
@@ -40,11 +40,11 @@ tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")
 text_embedding_model = transformers.T5EncoderModel.from_pretrained("t5-small").to(torch_device)
 
 # Model
-unet = model.UNet().to(torch_device)
+unet = diffusion.UNet().to(torch_device)
 
 # Forward/Backward Process
-forward_process = model.ForwardProcess(num_timesteps=forward_num_timesteps, torch_device=torch_device)
-backward_process = model.BackwardProcess(model=unet, torch_device=torch_device)
+forward_process = diffusion.ForwardProcess(num_timesteps=forward_num_timesteps, torch_device=torch_device)
+backward_process = diffusion.BackwardProcess(model=unet, torch_device=torch_device)
 
 # Data
 train_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions')['train']
@@ -76,17 +76,23 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         # Get data
         image = batch["image"].to(torch_device)
         text = batch["sentences_raw"]
+        import IPython; IPython.embed()
 
         # Forward Noising Step
         timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
         noised_image = forward_process.sample(image=image, timestep=timestep)
 
-        # Backward Generation Step
-        # TODO build the denoising process
+
+
+
+
+        # Generate Text Embedding
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
         outputs = text_embedding_model(**inputs)
         text_embedding = outputs.last_hidden_state
         mean_text_embedding = text_embedding.mean(dim=1)
+
+        # Reverse Noising Step
         with autocast():
             predicted_noise = backward_process.predict(image=noised_image, text=mean_text_embedding)
 

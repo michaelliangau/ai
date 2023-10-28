@@ -25,9 +25,9 @@ class ForwardProcess():
 
         # Calculate mean
         self.posterior_mean_coef1 = (torch.sqrt(self.alphas.cumprod(dim=0)) * self.betas) / (1 - self.alphas.cumprod(dim=0))
-        self.alphas_cumprod_prev = F.pad(self.alphas_cumprod[:-1], (1, 0), value=1.0)
-        self.posterior_mean_coef2 = torch.sqrt(self.alphas) * (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod)
-        self.posterior_variance = (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod) * self.betas
+        self.alphas_cumprod_prev = F.pad(self.alphas.cumprod(dim=0)[:-1], (1, 0), value=1.0)
+        self.posterior_mean_coef2 = torch.sqrt(self.alphas) * (1 - self.alphas_cumprod_prev) / (1 - self.alphas.cumprod(dim=0))
+        self.posterior_variance = (1 - self.alphas_cumprod_prev) / (1 - self.alphas.cumprod(dim=0)) * self.betas
         self.posterior_log_variance_clipped = torch.log(self.posterior_variance.clamp(min=1e-20))
 
 
@@ -104,108 +104,29 @@ class ForwardProcess():
     
     
 
-class BackwardProcess():
-    """Generates an image from a noised image in a backward process."""
-    def __init__(self, model, torch_device=torch.device("cuda")) -> None:
-        """
-        Initialize the backward process.
+# class BackwardProcess():
+#     """Generates an image from a noised image in a backward process."""
+#     def __init__(self, model, torch_device=torch.device("cuda")) -> None:
+#         """
+#         Initialize the backward process.
 
-        Args:
-            model: The model to be used in the backward process.
-        """
-        self.unet = model
-        self.torch_device = torch_device
+#         Args:
+#             model: The model to be used in the backward process.
+#         """
+#         self.unet = model
+#         self.torch_device = torch_device
     
-    def predict(self, image: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
-        """Predict the amount of noise
+#     def predict(self, image: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
+#         """Predict the amount of noise
         
-        TODO: You can also embed timestep into the upsampling.
+#         TODO: You can also embed timestep into the upsampling.
 
-        Args:
-            image (torch.Tensor): The image to denoise. Shape is (batch_size, channels, height, width).
-            text (torch.Tensor): The text embedding. Shape is (batch_size, embedding_dim).
+#         Args:
+#             image (torch.Tensor): The image to denoise. Shape is (batch_size, channels, height, width).
+#             text (torch.Tensor): The text embedding. Shape is (batch_size, embedding_dim).
         
-        Returns:
-            torch.Tensor: Predict the amount of noise. Shape is (batch_size, channels, height, width).
-        """
-        output = self.unet(image, text)
-        return output
-
-class UNet(nn.Module):
-    """This UNet is the main workhorse of the backward denoising process."""
-
-    def __init__(self):
-        """Initialize the UNet model."""
-        super(UNet, self).__init__()
-        self.enc1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU()
-        )
-        self.pool1 = nn.MaxPool2d(2)
-
-        self.enc2 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.ReLU()
-        )
-        self.pool2 = nn.MaxPool2d(2)
-
-        self.enc3 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU()
-        )
-
-        self.up2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
-        self.dec2 = nn.Sequential(
-            nn.Conv2d(256, 128, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.ReLU()
-        )
-
-        self.up1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.dec1 = nn.Sequential(
-            nn.Conv2d(128, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 3, kernel_size=1)
-        )
-
-        self.embedding_projector = nn.Linear(512, 256)
-
-
-    def forward(self, x: torch.Tensor, text_embedding: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the UNet model.
-
-        Args:
-            x (torch.Tensor): The input tensor, typically an image.
-            text_embedding (torch.Tensor): The text embedding tensor.
-
-        Returns:
-            torch.Tensor: The output tensor after passing through the model.
-        """
-        # Encode
-        enc1 = self.enc1(x)
-        enc2 = self.enc2(self.pool1(enc1))
-        enc3 = self.enc3(self.pool2(enc2))
-
-        # Project the text embedding to 256 dimensions
-        text_embedding = self.embedding_projector(text_embedding)
-
-        # Expand text embedding into same dim as enc3
-        text_embedding = text_embedding.unsqueeze(-1).unsqueeze(-1).expand(enc3.shape)
-
-        # Concatenate enc3 and text_embedding
-        enc3 = enc3 + text_embedding
-
-        # Decode
-        dec2 = self.dec2(torch.cat([self.up2(enc3), enc2], dim=1))
-        dec1 = self.dec1(torch.cat([self.up1(dec2), enc1], dim=1))
-
-        return dec1
+#         Returns:
+#             torch.Tensor: Predict the amount of noise. Shape is (batch_size, channels, height, width).
+#         """
+#         output = self.unet(image, text)
+#         return output
