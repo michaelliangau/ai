@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import numpy as np
+import torch.nn.functional as F
 
 class ForwardProcess():
     """Adds noise to an image in a forward process."""
@@ -12,10 +12,25 @@ class ForwardProcess():
         """
         self.betas = self.generate_betas(num_timesteps).to(torch_device)
         
-        # Used for rapidly calculating noising schedule
+        # Used for forward process
         self.alphas = 1 - self.betas
         self.sqrt_alphas_cumprod = torch.sqrt(self.alphas.cumprod(dim=0)).to(torch_device)
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1 - self.alphas.cumprod(dim=0)).to(torch_device)
+
+        # Reverse process
+
+        # Calculate x_0 (start_image) from current image
+        self.sqrt_recip_alphas_cumprod = torch.sqrt(1 / self.alphas.cumprod(dim=0)).to(torch_device)
+        self.sqrt_recipm1_alphas_cumprod = torch.sqrt((1 / self.alphas.cumprod(dim=0)) - 1).to(torch_device)
+
+        # Calculate mean
+        self.posterior_mean_coef1 = (torch.sqrt(self.alphas.cumprod(dim=0)) * self.betas) / (1 - self.alphas.cumprod(dim=0))
+        self.alphas_cumprod_prev = F.pad(self.alphas_cumprod[:-1], (1, 0), value=1.0)
+        self.posterior_mean_coef2 = torch.sqrt(self.alphas) * (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod)
+        self.posterior_variance = (1 - self.alphas_cumprod_prev) / (1 - self.alphas_cumprod) * self.betas
+        self.posterior_log_variance_clipped = torch.log(self.posterior_variance.clamp(min=1e-20))
+
+
 
     def generate_betas(self, num_timesteps: int) -> torch.Tensor:
         """Generate an array of betas for diffusion.
@@ -53,6 +68,41 @@ class ForwardProcess():
         noised = self.sqrt_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * image + self.sqrt_one_minus_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * noise
         
         return noised
+    
+    def predict_start_from_noise(self, image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
+        """Predict the start image from a noised image.
+        
+        Args:
+            image: The noised image.
+            timestep: The timestep to predict from.
+        
+        Returns:
+            The predicted start image (x_0).
+        """
+        noise = torch.randn_like(image)
+        start_image = self.sqrt_recip_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * image - self.sqrt_recipm1_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * noise
+
+        return start_image
+
+    def q_posterior(self, start_image: torch.Tensor, current_image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
+        """Calculate the posterior distribution of q(x_t|x_0).
+        
+        Args:
+            start_image: The image.
+            current_image: The current image.
+            timestep: The timestep.
+        
+        Returns:
+            The posterior distribution of q(x_t|x_0).
+        """
+        # Calculate posterior mean
+        # TODO: Validate shapes match, you probably need to pull at a specific timestep
+        posterior_mean = self.posterior_mean_coef1 * start_image + self.posterior_mean_coef2 * current_image
+        posterior_variance = self.posterior_variance
+        posterior_log_variance_clipped = self.posterior_log_variance_clipped
+        return posterior_mean, posterior_variance, posterior_log_variance_clipped
+    
+    
 
 class BackwardProcess():
     """Generates an image from a noised image in a backward process."""

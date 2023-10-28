@@ -80,9 +80,9 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         # Forward Noising Step
         timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
         noised_image = forward_process.sample(image=image, timestep=timestep)
-        noise_added = noised_image - image
 
         # Backward Generation Step
+        # TODO build the denoising process
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
         outputs = text_embedding_model(**inputs)
         text_embedding = outputs.last_hidden_state
