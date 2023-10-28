@@ -4,51 +4,55 @@ import numpy as np
 
 class ForwardProcess():
     """Adds noise to an image in a forward process."""
-    def __init__(self, num_timesteps: int = 100, initial_beta: float = 0.2, decay_rate: float = 0.98, torch_device: torch.device = torch.device("cuda")) -> None:
+    def __init__(self, num_timesteps: int = 100, torch_device: torch.device = torch.device("cuda")) -> None:
         """Initialize the forward process.
 
         Args:
             num_timesteps: Number of timesteps in the diffusion process.
-            initial_beta: Initial beta value. This is a hyperparameter that we tune.
-                It represents what is the standard deviation of the noise that we add to
-                the images at the first timestep (which has maximum noise).
-            decay_rate: Decay rate for each subsequent beta.
         """
-        self.betas = self.generate_betas(num_timesteps, initial_beta, decay_rate).to(torch_device)
-    
-    def generate_betas(self, num_timesteps: int, initial_beta: float, decay_rate: float) -> torch.Tensor:
+        self.betas = self.generate_betas(num_timesteps).to(torch_device)
+        
+        # Used for rapidly calculating noising schedule
+        self.alphas = 1 - self.betas
+        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas.cumprod(dim=0)).to(torch_device)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1 - self.alphas.cumprod(dim=0)).to(torch_device)
+
+    def generate_betas(self, num_timesteps: int) -> torch.Tensor:
         """Generate an array of betas for diffusion.
         
-        Q: Why is betas going from high values to low?
-        A: It follows the timesteps of the backward process which starts from lots of
-            noise and gradually removes noise.
+        DDPM paper specifies beta start and end values to be 1e-4 and 2e-2 respectively.
         
         Args:
             num_timesteps: Number of timesteps in the diffusion process.
-            initial_beta: Initial beta value.
-            decay_rate: Decay rate for each subsequent beta.
             
         Returns:
             A torch.Tensor containing generated betas.
         """
-        # Create an array of indices
-        indices = np.arange(num_timesteps)
-        # Compute the betas in a vectorized manner
-        betas = initial_beta * (decay_rate ** indices)
-        # Convert to a torch tensor and return
-        return torch.tensor(betas, dtype=torch.float32)
+        # Scaling the betas helps to ensure that even with different timesteps the magnitude
+        # of each timestep scales with it.
+        scale = 1000 / num_timesteps
+        beta_start = scale * 1e-4
+        beta_end = scale * 2e-2
+        betas = torch.linspace(beta_start, beta_end, num_timesteps, dtype=torch.float32)
+        return betas
     
     def sample(self, image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
         """Sample from the forward process at a specific timestep.
         
+        According to DDPM paper, we're sampling from a Gaussian distribution with mean of
+        (sqrt_alphas_cumprod * image) and variance of (1 - alphas_cum_prod) * I.
+
         Args:
             image: The image to noise.
             timestep: The timestep to sample at.
         """
-        noise_std = torch.sqrt(self.betas[timestep])
-        noise = torch.randn_like(image) * noise_std.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        noised_image = image + noise
-        return noised_image
+        # epsilon ~ N(0, I)
+        noise = torch.randn_like(image)
+
+        # Create noised image
+        noised = self.sqrt_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * image + self.sqrt_one_minus_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * noise
+        
+        return noised
 
 class BackwardProcess():
     """Generates an image from a noised image in a backward process."""

@@ -17,11 +17,9 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Hyperparameters
 experiment_name = "dev"
-forward_beta = 100.0
 forward_num_timesteps = 100
-forward_decay_rate = 0.93
 num_epochs = 4
-batch_size = 12
+batch_size = 1
 learning_rate = 4e-3
 device = "cuda"
 save_steps = 100
@@ -45,7 +43,7 @@ text_embedding_model = transformers.T5EncoderModel.from_pretrained("t5-small").t
 unet = model.UNet().to(torch_device)
 
 # Forward/Backward Process
-forward_process = model.ForwardProcess(num_timesteps=forward_num_timesteps, initial_beta=forward_beta, decay_rate=forward_decay_rate, torch_device=torch_device)
+forward_process = model.ForwardProcess(num_timesteps=forward_num_timesteps, torch_device=torch_device)
 backward_process = model.BackwardProcess(model=unet, torch_device=torch_device)
 
 # Data
@@ -83,7 +81,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
         noised_image = forward_process.sample(image=image, timestep=timestep)
         noise_added = noised_image - image
-        
+
         # Backward Generation Step
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
         outputs = text_embedding_model(**inputs)
