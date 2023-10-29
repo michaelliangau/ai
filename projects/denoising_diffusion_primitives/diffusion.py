@@ -104,7 +104,8 @@ class ForwardProcess():
     
     
 
-# class BackwardProcess():
+class BackwardProcess():
+    pass
 #     """Generates an image from a noised image in a backward process."""
 #     def __init__(self, model, torch_device=torch.device("cuda")) -> None:
 #         """

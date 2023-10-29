@@ -1,6 +1,7 @@
 import datasets
 import transformers
-import ai.projects.denoising_diffusion_primitives.diffusion as diffusion
+import diffusion
+import unet
 import torch
 import os
 import collator
@@ -21,7 +22,7 @@ forward_num_timesteps = 100
 num_epochs = 4
 batch_size = 1
 learning_rate = 4e-3
-device = "cuda"
+device = "cpu"
 save_steps = 100
 do_eval = False
 eval_steps = 200
@@ -37,14 +38,14 @@ torch_device = common_utils.get_device(device)
 
 # Tokenizer
 tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")
-text_embedding_model = transformers.T5EncoderModel.from_pretrained("t5-small").to(torch_device)
+t5_model = transformers.T5EncoderModel.from_pretrained("t5-small").to(torch_device)
+t5_model.eval()
 
 # Model
-unet = diffusion.UNet().to(torch_device)
+unet = unet.UNet().to(torch_device)
 
-# Forward/Backward Process
+# Forward Process
 forward_process = diffusion.ForwardProcess(num_timesteps=forward_num_timesteps, torch_device=torch_device)
-backward_process = diffusion.BackwardProcess(model=unet, torch_device=torch_device)
 
 # Data
 train_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions')['train']
@@ -76,19 +77,16 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         # Get data
         image = batch["image"].to(torch_device)
         text = batch["sentences_raw"]
-        import IPython; IPython.embed()
 
         # Forward Noising Step
         timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
         noised_image = forward_process.sample(image=image, timestep=timestep)
 
-
-
-
-
         # Generate Text Embedding
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
-        outputs = text_embedding_model(**inputs)
+        with torch.no_grad():
+            outputs = t5_model(**inputs)
+            import IPython; IPython.embed()
         text_embedding = outputs.last_hidden_state
         mean_text_embedding = text_embedding.mean(dim=1)
 
@@ -138,7 +136,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
 
                 # Backward Generation Step
                 eval_inputs = tokenizer(eval_text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
-                eval_outputs = text_embedding_model(**eval_inputs)
+                eval_outputs = t5_model(**eval_inputs)
                 eval_text_embedding = eval_outputs.last_hidden_state
                 eval_mean_text_embedding = eval_text_embedding.mean(dim=1)
                 with autocast():
