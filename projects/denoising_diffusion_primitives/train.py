@@ -48,9 +48,9 @@ unet = unet.UNet().to(torch_device)
 forward_process = diffusion.ForwardProcess(num_timesteps=forward_num_timesteps, torch_device=torch_device)
 
 # Data
-train_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions')['train']
+train_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions', streaming=True)['train']
 train_ds = train_ds.remove_columns(['filepath', 'sentids', 'filename', 'imgid', 'split', 'sentences_tokens', 'sentences_sentid', 'cocoid'])
-eval_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions')['validation']
+eval_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions', streaming=True)['validation']
 eval_ds = eval_ds.remove_columns(['filepath', 'sentids', 'filename', 'imgid', 'split', 'sentences_tokens', 'sentences_sentid', 'cocoid'])
 
 # Collator
