@@ -20,7 +20,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 experiment_name = "dev"
 forward_num_timesteps = 100
 num_epochs = 4
-batch_size = 1
+batch_size = 2
 learning_rate = 4e-3
 device = "cpu"
 save_steps = 100
@@ -31,7 +31,7 @@ eval_steps = 200
 common_utils.create_folder("outputs")
 
 # Weights & Biases
-common_utils.start_wandb_logging(name=experiment_name, project_name="denoising_diffusion_primitives")
+# common_utils.start_wandb_logging(name=experiment_name, project_name="denoising_diffusion_primitives")
 
 # Device
 torch_device = common_utils.get_device(device)
@@ -41,11 +41,13 @@ tokenizer = transformers.T5TokenizerFast.from_pretrained("t5-small")
 t5_model = transformers.T5EncoderModel.from_pretrained("t5-small").to(torch_device)
 t5_model.eval()
 
-# Model
-unet = unet.UNet().to(torch_device)
+# Model TODO: explicitly call all init args
+model = unet.UNet(
+    device=torch_device
+).to(torch_device)
 
 # Forward Process
-forward_process = diffusion.ForwardProcess(num_timesteps=forward_num_timesteps, torch_device=torch_device)
+gaussian_diffusion = diffusion.GaussianDiffusion(num_timesteps=forward_num_timesteps, torch_device=torch_device)
 
 # Data
 train_ds = datasets.load_dataset('HuggingFaceM4/COCO', '2014_captions')['train']
@@ -59,7 +61,7 @@ train_dataloader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, 
 eval_dataloader = torch.utils.data.DataLoader(eval_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=8, drop_last=True)
 
 # Optimizer and Scheduler
-optimizer = Adam(list(unet.parameters()), lr=learning_rate)
+optimizer = Adam(list(model.parameters()), lr=learning_rate)
 scheduler_steps = num_epochs * len(train_dataloader)
 scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=learning_rate, total_steps=scheduler_steps, pct_start=0.25)
 
@@ -67,7 +69,7 @@ scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=learning_rate,
 scaler = GradScaler()
 
 # Print the number of trainable parameters in both the unet and the downsample text embedding layer
-num_trainable_params_unet = sum(p.numel() for p in unet.parameters() if p.requires_grad)
+num_trainable_params_unet = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(f"Number of trainable parameters in UNet: {num_trainable_params_unet}")
 
 # Train loop
@@ -78,12 +80,21 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         image = batch["image"].to(torch_device)
         text = batch["sentences_raw"]
 
+        # Forward noising
+        timestep = gaussian_diffusion.sample_random_times(batch_size=batch_size, device=torch_device)
+        noised_image = gaussian_diffusion.sample(image=image, timestep=timestep)
+
         # Encode text
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
+        attention_mask = inputs["attention_mask"].bool()
         with torch.no_grad():
             outputs = t5_model(**inputs)
-        text_embedding = outputs.last_hidden_state
-        import IPython; IPython.embed()
+        encoded_text = outputs.last_hidden_state
+        encoded_text = encoded_text.masked_fill(attention_mask.unsqueeze(-1), 0)
+
+        # Backward Denoising
+        _ = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
+
 
 
 

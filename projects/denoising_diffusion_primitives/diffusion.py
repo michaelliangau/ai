@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-class ForwardProcess():
+class GaussianDiffusion():
     """Adds noise to an image in a forward process."""
     def __init__(self, num_timesteps: int = 100, torch_device: torch.device = torch.device("cuda")) -> None:
         """Initialize the forward process.
@@ -10,14 +10,13 @@ class ForwardProcess():
         Args:
             num_timesteps: Number of timesteps in the diffusion process.
         """
-        self.betas = self.generate_betas(num_timesteps).to(torch_device)
+        self.num_timesteps = num_timesteps
+        self.betas = self._generate_betas(num_timesteps).to(torch_device)
         
         # Used for forward process
         self.alphas = 1 - self.betas
         self.sqrt_alphas_cumprod = torch.sqrt(self.alphas.cumprod(dim=0)).to(torch_device)
         self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1 - self.alphas.cumprod(dim=0)).to(torch_device)
-
-        # Reverse process
 
         # Calculate x_0 (start_image) from current image
         self.sqrt_recip_alphas_cumprod = torch.sqrt(1 / self.alphas.cumprod(dim=0)).to(torch_device)
@@ -30,9 +29,7 @@ class ForwardProcess():
         self.posterior_variance = (1 - self.alphas_cumprod_prev) / (1 - self.alphas.cumprod(dim=0)) * self.betas
         self.posterior_log_variance_clipped = torch.log(self.posterior_variance.clamp(min=1e-20))
 
-
-
-    def generate_betas(self, num_timesteps: int) -> torch.Tensor:
+    def _generate_betas(self, num_timesteps: int) -> torch.Tensor:
         """Generate an array of betas for diffusion.
         
         DDPM paper specifies beta start and end values to be 1e-4 and 2e-2 respectively.
@@ -50,6 +47,19 @@ class ForwardProcess():
         beta_end = scale * 2e-2
         betas = torch.linspace(beta_start, beta_end, num_timesteps, dtype=torch.float32)
         return betas
+
+
+    def sample_random_times(self, batch_size: int, device: torch.device) -> torch.tensor:
+        """Randomly sample `batch_size` timestep values uniformly from [0, 1, ..., `self.num_timesteps`]
+
+        Args:
+            batch_size (int): Number of images in the batch.
+            device (torch.device): Device on which to place the return tensor.
+
+        Returns:
+            torch.tensor: Tensor of integers (`dtype=torch.long`) of shape `(batch_size,)`
+        """
+        return torch.randint(0, self.num_timesteps, (batch_size,), device=device, dtype=torch.long)
     
     def sample(self, image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
         """Sample from the forward process at a specific timestep.
@@ -87,6 +97,9 @@ class ForwardProcess():
     def q_posterior(self, start_image: torch.Tensor, current_image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
         """Calculate the posterior distribution of q(x_t|x_0).
         
+        These values are used in the reverse process to calculate each iterative
+        diffusion step.
+
         Args:
             start_image: The image.
             current_image: The current image.
