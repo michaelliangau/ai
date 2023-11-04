@@ -68,7 +68,7 @@ class UNet(nn.Module):
 
     def _text_condition(self, text_embeds: torch.tensor, batch_size: int, cond_drop_prob: float, device: torch.device, text_mask: torch.tensor, t: torch.tensor, time_tokens: torch.tensor):
         text_tokens = None
-        pass        
+        pass
 
     def forward(self, x: torch.Tensor, text: torch.Tensor, time) -> torch.Tensor:
         """Forward pass through the UNet model.
@@ -82,4 +82,6 @@ class UNet(nn.Module):
         """
         # Time condition
         t, time_tokens = self._generate_t_tokens(time)
+
+        # TODO: Text conditioning
         return 

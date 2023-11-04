@@ -78,6 +78,18 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         image = batch["image"].to(torch_device)
         text = batch["sentences_raw"]
 
+        # Encode text
+        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
+        with torch.no_grad():
+            outputs = t5_model(**inputs)
+        text_embedding = outputs.last_hidden_state
+        import IPython; IPython.embed()
+
+
+
+
+
+        exit()
         # Forward Noising Step
         timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
         noised_image = forward_process.sample(image=image, timestep=timestep)
