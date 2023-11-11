@@ -7,7 +7,6 @@ import os
 import collator
 import tqdm
 from torch.optim import Adam
-from torch.cuda.amp import GradScaler
 
 import sys
 sys.path.append("../..")
@@ -20,7 +19,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 experiment_name = "dev"
 forward_num_timesteps = 100
 num_epochs = 4
-batch_size = 2
+batch_size = 1
 learning_rate = 4e-3
 device = "cuda"
 save_steps = 100
@@ -69,9 +68,6 @@ optimizer = Adam(list(model.parameters()), lr=learning_rate)
 scheduler_steps = num_epochs * len(train_dataloader)
 scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=learning_rate, total_steps=scheduler_steps, pct_start=0.25)
 
-# GradScaler for mixed precision training
-scaler = GradScaler()
-
 # Print the number of trainable parameters in both the unet and the downsample text embedding layer
 num_trainable_params_unet = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(f"Number of trainable parameters in UNet: {num_trainable_params_unet}")
@@ -96,16 +92,14 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         encoded_text = encoded_text.masked_fill(attention_mask.unsqueeze(-1), 0)
 
         # Backward Denoising - Predict the noise
-        with torch.cuda.amp.autocast():
-            output = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
+        output = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
 
         # Loss
-        loss = torch.nn.functional.mse_loss(input=output.half(), target=noise.half())
+        loss = torch.nn.functional.mse_loss(input=output, target=noise)
 
-        # Backward pass with gradient scaling
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        # Backward pass
+        loss.backward()
+        optimizer.step()
         optimizer.zero_grad()
         scheduler.step()
 
@@ -119,7 +113,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         if i % save_steps == 0 and i != 0:
             torch.save({
                 'epoch': epoch,
-                'model_state_dict': unet.state_dict(),
+                'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
             }, os.path.join("./outputs/", f"checkpoint_{epoch}_{i}.pt"))
@@ -132,7 +126,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
     # Save checkpoint every epoch
     torch.save({
         'epoch': epoch,
-        'model_state_dict': unet.state_dict(),
+        'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': loss,
     }, os.path.join("./outputs/", f"checkpoint_{epoch}.pt"))
