@@ -159,10 +159,16 @@ class UNet(nn.Module):
 
             # Whether to downsample at the beginning of the layer - cuts image spatial size-length
             pre_downsample = None
+            if memory_efficient:
+                pre_downsample = layers.Downsample(dim_in, dim_out)
+                current_dim = dim_out            
             skip_connect_dims.append(current_dim)
 
             # Downsample at the end of the layer if not `pre_downsample`
             post_downsample = None
+            if not memory_efficient:
+                post_downsample = layers.Downsample(current_dim, dim_out) if not is_last else layers.Parallel(
+                    nn.Conv2d(dim_in, dim_out, 3, padding=1), nn.Conv2d(dim_in, dim_out, 1))            
 
             # Create the layer
             self.downs.append(nn.ModuleList([
@@ -248,7 +254,7 @@ class UNet(nn.Module):
 
         # Whether to do a final residual from initial conv to the final resnet block out
         init_conv_to_final_conv_residual = False  # Whether to add skip connection between Unet input and output
-        final_resnet_block = True  # Whether to add a final resnet block to the output of the Unet        
+        final_resnet_block = False  # Whether to add a final resnet block to the output of the Unet        
         self.init_conv_to_final_conv_residual = init_conv_to_final_conv_residual
         final_conv_dim = dim * (2 if init_conv_to_final_conv_residual else 1)
 
@@ -259,8 +265,12 @@ class UNet(nn.Module):
         # Final convolution to bring to right num channels
         self.channels_out = channels_out if channels_out is not None else channels
         final_conv_dim_in = dim if final_resnet_block else final_conv_dim
+        
+        # My input: Getting network to work in low GPU mem environment
+        final_conv_dim_in = 256
         self.final_conv = nn.Conv2d(final_conv_dim_in, self.channels_out, 3,
                                     padding=3 // 2)
+        
 
         
 
@@ -366,7 +376,6 @@ class UNet(nn.Module):
 
         # For every layer in the downwards trajectory
         for pre_downsample, init_block, resnet_blocks, attn_block, post_downsample in self.downs:
-
             # Downsample before processing at this resolution if using efficient UNet
             if pre_downsample is not None:
                 x = pre_downsample(x)
@@ -388,7 +397,6 @@ class UNet(nn.Module):
                 x = post_downsample(x)
    
         # MIDDLE PASS
-
         # Pass through two ResnetBlocks that condition on `c` and `t`, with a possible residual Attention layer between.
         x = self.mid_block1(x, t, c)
         if self.mid_attn is not None:
@@ -421,4 +429,5 @@ class UNet(nn.Module):
             x = self.final_res_block(x, t)
 
         # Final convolution to get the proper number of channels.
-        return self.final_conv(x)        
+        x = self.final_conv(x)
+        return x

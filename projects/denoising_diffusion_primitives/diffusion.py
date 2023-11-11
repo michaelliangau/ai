@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from typing import Tuple
 import torch.nn.functional as F
 
 class GaussianDiffusion():
@@ -61,15 +61,19 @@ class GaussianDiffusion():
         """
         return torch.randint(0, self.num_timesteps, (batch_size,), device=device, dtype=torch.long)
     
-    def sample(self, image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
-        """Sample from the forward process at a specific timestep.
+    def sample(self, image: torch.Tensor, timestep: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Sample from the forward process at a specific timestep.
         
         According to DDPM paper, we're sampling from a Gaussian distribution with mean of
         (sqrt_alphas_cumprod * image) and variance of (1 - alphas_cum_prod) * I.
 
         Args:
-            image: The image to noise.
-            timestep: The timestep to sample at.
+            image (torch.Tensor): The image to noise.
+            timestep (torch.Tensor): The timestep to sample at.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: The noised image and the noise.
         """
         # epsilon ~ N(0, I)
         noise = torch.randn_like(image)
@@ -77,7 +81,7 @@ class GaussianDiffusion():
         # Create noised image
         noised = self.sqrt_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * image + self.sqrt_one_minus_alphas_cumprod[timestep].reshape(image.shape[0], 1, 1, 1) * noise
         
-        return noised
+        return noised, noise
     
     def predict_start_from_noise(self, image: torch.Tensor, timestep: torch.Tensor) -> torch.Tensor:
         """Predict the start image from a noised image.

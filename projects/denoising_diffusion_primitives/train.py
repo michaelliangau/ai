@@ -7,7 +7,7 @@ import os
 import collator
 import tqdm
 from torch.optim import Adam
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import GradScaler
 
 import sys
 sys.path.append("../..")
@@ -22,7 +22,7 @@ forward_num_timesteps = 100
 num_epochs = 4
 batch_size = 2
 learning_rate = 4e-3
-device = "cpu"
+device = "cuda"
 save_steps = 100
 do_eval = False
 eval_steps = 200
@@ -31,7 +31,7 @@ eval_steps = 200
 common_utils.create_folder("outputs")
 
 # Weights & Biases
-# common_utils.start_wandb_logging(name=experiment_name, project_name="denoising_diffusion_primitives")
+common_utils.start_wandb_logging(name=experiment_name, project_name="denoising_diffusion_primitives")
 
 # Device
 torch_device = common_utils.get_device(device)
@@ -43,6 +43,10 @@ t5_model.eval()
 
 # Model TODO: explicitly call all init args
 model = unet.UNet(
+    attn_heads=1,
+    dim_mults=(1,2,1),
+    memory_efficient=True,
+    layer_attns=False,
     device=torch_device
 ).to(torch_device)
 
@@ -79,10 +83,9 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         # Get data
         image = batch["image"].to(torch_device)
         text = batch["sentences_raw"]
-
         # Forward noising
         timestep = gaussian_diffusion.sample_random_times(batch_size=batch_size, device=torch_device)
-        noised_image = gaussian_diffusion.sample(image=image, timestep=timestep)
+        noised_image, noise = gaussian_diffusion.sample(image=image, timestep=timestep)
 
         # Encode text
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
@@ -92,33 +95,12 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         encoded_text = outputs.last_hidden_state
         encoded_text = encoded_text.masked_fill(attention_mask.unsqueeze(-1), 0)
 
-        # Backward Denoising
-        output = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
+        # Backward Denoising - Predict the noise
+        with torch.cuda.amp.autocast():
+            output = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
 
-
-
-
-
-
-        exit()
-        # Forward Noising Step
-        timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
-        noised_image = forward_process.sample(image=image, timestep=timestep)
-
-        # Generate Text Embedding
-        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
-        with torch.no_grad():
-            outputs = t5_model(**inputs)
-            import IPython; IPython.embed()
-        text_embedding = outputs.last_hidden_state
-        mean_text_embedding = text_embedding.mean(dim=1)
-
-        # Reverse Noising Step
-        with autocast():
-            predicted_noise = backward_process.predict(image=noised_image, text=mean_text_embedding)
-
-            # Loss
-            loss = torch.nn.functional.mse_loss(noise_added, predicted_noise)
+        # Loss
+        loss = torch.nn.functional.mse_loss(input=output.half(), target=noise.half())
 
         # Backward pass with gradient scaling
         scaler.scale(loss).backward()
@@ -145,35 +127,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         # Evaluate every `eval_steps` steps
         if do_eval and i % eval_steps == 0:
             print("Evaluating...")
-            unet.eval()
-            eval_losses = []
-            for j, eval_batch in tqdm.tqdm(enumerate(eval_dataloader), total=len(eval_dataloader)):
-                # Get data
-                eval_image = eval_batch["image"].to(torch_device)
-                eval_text = eval_batch["sentences_raw"]
-
-                # Forward Noising Step
-                eval_timestep = torch.randint(0, forward_num_timesteps, (batch_size,)).to(torch_device)
-                eval_noised_image = forward_process.sample(image=eval_image, timestep=eval_timestep)
-                eval_noise_added = eval_noised_image - eval_image
-
-                # Backward Generation Step
-                eval_inputs = tokenizer(eval_text, return_tensors="pt", padding=True, truncation=True).to(torch_device)
-                eval_outputs = t5_model(**eval_inputs)
-                eval_text_embedding = eval_outputs.last_hidden_state
-                eval_mean_text_embedding = eval_text_embedding.mean(dim=1)
-                with autocast():
-                    eval_predicted_noise = backward_process.predict(image=eval_noised_image, text=eval_mean_text_embedding)
-
-                # Loss
-                eval_loss = torch.nn.functional.mse_loss(eval_noise_added, eval_predicted_noise)
-                eval_losses.append(eval_loss.item())
-
-            # Log the mean eval loss over the entire evaluation loop to Weights & Biases
-            common_utils.log_wandb({
-                "eval_loss": sum(eval_losses) / len(eval_losses),
-            })
-            unet.train()
+            # TODO: Build eval loop
 
     # Save checkpoint every epoch
     torch.save({
