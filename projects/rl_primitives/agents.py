@@ -757,7 +757,7 @@ class PPOAgent:
 
             # Calculate ratio between current probability and the probabily at the time of action
             ratio = prob / old_prob
-            
+
             # Clamp ratio to be within 1 +/- episolon
             clamped_ratio = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon)
 

@@ -18,12 +18,7 @@ class Attention(nn.Module):
     """
 
     def __init__(
-            self,
-            dim: int,
-            *,
-            dim_head: int = 64,
-            heads: int = 8,
-            context_dim: int = None
+        self, dim: int, *, dim_head: int = 64, heads: int = 8, context_dim: int = None
     ):
         """
         :param dim: Input dimensionality.
@@ -32,7 +27,7 @@ class Attention(nn.Module):
         :param context_dim: Context dimensionality.
         """
         super().__init__()
-        self.scale = dim_head ** -0.5
+        self.scale = dim_head**-0.5
         self.heads = heads
         inner_dim = dim_head * heads
 
@@ -42,27 +37,36 @@ class Attention(nn.Module):
         self.to_q = nn.Linear(dim, inner_dim, bias=False)
         self.to_kv = nn.Linear(dim, dim_head * 2, bias=False)
 
-        self.to_context = nn.Sequential(nn.LayerNorm(context_dim), nn.Linear(context_dim, dim_head * 2)) if context_dim is not None else None
-
-        self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, dim, bias=False),
-            LayerNorm(dim)
+        self.to_context = (
+            nn.Sequential(
+                nn.LayerNorm(context_dim), nn.Linear(context_dim, dim_head * 2)
+            )
+            if context_dim is not None
+            else None
         )
 
-    def forward(self, x: torch.tensor, context: torch.tensor = None, mask: torch.tensor = None,
-                attn_bias: torch.tensor = None) -> torch.tensor:
+        self.to_out = nn.Sequential(
+            nn.Linear(inner_dim, dim, bias=False), LayerNorm(dim)
+        )
 
+    def forward(
+        self,
+        x: torch.tensor,
+        context: torch.tensor = None,
+        mask: torch.tensor = None,
+        attn_bias: torch.tensor = None,
+    ) -> torch.tensor:
         b, n, device = *x.shape[:2], x.device
 
         x = self.norm(x)
         q, k, v = (self.to_q(x), *self.to_kv(x).chunk(2, dim=-1))
 
-        q = rearrange(q, 'b n (h d) -> b h n d', h=self.heads)
+        q = rearrange(q, "b n (h d) -> b h n d", h=self.heads)
         q = q * self.scale
 
         # add null key / value for classifier free guidance in prior net
 
-        nk, nv = repeat_many(self.null_kv.unbind(dim=-2), 'd -> b 1 d', b=b)
+        nk, nv = repeat_many(self.null_kv.unbind(dim=-2), "d -> b 1 d", b=b)
         k = torch.cat((nk, k), dim=-2)
         v = torch.cat((nv, v), dim=-2)
 
@@ -76,7 +80,7 @@ class Attention(nn.Module):
 
         # calculate query / key similarities
 
-        sim = einsum('b h i d, b j d -> b h i j', q, k)
+        sim = einsum("b h i d, b j d -> b h i j", q, k)
 
         # relative positional encoding (T5 style)
 
@@ -89,7 +93,7 @@ class Attention(nn.Module):
 
         if mask is not None:
             mask = F.pad(mask, (1, 0), value=True)
-            mask = rearrange(mask, 'b j -> b 1 1 j')
+            mask = rearrange(mask, "b j -> b 1 1 j")
             sim = sim.masked_fill(~mask, max_neg_value)
 
         # attention
@@ -98,9 +102,9 @@ class Attention(nn.Module):
 
         # aggregate values
 
-        out = einsum('b h i j, b j d -> b h i d', attn, v)
+        out = einsum("b h i j, b j d -> b h i d", attn, v)
 
-        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
 
 
@@ -110,13 +114,7 @@ class Block(nn.Module):
         scale-shift incorporation of timestep information.
     """
 
-    def __init__(
-            self,
-            dim: int,
-            dim_out: int,
-            groups: int = 8,
-            norm: bool = True
-    ):
+    def __init__(self, dim: int, dim_out: int, groups: int = 8, norm: bool = True):
         """
         :param dim: Input number of channels.
         :param dim_out: Output number of channels.
@@ -128,7 +126,9 @@ class Block(nn.Module):
         self.activation = nn.SiLU()
         self.project = nn.Conv2d(dim, dim_out, 3, padding=1)
 
-    def forward(self, x: torch.tensor, scale_shift: Tuple[torch.tensor, torch.tensor] = None) -> torch.tensor:
+    def forward(
+        self, x: torch.tensor, scale_shift: Tuple[torch.tensor, torch.tensor] = None
+    ) -> torch.tensor:
         """
         Forward pass
 
@@ -145,8 +145,11 @@ class Block(nn.Module):
         return self.project(x)
 
 
-def ChanFeedForward(dim: int,
-                    mult: int = 2) -> torch.nn.Sequential:  # in paper, it seems for self attention layers they did feedforwards with twice channel width
+def ChanFeedForward(
+    dim: int, mult: int = 2
+) -> (
+    torch.nn.Sequential
+):  # in paper, it seems for self attention layers they did feedforwards with twice channel width
     """
     MLP for :class:`.TransformerBlock`. Maps images to a multiple of the number of channels and then back with
         convolutions, with layernorms before each convolution a GELU between them.
@@ -157,7 +160,7 @@ def ChanFeedForward(dim: int,
         nn.Conv2d(dim, hidden_dim, 1, bias=False),
         nn.GELU(),
         ChanLayerNorm(hidden_dim),
-        nn.Conv2d(hidden_dim, dim, 1, bias=False)
+        nn.Conv2d(hidden_dim, dim, 1, bias=False),
     )
 
 
@@ -183,13 +186,13 @@ class CrossAttention(nn.Module):
     """
 
     def __init__(
-            self,
-            dim: int,
-            *,
-            context_dim: int = None,
-            dim_head: int = 64,
-            heads: int = 8,
-            norm_context: bool = False
+        self,
+        dim: int,
+        *,
+        context_dim: int = None,
+        dim_head: int = 64,
+        heads: int = 8,
+        norm_context: bool = False,
     ):
         """
         :param dim: Input dimensionality.
@@ -199,7 +202,7 @@ class CrossAttention(nn.Module):
         :param norm_context: Whether to LayerNorm the context.
         """
         super().__init__()
-        self.scale = dim_head ** -0.5
+        self.scale = dim_head**-0.5
         self.heads = heads
         inner_dim = dim_head * heads
 
@@ -213,11 +216,12 @@ class CrossAttention(nn.Module):
         self.to_kv = nn.Linear(context_dim, inner_dim * 2, bias=False)
 
         self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, dim, bias=False),
-            LayerNorm(dim)
+            nn.Linear(inner_dim, dim, bias=False), LayerNorm(dim)
         )
 
-    def forward(self, x: torch.tensor, context: torch.tensor, mask: torch.tensor = None) -> torch.tensor:
+    def forward(
+        self, x: torch.tensor, context: torch.tensor, mask: torch.tensor = None
+    ) -> torch.tensor:
         b, n, device = *x.shape[:2], x.device
 
         x = self.norm(x)
@@ -225,34 +229,36 @@ class CrossAttention(nn.Module):
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
 
-        q, k, v = rearrange_many((q, k, v), 'b n (h d) -> b h n d', h=self.heads)
+        q, k, v = rearrange_many((q, k, v), "b n (h d) -> b h n d", h=self.heads)
 
         # add null key / value for classifier free guidance in prior net
 
-        nk, nv = repeat_many(self.null_kv.unbind(dim=-2), 'd -> b h 1 d', h=self.heads, b=b)
+        nk, nv = repeat_many(
+            self.null_kv.unbind(dim=-2), "d -> b h 1 d", h=self.heads, b=b
+        )
 
         k = torch.cat((nk, k), dim=-2)
         v = torch.cat((nv, v), dim=-2)
 
         q = q * self.scale
 
-        sim = einsum('b h i d, b h j d -> b h i j', q, k)
+        sim = einsum("b h i d, b h j d -> b h i j", q, k)
         max_neg_value = -torch.finfo(sim.dtype).max
 
         if mask is not None:
             mask = F.pad(mask, (1, 0), value=True)
-            mask = rearrange(mask, 'b j -> b 1 1 j')
+            mask = rearrange(mask, "b j -> b 1 1 j")
             sim = sim.masked_fill(~mask, max_neg_value)
 
         attn = sim.softmax(dim=-1, dtype=torch.float32)
 
-        out = einsum('b h i j, b h j d -> b h i d', attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = einsum("b h i j, b h j d -> b h i d", attn, v)
+        out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
 
 
 class CrossEmbedLayer(nn.Module):
-    '''
+    """
     Module that performs cross embedding on an input image (essentially an Inception module) which maintains channel
         depth.
 
@@ -264,14 +270,14 @@ class CrossEmbedLayer(nn.Module):
         3: 32 filters, (15x15) kernel, stride=(1x1), padding=(7x7) -> 64x64 output
 
         Concatenate them for a resulting 64x64 image with 128 output channels
-    '''
+    """
 
     def __init__(
-            self,
-            dim_in: int,
-            kernel_sizes: Tuple[int, ...],
-            dim_out: int = None,
-            stride: int = 2
+        self,
+        dim_in: int,
+        kernel_sizes: Tuple[int, ...],
+        dim_out: int = None,
+        stride: int = 2,
     ):
         """
         :param dim_in: Number of channels in the input image.
@@ -291,13 +297,21 @@ class CrossEmbedLayer(nn.Module):
         num_scales = len(kernel_sizes)
 
         # Determine number of filters for each kernel. They will sum to dim_out and be descending with kernel size
-        dim_scales = [int(dim_out / (2 ** i)) for i in range(1, num_scales)]
+        dim_scales = [int(dim_out / (2**i)) for i in range(1, num_scales)]
         dim_scales = [*dim_scales, dim_out - sum(dim_scales)]
 
         # Create the convolution objects
         self.convs = nn.ModuleList([])
         for kernel, dim_scale in zip(kernel_sizes, dim_scales):
-            self.convs.append(nn.Conv2d(dim_in, dim_scale, kernel, stride=stride, padding=(kernel - stride) // 2))
+            self.convs.append(
+                nn.Conv2d(
+                    dim_in,
+                    dim_scale,
+                    kernel,
+                    stride=stride,
+                    padding=(kernel - stride) // 2,
+                )
+            )
 
     def forward(self, x: torch.tensor) -> torch.tensor:
         # Perform each convolution and then concatenate the results along the channel dim.
@@ -323,6 +337,7 @@ class Identity(nn.Module):
     """
     Identity module - forward pass returns input.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__()
 
@@ -334,10 +349,11 @@ class LayerNorm(nn.Module):
     """
     LayerNorm
     """
+
     def __init__(self, dim: int):
         super().__init__()
         self.gamma = nn.Parameter(torch.ones(dim))
-        self.register_buffer('beta', torch.zeros(dim))
+        self.register_buffer("beta", torch.zeros(dim))
 
     def forward(self, x: torch.tensor) -> torch.tensor:
         return F.layer_norm(x, x.shape[-1:], self.gamma, self.beta)
@@ -347,6 +363,7 @@ class Parallel(nn.Module):
     """
     Passes input through parallel functions and then sums the result.
     """
+
     def __init__(self, *fns: Tuple[Callable, ...]):
         super().__init__()
         self.fns = nn.ModuleList(fns)
@@ -360,6 +377,7 @@ class Residual(nn.Module):
     """
     Residual module. Passes input through a function and then adds the result to the input.
     """
+
     def __init__(self, fn: callable):
         super().__init__()
         self.fn = fn
@@ -372,14 +390,15 @@ class ResnetBlock(nn.Module):
     """
     ResNet Block.
     """
+
     def __init__(
-            self,
-            dim: int,
-            dim_out: int,
-            *,
-            cond_dim: int = None,
-            time_cond_dim: int = None,
-            groups: int = 8,
+        self,
+        dim: int,
+        dim_out: int,
+        *,
+        cond_dim: int = None,
+        time_cond_dim: int = None,
+        groups: int = 8,
     ):
         """
         :param dim: Number of channels in the input.
@@ -394,19 +413,15 @@ class ResnetBlock(nn.Module):
 
         if time_cond_dim is not None:
             self.time_mlp = nn.Sequential(
-                nn.SiLU(),
-                nn.Linear(time_cond_dim, dim_out * 2)
+                nn.SiLU(), nn.Linear(time_cond_dim, dim_out * 2)
             )
 
         self.cross_attn = None
         if cond_dim is not None:
             self.cross_attn = EinopsToAndFrom(
-                'b c h w',
-                'b (h w) c',
-                CrossAttention(
-                    dim=dim_out,
-                    context_dim=cond_dim
-                )
+                "b c h w",
+                "b (h w) c",
+                CrossAttention(dim=dim_out, context_dim=cond_dim),
             )
 
         self.block1 = Block(dim, dim_out, groups=groups)
@@ -414,7 +429,9 @@ class ResnetBlock(nn.Module):
 
         self.res_conv = nn.Conv2d(dim, dim_out, 1) if dim != dim_out else Identity()
 
-    def forward(self, x: torch.tensor, time_emb: torch.tensor = None, cond: torch.tensor = None) -> torch.tensor:
+    def forward(
+        self, x: torch.tensor, time_emb: torch.tensor = None, cond: torch.tensor = None
+    ) -> torch.tensor:
         """
         :param x: Input image. Shape (b, c, s, s).
         :param time_emb: Time conditioning tensor. Shape (b, c2).
@@ -425,7 +442,7 @@ class ResnetBlock(nn.Module):
         scale_shift = None
         if self.time_mlp is not None and time_emb is not None:
             time_emb = self.time_mlp(time_emb)
-            time_emb = rearrange(time_emb, 'b c -> b c 1 1')
+            time_emb = rearrange(time_emb, "b c -> b c 1 1")
             scale_shift = time_emb.chunk(2, dim=1)
 
         h = self.block1(x)
@@ -440,10 +457,10 @@ class ResnetBlock(nn.Module):
 
 
 class SinusoidalPosEmb(nn.Module):
-    '''
+    """
     Generates sinusoidal positional embedding tensor. In this case, position corresponds to time. For more information
         on sinusoidal embeddings, see ["Positional Encoding - Additional Details"](https://www.assemblyai.com/blog/how-imagen-actually-works/#timestep-conditioning).
-    '''
+    """
 
     def __init__(self, dim: int):
         """
@@ -461,7 +478,7 @@ class SinusoidalPosEmb(nn.Module):
         half_dim = self.dim // 2
         emb = math.log(10000) / (half_dim - 1)
         emb = torch.exp(torch.arange(half_dim, device=x.device) * -emb)
-        emb = rearrange(x, 'i -> i 1') * rearrange(emb, 'j -> 1 j')
+        emb = rearrange(x, "i -> i 1") * rearrange(emb, "j -> 1 j")
         return torch.cat((emb.sin(), emb.cos()), dim=-1)
 
 
@@ -470,14 +487,15 @@ class TransformerBlock(nn.Module):
     Transformer encoder block. Responsible for applying attention at the end of a chain of :class:`.ResnetBlock`s at
         each layer in the U-Met.
     """
+
     def __init__(
-            self,
-            dim: int,
-            *,
-            heads: int = 8,
-            dim_head: int = 32,
-            ff_mult: int = 2,
-            context_dim: int = None
+        self,
+        dim: int,
+        *,
+        heads: int = 8,
+        dim_head: int = 32,
+        ff_mult: int = 2,
+        context_dim: int = None,
     ):
         """
 
@@ -489,8 +507,11 @@ class TransformerBlock(nn.Module):
         :param context_dim: Dimensionality of the context.
         """
         super().__init__()
-        self.attn = EinopsToAndFrom('b c h w', 'b (h w) c',
-                                    Attention(dim=dim, heads=heads, dim_head=dim_head, context_dim=context_dim))
+        self.attn = EinopsToAndFrom(
+            "b c h w",
+            "b (h w) c",
+            Attention(dim=dim, heads=heads, dim_head=dim_head, context_dim=context_dim),
+        )
         self.ff = ChanFeedForward(dim=dim, mult=ff_mult)
 
     def forward(self, x: torch.tensor, context: torch.tensor = None) -> torch.tensor:
@@ -510,6 +531,6 @@ def Upsample(dim: int, dim_out: int = None) -> torch.nn.Sequential:
     dim_out = dim_out if dim_out is not None else dim
 
     return nn.Sequential(
-        nn.Upsample(scale_factor=2, mode='nearest'),
-        nn.Conv2d(dim, dim_out, 3, padding=1)
+        nn.Upsample(scale_factor=2, mode="nearest"),
+        nn.Conv2d(dim, dim_out, 3, padding=1),
     )

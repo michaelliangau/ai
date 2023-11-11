@@ -1,6 +1,7 @@
 import torchvision
 import torch
 
+
 def save_image(tensor: torch.Tensor, path: str) -> None:
     """Saves an image tensor to a specified path.
 
@@ -9,4 +10,3 @@ def save_image(tensor: torch.Tensor, path: str) -> None:
         path (str): The path where the image will be saved.
     """
     torchvision.utils.save_image(tensor, path)
-
