@@ -1,4 +1,4 @@
-# Denoising Diffusion Primitives
+# Image Diffusion
 
 Text conditioned image diffusion model implementation in PyTorch.
 

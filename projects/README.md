@@ -19,7 +19,7 @@ All project specific code exists in the `projects` folder.
 - `makemore` - Bigram and neural network language model primitive.
 - `gpt` - Transformer based character-level language model.
 - `forward_forward` - Geoffrey Hinton's proposed forward forward neural network training algorithm.
-- `diffusion_model` - Vanilla image diffusion model on Stanford cars dataset.
+- `image_diffusion` - Text to Image diffusion primitives
 - `rnnt` - Recurrent neural network transducer architecture for seq2seq problems.
 - `buffet_bot` - Algorithmic investing using LLMs
 - `silicron` - PyPI package to extend chat apps with context using vector stores.
