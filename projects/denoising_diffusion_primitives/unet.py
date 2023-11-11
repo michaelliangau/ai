@@ -128,13 +128,15 @@ class UNet(nn.Module):
 
         # Downsampling layers
         self.downs = nn.ModuleList([])
+        self.ups = nn.ModuleList([])
+
+        # Set variables
         resnet_groups = (constants.RESNET_GROUPS,)
         num_resnet_blocks = (num_resnet_blocks,)
         layer_attns = (layer_attns,)
         layer_cross_attns = (layer_cross_attns,)
         layer_params = [num_resnet_blocks, resnet_groups, layer_attns, layer_cross_attns]
         reversed_layer_params = list(map(reversed, layer_params))
-
         dims = [dim, *map(lambda m: dim * m, dim_mults)]
         in_out = list(zip(dims[:-1], dims[1:]))
 

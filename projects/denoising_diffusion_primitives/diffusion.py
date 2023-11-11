@@ -116,31 +116,3 @@ class GaussianDiffusion():
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
     
     
-
-class BackwardProcess():
-    pass
-#     """Generates an image from a noised image in a backward process."""
-#     def __init__(self, model, torch_device=torch.device("cuda")) -> None:
-#         """
-#         Initialize the backward process.
-
-#         Args:
-#             model: The model to be used in the backward process.
-#         """
-#         self.unet = model
-#         self.torch_device = torch_device
-    
-#     def predict(self, image: torch.Tensor, text: torch.Tensor) -> torch.Tensor:
-#         """Predict the amount of noise
-        
-#         TODO: You can also embed timestep into the upsampling.
-
-#         Args:
-#             image (torch.Tensor): The image to denoise. Shape is (batch_size, channels, height, width).
-#             text (torch.Tensor): The text embedding. Shape is (batch_size, embedding_dim).
-        
-#         Returns:
-#             torch.Tensor: Predict the amount of noise. Shape is (batch_size, channels, height, width).
-#         """
-#         output = self.unet(image, text)
-#         return output

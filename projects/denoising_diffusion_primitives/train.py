@@ -93,7 +93,7 @@ for epoch in tqdm.tqdm(range(num_epochs)):
         encoded_text = encoded_text.masked_fill(attention_mask.unsqueeze(-1), 0)
 
         # Backward Denoising
-        _ = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
+        output = model(image=image, encoded_text=encoded_text, timestep=timestep, text_mask=attention_mask)
 
 
 
