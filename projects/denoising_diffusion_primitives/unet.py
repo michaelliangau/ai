@@ -44,6 +44,7 @@ class UNet(nn.Module):
         dim: int = 128,
         dim_mults: tuple = (1, 2, 4),
         channels: int = 3,
+        channels_out: int = None,
         cond_dim: int = 128,
         encoded_text_dim: int = 512,
         device: torch.device = torch.device("cpu"),
@@ -52,7 +53,8 @@ class UNet(nn.Module):
         attn_heads: int = 8,
         layer_attns: bool = True,
         layer_cross_attns: bool = True,
-        attend_at_middle: bool = False):
+        attend_at_middle: bool = False,
+        memory_efficient: bool = False,):
         """Initializes the UNet model.
         
         Args:
@@ -68,6 +70,8 @@ class UNet(nn.Module):
 
                 - (512, 16, 16) in the third layer of the U-Net  
             channels (int, optional): Number of channels in the input image. Defaults to 3.
+            channels_out (int, optional): Number of channels in the output image. Defaults
+                to None.
             cond_dim (int, optional): Dimensionality of the conditioning tensor. Defaults
                 to the same as dim.
             encoded_text_dim (int, optional): Dimensionality of the text encoded by T5.
@@ -83,6 +87,7 @@ class UNet(nn.Module):
                 layer. Defaults to True.
             attend_at_middle (bool, optional): If True, applies attention to the bottleneck
                 of the UNet. Defaults to False.
+            memory_efficient (bool, optional): Memory efficient architecture.
         """
         super(UNet, self).__init__()
         self.device = device
@@ -128,6 +133,8 @@ class UNet(nn.Module):
         layer_attns = (layer_attns,)
         layer_cross_attns = (layer_cross_attns,)
         layer_params = [num_resnet_blocks, resnet_groups, layer_attns, layer_cross_attns]
+        reversed_layer_params = list(map(reversed, layer_params))
+
         dims = [dim, *map(lambda m: dim * m, dim_mults)]
         in_out = list(zip(dims[:-1], dims[1:]))
 
@@ -197,6 +204,61 @@ class UNet(nn.Module):
         # ResnetBlock that incorporates cross-attention conditioning on main tokens
         self.mid_block2 = layers.ResnetBlock(mid_dim, mid_dim, cond_dim=cond_dim, time_cond_dim=time_cond_dim,
                                       groups=resnet_groups[-1])
+
+
+        # Upsampling layers
+        self.skip_connect_scale = 2 ** -0.5        
+
+        # For each layer in the unet
+        for ind, ((dim_in, dim_out), layer_num_resnet_blocks, groups, layer_attn, layer_cross_attn) in enumerate(
+                zip(reversed(in_out), *reversed_layer_params)):
+            is_last = ind == (num_resolutions - 1)
+            layer_cond_dim = cond_dim if layer_cross_attn else None
+
+            # Potentially use Transformer encoder at end of layer
+            transformer_block_klass = layers.TransformerBlock if layer_attn else layers.Identity
+
+            skip_connect_dim = skip_connect_dims.pop()
+
+            # Create the layer
+            self.ups.append(nn.ModuleList([
+                # Same as `downs` except add channels for skip-connect
+                layers.ResnetBlock(dim_out + skip_connect_dim,
+                            dim_out,
+                            cond_dim=layer_cond_dim,
+                            time_cond_dim=time_cond_dim,
+                            groups=groups),
+                # Same as `downs` except add channels for skip-connect
+                nn.ModuleList(
+                    [
+                        layers.ResnetBlock(dim_out + skip_connect_dim,
+                                    dim_out,
+                                    time_cond_dim=time_cond_dim,
+                                    groups=groups)
+                        for _ in range(layer_num_resnet_blocks)
+                    ]),
+                transformer_block_klass(dim=dim_out,
+                                        heads=attn_heads,
+                                        dim_head=constants.ATTN_DIM_HEAD),
+                # Upscale on the final layer too if memory_efficient to make sure get correct output size
+                layers.Upsample(dim_out, dim_in) if not is_last or memory_efficient else layers.Identity()
+            ]))
+
+        # Whether to do a final residual from initial conv to the final resnet block out
+        init_conv_to_final_conv_residual = False  # Whether to add skip connection between Unet input and output
+        final_resnet_block = True  # Whether to add a final resnet block to the output of the Unet        
+        self.init_conv_to_final_conv_residual = init_conv_to_final_conv_residual
+        final_conv_dim = dim * (2 if init_conv_to_final_conv_residual else 1)
+
+        # Final optional resnet block and convolution out
+        self.final_res_block = layers.ResnetBlock(final_conv_dim, dim, time_cond_dim=time_cond_dim,
+                                           groups=resnet_groups[0]) if final_resnet_block else None
+
+        # Final convolution to bring to right num channels
+        self.channels_out = channels_out if channels_out is not None else channels
+        final_conv_dim_in = dim if final_resnet_block else final_conv_dim
+        self.final_conv = nn.Conv2d(final_conv_dim_in, self.channels_out, 3,
+                                    padding=3 // 2)
 
         
 
@@ -330,3 +392,31 @@ class UNet(nn.Module):
         if self.mid_attn is not None:
             x = self.mid_attn(x)
         x = self.mid_block2(x, t, c)        
+
+        # Upsampling trajectory
+
+        # Lambda function for skip connections
+        add_skip_connection = lambda x: torch.cat((x, hiddens.pop() * self.skip_connect_scale), dim=1)
+
+        for init_block, resnet_blocks, attn_block, upsample in self.ups:
+            # Concatenate the skip connection (post Transformer encoder) from the corresponding layer in the
+            #   downsampling trajectory and pass through `init_block`, which again conditions on `c` and `t`
+            x = add_skip_connection(x)
+            x = init_block(x, t, c)
+
+            # For each resnet block, concatenate the corresponding skip connection and then pass through the block.
+            #   These blocks again condition only on `t`.
+            for resnet_block in resnet_blocks:
+                x = add_skip_connection(x)
+                x = resnet_block(x, t)
+
+            # Transformer encoder and upsampling
+            x = attn_block(x)
+            x = upsample(x)
+
+        # Potentially one final residual block
+        if self.final_res_block is not None:
+            x = self.final_res_block(x, t)
+
+        # Final convolution to get the proper number of channels.
+        return self.final_conv(x)        
