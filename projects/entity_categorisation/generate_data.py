@@ -11,16 +11,25 @@ company_descriptions = [
     "We are a pioneer in the field of satellite technology. Our satellites are used for various purposes like weather forecasting, communication, and research.",
     "We are a leading player in the AI industry. We specialize in machine learning and have developed a range of products that have revolutionized the field of data analysis.",
     "We are known for our work in the field of artificial intelligence. Our AI models have made significant contributions to the understanding of complex data patterns.",
-    "We are a pioneer in the field of AI. Our AI models are used for various purposes like data analysis, prediction, and automation."
+    "We are a pioneer in the field of AI. Our AI models are used for various purposes like data analysis, prediction, and automation.",
 ]
 
-if not os.path.exists('company_data'):
-    os.makedirs('company_data')
+if not os.path.exists("company_data"):
+    os.makedirs("company_data")
 
-company_types = ['biotech', 'biotech', 'biotech', 'space', 'space', 'space', 'ai', 'ai', 'ai']
+company_types = [
+    "biotech",
+    "biotech",
+    "biotech",
+    "space",
+    "space",
+    "space",
+    "ai",
+    "ai",
+    "ai",
+]
 for i, description in enumerate(company_descriptions):
-
-    with open(f'./company_data/{company_types[i]}_{i}.txt', 'w') as f:
+    with open(f"./company_data/{company_types[i]}_{i}.txt", "w") as f:
         f.write(description)
 
 # List of target categories
@@ -37,7 +46,6 @@ category_descriptions = [
 
     The ethical implications of biotechnology are significant, including concerns over GMOs, gene editing in humans, and the impact on natural ecosystems. The field must navigate these issues while pushing the boundaries of scientific innovation.
     """,
-
     # Space Technology
     """
     Space technology encompasses the tools, processes, and knowledge necessary for activities related to outer space. Its history began in the mid-20th century with the space race, primarily between the United States and the Soviet Union, leading to significant milestones such as the launch of the first artificial satellite, Sputnik, and the first human landing on the Moon.
@@ -50,7 +58,6 @@ category_descriptions = [
 
     Future prospects in space technology include advancements in propulsion systems, the potential colonization of other planets, and the continued exploration of the solar system and beyond. The field also faces challenges, such as the issue of space debris and the ethical implications of space colonization.
     """,
-
     # Artificial Intelligence
     """
     Artificial Intelligence (AI) is a branch of computer science focused on creating systems capable of performing tasks that typically require human intelligence. This includes activities such as learning, reasoning, problem-solving, perception, and language understanding.
@@ -64,15 +71,14 @@ category_descriptions = [
     The future of AI holds both exciting possibilities and significant challenges. Key areas of future development include improving AI's ability to understand and interact in natural, human-like ways, ensuring ethical use of AI, and addressing concerns like job displacement and privacy.
 
     AI's ethical considerations are particularly critical, focusing on issues like algorithmic bias, transparency, and the potential for misuse. The field is also grappling with the challenges of AI alignment – ensuring that AI systems' goals are aligned with human values and well-being.
-    """
+    """,
 ]
 
 
-if not os.path.exists('category_data'):
-    os.makedirs('category_data')
+if not os.path.exists("category_data"):
+    os.makedirs("category_data")
 
-category_types = ['biotech', 'space', 'ai']
+category_types = ["biotech", "space", "ai"]
 for i, description in enumerate(category_descriptions):
-
-    with open(f'./category_data/{category_types[i]}_{i}.txt', 'w') as f:
+    with open(f"./category_data/{category_types[i]}_{i}.txt", "w") as f:
         f.write(description)
