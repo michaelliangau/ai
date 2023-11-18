@@ -32,22 +32,28 @@ category_embeddings = model.encode(categories, normalize_embeddings=True)
 company_folder = "./company_data"
 
 # Compute targets
-targets_df = pd.read_csv('/Users/michael/Desktop/test_set.csv')
+targets_df = pd.read_csv("/Users/michael/Desktop/test_set.csv")
 
 # Iterating through each row in the DataFrame
 targets_list = {}
 for index, row in targets_df.iterrows():
-    if pd.isna(row['Name']) or pd.isna(row['Description']) or pd.isna(row['VC Industry Classification']):
+    if (
+        pd.isna(row["Name"])
+        or pd.isna(row["Description"])
+        or pd.isna(row["VC Industry Classification"])
+    ):
         continue
-    target_file_name = row['VC Industry Classification'] + '.txt'
-    target_file_name = target_file_name.replace(" / ", "_").replace(' ', '_').lower()
+    target_file_name = row["VC Industry Classification"] + ".txt"
+    target_file_name = target_file_name.replace(" / ", "_").replace(" ", "_").lower()
 
     # Get the index of this file_name in category_files
     file_index = category_files.index(target_file_name)
 
     # Actual file name
-    file_name = row['Name'].replace(" / ", "_").replace(' ', '_').replace('.', '_').lower()
-    file_name += '.txt'
+    file_name = (
+        row["Name"].replace(" / ", "_").replace(" ", "_").replace(".", "_").lower()
+    )
+    file_name += ".txt"
 
     # Add this file_name and index to targets_list
     targets_list[file_name] = file_index
@@ -90,7 +96,7 @@ for company_file in tqdm(os.listdir(company_folder)):
     raw_output = {
         "company_file": company_file,
         "ranked_similarity": [category_files[rs] for rs in ranked_similarity],
-        "target": category_files[target]
+        "target": category_files[target],
     }
     raw_outputs.append(raw_output)
 
@@ -101,7 +107,17 @@ top_5_percentage = (top_5_count / total_files) * 100
 
 # Save raw outputs and accuracy to a json file
 with open("./raw_outputs.json", "w") as f:
-    json.dump({"accuracy": {"top_1": top_1_percentage, "top_3": top_3_percentage, "top_5": top_5_percentage}, "raw_outputs": raw_outputs}, f)
+    json.dump(
+        {
+            "accuracy": {
+                "top_1": top_1_percentage,
+                "top_3": top_3_percentage,
+                "top_5": top_5_percentage,
+            },
+            "raw_outputs": raw_outputs,
+        },
+        f,
+    )
 
 print(f"Top 1 accuracy: {top_1_percentage}%")
 print(f"Top 3 accuracy: {top_3_percentage}%")
