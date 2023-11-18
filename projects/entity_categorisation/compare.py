@@ -101,7 +101,7 @@ top_5_percentage = (top_5_count / total_files) * 100
 
 # Save raw outputs and accuracy to a json file
 with open("./raw_outputs.json", "w") as f:
-    json.dump({"raw_outputs": raw_outputs, "accuracy": {"top_1": top_1_percentage, "top_3": top_3_percentage, "top_5": top_5_percentage}}, f)
+    json.dump({"accuracy": {"top_1": top_1_percentage, "top_3": top_3_percentage, "top_5": top_5_percentage}, "raw_outputs": raw_outputs}, f)
 
 print(f"Top 1 accuracy: {top_1_percentage}%")
 print(f"Top 3 accuracy: {top_3_percentage}%")
