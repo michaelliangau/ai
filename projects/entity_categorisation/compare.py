@@ -59,7 +59,9 @@ for index, row in targets_df.iterrows():
     targets_list[file_name] = file_index
 
 top_1_count = 0
+top_2_count = 0
 top_3_count = 0
+top_4_count = 0
 top_5_count = 0
 total_files = 0
 
@@ -84,11 +86,15 @@ for company_file in tqdm(os.listdir(company_folder)):
         continue
 
     total_files += 1
-    # Check if the target index is within the top 1, top 3 and top 5 predicted ranked_similarity values
+    # Check if the target index is within the top 1, top 2, top 3, top 4 and top 5 predicted ranked_similarity values
     if target in ranked_similarity[:1]:
         top_1_count += 1
+    if target in ranked_similarity[:2]:
+        top_2_count += 1
     if target in ranked_similarity[:3]:
         top_3_count += 1
+    if target in ranked_similarity[:4]:
+        top_4_count += 1
     if target in ranked_similarity[:5]:
         top_5_count += 1
 
@@ -100,9 +106,11 @@ for company_file in tqdm(os.listdir(company_folder)):
     }
     raw_outputs.append(raw_output)
 
-# Compute the percentage of files that are within the top 1, 3 and 5
+# Compute the percentage of files that are within the top 1, 2, 3, 4 and 5
 top_1_percentage = (top_1_count / total_files) * 100
+top_2_percentage = (top_2_count / total_files) * 100
 top_3_percentage = (top_3_count / total_files) * 100
+top_4_percentage = (top_4_count / total_files) * 100
 top_5_percentage = (top_5_count / total_files) * 100
 
 # Save raw outputs and accuracy to a json file
@@ -111,7 +119,9 @@ with open("./raw_outputs.json", "w") as f:
         {
             "accuracy": {
                 "top_1": top_1_percentage,
+                "top_2": top_2_percentage,
                 "top_3": top_3_percentage,
+                "top_4": top_4_percentage,
                 "top_5": top_5_percentage,
             },
             "raw_outputs": raw_outputs,
@@ -120,5 +130,7 @@ with open("./raw_outputs.json", "w") as f:
     )
 
 print(f"Top 1 accuracy: {top_1_percentage}%")
+print(f"Top 2 accuracy: {top_2_percentage}%")
 print(f"Top 3 accuracy: {top_3_percentage}%")
+print(f"Top 4 accuracy: {top_4_percentage}%")
 print(f"Top 5 accuracy: {top_5_percentage}%")
