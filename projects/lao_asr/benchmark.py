@@ -5,6 +5,7 @@ from tqdm import tqdm
 import jiwer
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
@@ -54,18 +55,18 @@ for batch in tqdm(batches):
 
 # Generate metrics
 wer = sum([output["wer"] for output in outputs]) / len(outputs)
-print(f"WER: {wer}")
+print(f"MEAN WER: {wer}")
+
 
 # Generate a WER plot
 wer_values = [output["wer"] for output in outputs]
 plt.figure(figsize=(10, 5))
-plt.plot(wer_values)
-plt.title('WER values over batches')
-plt.xlabel('Batch')
-plt.ylabel('WER')
+plt.hist(wer_values, bins=np.arange(min(wer_values), max(wer_values) + 0.1, 0.1), edgecolor='black')
+plt.title('Frequency of WER values')
+plt.xlabel('WER')
+plt.ylabel('Frequency')
 
 # Save the plot to outputs folder
 if not os.path.exists('outputs'):
     os.makedirs('outputs')
 plt.savefig('outputs/wer_plot.png')
-import IPython; IPython.embed()
