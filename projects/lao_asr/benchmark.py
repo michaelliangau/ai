@@ -12,7 +12,7 @@ parser.add_argument("--provider", help="Specify the ASR provider to use. Options
 args = parser.parse_args()
 
 # Hyperparameters
-batch_size = 4
+batch_size = 1
 
 if args.provider == "whisper":
     import providers.whisper_v3_large as whisper
@@ -34,13 +34,17 @@ batches = [ds[i:i + batch_size] for i in range(0, len(ds), batch_size)]
 
 
 for batch in tqdm(batches):
-    transcriptions = batch["transcription"]
-    results = provider.forward(batch=batch)
-    
-    for result, target in zip(results, transcriptions):
-        pred = result["text"]
-        wer = jiwer.wer(target, pred)
-        outputs.append({"prediction": pred, "target": target, "wer": wer})
+    try:
+        transcriptions = batch["transcription"]
+        results = provider.forward(batch=batch)
+        
+        for result, target in zip(results, transcriptions):
+            pred = result["text"]
+            wer = jiwer.wer(target, pred)
+            outputs.append({"prediction": pred, "target": target, "wer": wer})
+    except RuntimeError as e:
+        print(f"Error: {e}")
+        continue
 
 # Generate metrics
 wer = sum([output["wer"] for output in outputs]) / len(outputs)
