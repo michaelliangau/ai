@@ -56,6 +56,6 @@ plt.xlim([0, 1.5])
 plt.text(0.95, 0.95, f'Mean WER: {wer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
 
 # Save the plot to outputs folder
-if not os.path.exists(f'outputs/{args.provider}'):
-    os.makedirs(f'outputs/{args.provider}')
-plt.savefig(f'outputs/wer_plot_{args.provider}.png')
+if not os.path.exists(f'./benchmark_outputs'):
+    os.makedirs(f'./benchmark_outputs')
+plt.savefig(f'./benchmark_outputs/wer_plot_{args.provider}.png')
