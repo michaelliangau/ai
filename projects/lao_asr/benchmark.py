@@ -57,14 +57,15 @@ for batch in tqdm(batches):
 wer = sum([output["wer"] for output in outputs]) / len(outputs)
 print(f"MEAN WER: {wer}")
 
-
 # Generate a WER plot
 wer_values = [output["wer"] for output in outputs]
 plt.figure(figsize=(10, 5))
-plt.hist(wer_values, bins=np.arange(min(wer_values), max(wer_values) + 0.1, 0.1), edgecolor='black')
+plt.hist(wer_values, bins=np.arange(0, 3 + 0.1, 0.1), edgecolor='black')
 plt.title('Frequency of WER values')
 plt.xlabel('WER')
 plt.ylabel('Frequency')
+plt.xlim([0, 1.5])
+plt.text(0.95, 0.95, f'Mean WER: {wer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
 
 # Save the plot to outputs folder
 if not os.path.exists('outputs'):
