@@ -1,5 +1,3 @@
-import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from datasets import load_dataset
 from tqdm import tqdm
 import jiwer
@@ -7,33 +5,21 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
-torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+import argparse
 
-model_id = "openai/whisper-large-v3"
+parser = argparse.ArgumentParser()
+parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper', 'seamlessm4t'], default="whisper")
+args = parser.parse_args()
 
-model = AutoModelForSpeechSeq2Seq.from_pretrained(
-    model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-)
-model.to(device)
-
-processor = AutoProcessor.from_pretrained(model_id)
-
+# Hyperparameters
 batch_size = 16
-pipe = pipeline(
-    "automatic-speech-recognition",
-    model=model,
-    tokenizer=processor.tokenizer,
-    feature_extractor=processor.feature_extractor,
-    max_new_tokens=128,
-    chunk_length_s=30,
-    batch_size=batch_size,
-    return_timestamps=False,
-    torch_dtype=torch_dtype,
-    device=device,
-)
 
-# result = pipe("./test_data/test_lao.wav")
+if args.provider == "whisper":
+    import providers.whisper_v3_large as whisper
+    provider = whisper.Whisper(batch_size=batch_size)
+else:
+    raise ValueError(f"Unknown provider: {args.provider}")
+
 
 # Download fleurs Lao test
 ds = load_dataset("google/fleurs", "lo_la", split="test")
@@ -43,10 +29,10 @@ ds = load_dataset("google/fleurs", "lo_la", split="test")
 outputs = []
 batches = [ds[i:i + batch_size] for i in range(0, len(ds), batch_size)]
 
+
 for batch in tqdm(batches):
-    audio_arrays = [data["array"] for data in batch["audio"]]
     transcriptions = batch["transcription"]
-    results = pipe(audio_arrays, generate_kwargs={"language": "lao"})
+    results = provider.forward(batch)
     
     for result, target in zip(results, transcriptions):
         pred = result["text"]
