@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import json
-
+import torch
 import argparse
 
 
@@ -14,18 +14,25 @@ if not os.path.exists(f'./benchmark_outputs'):
     os.makedirs(f'./benchmark_outputs')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper', 'seamlessm4t'], default="whisper")
+parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper")
+parser.add_argument("--device", help="Specify the device to use. Options: 'cpu' or 'cuda'", choices=['cpu', 'cuda'], default="cuda")
 args = parser.parse_args()
 
 # Hyperparameters
 batch_size = 1
 
+# Set device
+device = torch.device(args.device)
+
 if args.provider == "whisper":
     import providers.whisper_v3_large as whisper
-    provider = whisper.Whisper(batch_size=batch_size)
-elif args.provider == "seamlessm4t":
+    provider = whisper.Whisper(device=device, batch_size=batch_size)
+elif args.provider == "seamlessm4t-s2t-lao":
     import providers.seamlessm4t as seamlessm4t
-    provider = seamlessm4t.SeamlessM4T()
+    provider = seamlessm4t.SeamlessM4T(device=device, target_lang="lao")
+elif args.provider == "seamlessm4t-s2tt-eng":
+    import providers.seamlessm4t as seamlessm4t
+    provider = seamlessm4t.SeamlessM4T(device=device, target_lang="eng")
 else:
     raise ValueError(f"Unknown provider: {args.provider}")
 
