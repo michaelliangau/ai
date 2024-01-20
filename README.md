@@ -30,7 +30,7 @@ All project specific code exists in the `projects` folder. These projects are or
 - `rl_primitives` - RL primitives, implement agents in grid world environment.
 - `gpt2_shadow` - Use RL to finetune an LLM to adversarially train against an AI text detector.
 - `entity_categorisation` - Assign entity descriptions into a set of categories.
-- `lao_asr` - Improve Lao ASR.
+- `lao_asr_s2tt` - Improve Lao ASR and S2TT.
 
 ## Common utils
 
