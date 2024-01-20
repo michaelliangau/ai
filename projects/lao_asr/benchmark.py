@@ -14,19 +14,20 @@ if not os.path.exists(f'./benchmark_outputs'):
     os.makedirs(f'./benchmark_outputs')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper")
+parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper")
 parser.add_argument("--device", help="Specify the device to use. Options: 'cpu' or 'cuda'", choices=['cpu', 'cuda'], default="cuda")
 args = parser.parse_args()
 
 # Hyperparameters
 batch_size = 1
-
-# Set device
 device = torch.device(args.device)
 
-if args.provider == "whisper":
+if args.provider == "whisper-s2t-lao":
     import providers.whisper_v3_large as whisper
-    provider = whisper.Whisper(device=device, batch_size=batch_size)
+    provider = whisper.Whisper(device=device, batch_size=batch_size, model_task="transcribe", target_lang="lo")
+elif args.provider == "whisper-s2tt-eng":
+    import providers.whisper_v3_large as whisper
+    provider = whisper.Whisper(device=device, batch_size=batch_size, model_task="translate", target_lang="lo")
 elif args.provider == "seamlessm4t-s2t-lao":
     import providers.seamlessm4t as seamlessm4t
     provider = seamlessm4t.SeamlessM4T(device=device, target_lang="lao")
