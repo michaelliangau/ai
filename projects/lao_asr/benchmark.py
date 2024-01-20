@@ -4,8 +4,14 @@ import jiwer
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import json
 
 import argparse
+
+
+# Save the plot to outputs folder
+if not os.path.exists(f'./benchmark_outputs'):
+    os.makedirs(f'./benchmark_outputs')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper', 'seamlessm4t'], default="whisper")
@@ -40,26 +46,26 @@ for batch in tqdm(batches):
         
         for result, target in zip(results, transcriptions):
             pred = result["text"]
-            wer = jiwer.wer(target, pred)
-            outputs.append({"prediction": pred, "target": target, "wer": wer})
+            cer = jiwer.cer(target, pred)
+            outputs.append({"prediction": pred, "target": target, "cer": cer})
     except RuntimeError as e:
         print(f"Error: {e}")
         continue
 
 # Generate metrics
-wer = sum([output["wer"] for output in outputs]) / len(outputs)
+cer = sum([output["cer"] for output in outputs]) / len(outputs)
 
-# Generate a WER plot
-wer_values = [output["wer"] for output in outputs]
+# CER plot
+cer_values = [output["cer"] for output in outputs]
 plt.figure(figsize=(10, 5))
-plt.hist(wer_values, bins=np.arange(0, 3 + 0.1, 0.1), edgecolor='black')
-plt.title(f'{args.provider} WER values')
-plt.xlabel('WER')
+plt.hist(cer_values, bins=np.arange(0, 3 + 0.1, 0.1), edgecolor='black')
+plt.title(f'{args.provider} CER values')
+plt.xlabel('CER')
 plt.ylabel('Frequency')
 plt.xlim([0, 1.5])
-plt.text(0.95, 0.95, f'Mean WER: {wer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+plt.text(0.95, 0.95, f'Mean CER: {cer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+plt.savefig(f'./benchmark_outputs/cer_plot_{args.provider}.png')
 
-# Save the plot to outputs folder
-if not os.path.exists(f'./benchmark_outputs'):
-    os.makedirs(f'./benchmark_outputs')
-plt.savefig(f'./benchmark_outputs/wer_plot_{args.provider}.png')
+# Save raw outputs
+with open(f'./benchmark_outputs/raw_outputs_{args.provider}.json', 'w') as f:
+    json.dump(outputs, f)

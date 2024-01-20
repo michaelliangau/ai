@@ -1,4 +1,4 @@
-from transformers import AutoProcessor, SeamlessM4Tv2Model
+from transformers import AutoProcessor, SeamlessM4Tv2ForSpeechToText
 import torchaudio
 from typing import Any, Dict
 import torch
@@ -10,7 +10,7 @@ class SeamlessM4T:
         model_name = "facebook/seamless-m4t-v2-large"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.processor = AutoProcessor.from_pretrained(model_name)
-        self.model = SeamlessM4Tv2Model.from_pretrained(model_name).to(self.device)
+        self.model = SeamlessM4Tv2ForSpeechToText.from_pretrained(model_name).to(self.device)
 
     def forward(self, batch: Dict[str, Any], tgt_lang: str = "lao"):
         """
@@ -29,8 +29,7 @@ class SeamlessM4T:
         audio_arrays = [torchaudio.functional.resample(audio_array, orig_freq=sampling_rate, new_freq=16_000) if sampling_rate != 16_000 else audio_array for audio_array, sampling_rate in zip(audio_arrays, audio_sampling_rates)] # SeamlessM4T only supports 16kHz audio
         inputs = self.processor(audios=audio_arrays, return_tensors="pt", sampling_rate=16_000)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        output_tokens = self.model.generate(**inputs, tgt_lang=tgt_lang, generate_speech=False)
-        output_tokens = output_tokens["sequences"].cpu().numpy().squeeze().tolist()
+        output_tokens = self.model.generate(**inputs, tgt_lang=tgt_lang)
         
         for output_token in output_tokens:
             source = self.processor.decode(output_token, skip_special_tokens=True)
