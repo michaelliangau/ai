@@ -14,12 +14,13 @@ if not os.path.exists(f'./benchmark_outputs'):
     os.makedirs(f'./benchmark_outputs')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper")
+parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper-s2tt-eng")
 parser.add_argument("--device", help="Specify the device to use. Options: 'cpu' or 'cuda'", choices=['cpu', 'cuda'], default="cuda")
+parser.add_argument("--model_task", help="Specify the model task to use. Options: 'asr' or 's2tt'", choices=['asr', 's2tt'], default="asr")
 args = parser.parse_args()
 
 # Hyperparameters
-batch_size = 1
+batch_size = 4
 device = torch.device(args.device)
 
 if args.provider == "whisper-s2t-lao":
@@ -39,8 +40,9 @@ else:
 
 
 # Download fleurs Lao test
-ds = load_dataset("google/fleurs", "lo_la", split="test")
+# ds = load_dataset("facebook/flores", "eng_Latn-lao_Laoo")
 
+ds = load_dataset("google/fleurs", "lo_la", split="test")
 
 # Run transcriptions
 outputs = []
@@ -51,11 +53,18 @@ for batch in tqdm(batches):
     try:
         transcriptions = batch["transcription"]
         results = provider.forward(batch=batch)
-        
+
         for result, target in zip(results, transcriptions):
             pred = result["text"]
-            cer = jiwer.cer(target, pred)
+            if args.model_task == "asr":
+                cer = jiwer.cer(target, pred)
+                bleu = None
+            elif args.model_task == "s2tt":
+                # TODO Calculate BLEU
+                cer = None
+
             outputs.append({"prediction": pred, "target": target, "cer": cer})
+            
     except RuntimeError as e:
         print(f"Error: {e}")
         continue
