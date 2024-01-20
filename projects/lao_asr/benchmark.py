@@ -75,4 +75,4 @@ plt.savefig(f'./benchmark_outputs/cer_plot_{args.provider}.png')
 
 # Save raw outputs
 with open(f'./benchmark_outputs/raw_outputs_{args.provider}.json', 'w') as f:
-    json.dump(outputs, f)
+    json.dump(outputs, f, ensure_ascii=False)
