@@ -1,4 +1,4 @@
-from datasets import load_dataset
+import datasets
 from tqdm import tqdm
 import jiwer
 import matplotlib.pyplot as plt
@@ -7,7 +7,7 @@ import numpy as np
 import json
 import torch
 import argparse
-
+import nltk
 
 # Save the plot to outputs folder
 if not os.path.exists(f'./benchmark_outputs'):
@@ -16,7 +16,7 @@ if not os.path.exists(f'./benchmark_outputs'):
 parser = argparse.ArgumentParser()
 parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper-s2tt-eng")
 parser.add_argument("--device", help="Specify the device to use. Options: 'cpu' or 'cuda'", choices=['cpu', 'cuda'], default="cuda")
-parser.add_argument("--model_task", help="Specify the model task to use. Options: 'asr' or 's2tt'", choices=['asr', 's2tt'], default="asr")
+parser.add_argument("--model_task", help="Specify the model task to use. Options: 'asr' or 's2tt'", choices=['asr', 's2tt'], default="s2tt")
 args = parser.parse_args()
 
 # Hyperparameters
@@ -38,50 +38,83 @@ elif args.provider == "seamlessm4t-s2tt-eng":
 else:
     raise ValueError(f"Unknown provider: {args.provider}")
 
+# Datasets
+lao_ds = datasets.load_dataset("google/fleurs", "lo_la", split="test")
+en_ds = datasets.load_dataset("google/fleurs", "en_us", split="test")
 
-# Download fleurs Lao test
-# ds = load_dataset("facebook/flores", "eng_Latn-lao_Laoo")
+# Find the matching english transcription with the same id and add it to the lao_ds column
+en_dict = {item['id']: item['transcription'] for item in en_ds}
 
-ds = load_dataset("google/fleurs", "lo_la", split="test")
+def add_en_translation(example):
+    """
+    Add English translation to each item in the Lao dataset
+    
+    Args:
+        example: A dictionary containing the example data
+    
+    Returns:
+        example: A dictionary containing the example data with the English translation
+            added
+    """
+    example['en_translation'] = en_dict.get(example['id'], None)
+    return example
+
+# Apply the function to the Lao dataset
+lao_ds = lao_ds.map(add_en_translation, num_proc=4)
 
 # Run transcriptions
 outputs = []
-batches = [ds[i:i + batch_size] for i in range(0, len(ds), batch_size)]
-
+batches = [lao_ds[i:i + batch_size] for i in range(0, len(lao_ds), batch_size)]
 
 for batch in tqdm(batches):
     try:
         transcriptions = batch["transcription"]
+        en_translations = batch["en_translation"]
         results = provider.forward(batch=batch)
 
-        for result, target in zip(results, transcriptions):
+        for result, target, en_translation in zip(results, transcriptions, en_translations):
             pred = result["text"]
             if args.model_task == "asr":
                 cer = jiwer.cer(target, pred)
                 bleu = None
             elif args.model_task == "s2tt":
-                # TODO Calculate BLEU
-                cer = None
+                cer = None                
+                pred_norm = ''.join(e for e in pred if e.isalnum() or e.isspace()).lower().strip()
+                en_translation_norm = ''.join(e for e in en_translation if e.isalnum() or e.isspace()).lower().strip()
+                pred_words = pred_norm.split()
+                en_translation_words = en_translation_norm.split()
+                bleu = nltk.translate.bleu_score.sentence_bleu(en_translation_words, pred_words, weights=(0.33, 0.33, 0.33), smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
 
-            outputs.append({"prediction": pred, "target": target, "cer": cer})
+            outputs.append({"prediction": pred, "target": target, "cer": cer, "bleu": bleu})
             
     except RuntimeError as e:
         print(f"Error: {e}")
         continue
-
 # Generate metrics
-cer = sum([output["cer"] for output in outputs]) / len(outputs)
+cer = sum([output["cer"] for output in outputs if output["cer"] is not None]) / len([output for output in outputs if output["cer"] is not None])
+bleu = sum([output["bleu"] for output in outputs if output["bleu"] is not None]) / len([output for output in outputs if output["bleu"] is not None])
 
 # CER plot
-cer_values = [output["cer"] for output in outputs]
+cer_values = [output["cer"] for output in outputs if output["cer"] is not None]
 plt.figure(figsize=(10, 5))
-plt.hist(cer_values, bins=np.arange(0, 3 + 0.1, 0.1), edgecolor='black')
+plt.hist(cer_values, bins=np.arange(0, max(cer_values) + 0.1, 0.1), edgecolor='black')
 plt.title(f'{args.provider} CER values')
 plt.xlabel('CER')
 plt.ylabel('Frequency')
-plt.xlim([0, 1.5])
+plt.xlim([0, max(cer_values)])
 plt.text(0.95, 0.95, f'Mean CER: {cer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
 plt.savefig(f'./benchmark_outputs/cer_plot_{args.provider}.png')
+
+# BLEU score plot
+bleu_values = [output["bleu"] for output in outputs if output["bleu"] is not None]
+plt.figure(figsize=(10, 5))
+plt.hist(bleu_values, bins=np.arange(0, max(bleu_values) + 0.05, 0.05), edgecolor='black')
+plt.title(f'{args.provider} BLEU score values')
+plt.xlabel('BLEU score')
+plt.ylabel('Frequency')
+plt.xlim([0, max(bleu_values)])
+plt.text(0.95, 0.95, f'Mean BLEU score: {bleu:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+plt.savefig(f'./benchmark_outputs/bleu_plot_{args.provider}.png')
 
 # Save raw outputs
 with open(f'./benchmark_outputs/raw_outputs_{args.provider}.json', 'w') as f:
