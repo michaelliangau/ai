@@ -20,7 +20,7 @@ parser.add_argument("--model_task", help="Specify the model task to use. Options
 args = parser.parse_args()
 
 # Hyperparameters
-batch_size = 4
+batch_size = 12
 device = torch.device(args.device)
 
 if args.provider == "whisper-s2t-lao":
@@ -86,36 +86,41 @@ for batch in tqdm(batches):
                 bleu = nltk.translate.bleu_score.sentence_bleu(en_translation_words, pred_words, weights=(0.33, 0.33, 0.33), smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
 
             outputs.append({"prediction": pred, "target": target, "cer": cer, "bleu": bleu})
-            
+
     except RuntimeError as e:
         print(f"Error: {e}")
         continue
-# Generate metrics
-cer = sum([output["cer"] for output in outputs if output["cer"] is not None]) / len([output for output in outputs if output["cer"] is not None])
-bleu = sum([output["bleu"] for output in outputs if output["bleu"] is not None]) / len([output for output in outputs if output["bleu"] is not None])
-
-# CER plot
-cer_values = [output["cer"] for output in outputs if output["cer"] is not None]
-plt.figure(figsize=(10, 5))
-plt.hist(cer_values, bins=np.arange(0, max(cer_values) + 0.1, 0.1), edgecolor='black')
-plt.title(f'{args.provider} CER values')
-plt.xlabel('CER')
-plt.ylabel('Frequency')
-plt.xlim([0, max(cer_values)])
-plt.text(0.95, 0.95, f'Mean CER: {cer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
-plt.savefig(f'./benchmark_outputs/cer_plot_{args.provider}.png')
-
-# BLEU score plot
-bleu_values = [output["bleu"] for output in outputs if output["bleu"] is not None]
-plt.figure(figsize=(10, 5))
-plt.hist(bleu_values, bins=np.arange(0, max(bleu_values) + 0.05, 0.05), edgecolor='black')
-plt.title(f'{args.provider} BLEU score values')
-plt.xlabel('BLEU score')
-plt.ylabel('Frequency')
-plt.xlim([0, max(bleu_values)])
-plt.text(0.95, 0.95, f'Mean BLEU score: {bleu:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
-plt.savefig(f'./benchmark_outputs/bleu_plot_{args.provider}.png')
 
 # Save raw outputs
 with open(f'./benchmark_outputs/raw_outputs_{args.provider}.json', 'w') as f:
     json.dump(outputs, f, ensure_ascii=False)
+
+# Generate metrics
+cer_total = sum([output["cer"] for output in outputs if output["cer"] is not None])
+cer_count = len([output for output in outputs if output["cer"] is not None])
+cer = cer_total / cer_count if cer_count > 0 else 0
+cer_values = [output["cer"] for output in outputs if output["cer"] is not None]
+if cer_values:
+    plt.figure(figsize=(10, 5))
+    plt.hist(cer_values, bins=np.arange(0, max(cer_values) + 0.1, 0.1), edgecolor='black')
+    plt.title(f'{args.provider} CER values')
+    plt.xlabel('CER')
+    plt.ylabel('Frequency')
+    plt.xlim([0, max(cer_values)])
+    plt.text(0.95, 0.95, f'Mean CER: {cer:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+    plt.savefig(f'./benchmark_outputs/cer_plot_{args.provider}.png')
+
+bleu_total = sum([output["bleu"] for output in outputs if output["bleu"] is not None])
+bleu_count = len([output for output in outputs if output["bleu"] is not None])
+bleu = bleu_total / bleu_count if bleu_count > 0 else 0
+bleu_values = [output["bleu"] for output in outputs if output["bleu"] is not None]
+if bleu_values:
+    plt.figure(figsize=(10, 5))
+    plt.hist(bleu_values, bins=np.arange(0, max(bleu_values) + 0.05, 0.05), edgecolor='black')
+    plt.title(f'{args.provider} BLEU score values')
+    plt.xlabel('BLEU score')
+    plt.ylabel('Frequency')
+    plt.xlim([0, max(bleu_values)])
+    plt.text(0.95, 0.95, f'Mean BLEU score: {bleu:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+    plt.savefig(f'./benchmark_outputs/bleu_plot_{args.provider}.png')
+
