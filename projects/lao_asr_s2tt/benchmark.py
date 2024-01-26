@@ -86,7 +86,7 @@ for batch in tqdm(batches):
                 bleu = nltk.translate.bleu_score.sentence_bleu(en_translation_words, pred_words, weights=(0.33, 0.33, 0.33), smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
 
             outputs.append({"prediction": pred, "target": target, "cer": cer, "bleu": bleu})
-
+        break
     except RuntimeError as e:
         print(f"Error: {e}")
         continue
@@ -116,11 +116,10 @@ bleu = bleu_total / bleu_count if bleu_count > 0 else 0
 bleu_values = [output["bleu"] for output in outputs if output["bleu"] is not None]
 if bleu_values:
     plt.figure(figsize=(10, 5))
-    plt.hist(bleu_values, bins=np.arange(0, max(bleu_values) + 0.05, 0.05), edgecolor='black')
+    plt.hist(bleu_values, bins=np.arange(0, max(bleu_values) + 0.001, 0.001), edgecolor='black')  # Decreased bin size to 0.001
     plt.title(f'{args.provider} BLEU score values')
     plt.xlabel('BLEU score')
     plt.ylabel('Frequency')
     plt.xlim([0, max(bleu_values)])
-    plt.text(0.95, 0.95, f'Mean BLEU score: {bleu:.2f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)
+    plt.text(0.95, 0.95, f'Mean BLEU score: {bleu:.4f}', horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes)  # Increased decimal places to 4
     plt.savefig(f'./benchmark_outputs/bleu_plot_{args.provider}.png')
-
