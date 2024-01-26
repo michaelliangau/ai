@@ -8,6 +8,8 @@ import json
 import torch
 import argparse
 import nltk
+import utils
+
 
 # Save the plot to outputs folder
 if not os.path.exists(f'./benchmark_outputs'):
@@ -21,7 +23,7 @@ parser.add_argument("--batch_size", help="Specify the batch size for processing"
 args = parser.parse_args()
 
 # Hyperparameters
-batch_size = 12
+batch_size = args.batch_size
 device = torch.device(args.device)
 
 if args.provider == "whisper-s2t-lao":
@@ -46,22 +48,8 @@ en_ds = datasets.load_dataset("google/fleurs", "en_us", split="test")
 # Find the matching english transcription with the same id and add it to the lao_ds column
 en_dict = {item['id']: item['transcription'] for item in en_ds}
 
-def add_en_translation(example):
-    """
-    Add English translation to each item in the Lao dataset
-    
-    Args:
-        example: A dictionary containing the example data
-    
-    Returns:
-        example: A dictionary containing the example data with the English translation
-            added
-    """
-    example['en_translation'] = en_dict.get(example['id'], None)
-    return example
-
 # Apply the function to the Lao dataset
-lao_ds = lao_ds.map(add_en_translation, num_proc=4)
+lao_ds = lao_ds.map(lambda row: utils.add_translation(row=row, translations=en_dict, key='en_translation'), num_proc=4)
 
 # Run transcriptions
 outputs = []
