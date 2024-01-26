@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper-s2tt-eng")
 parser.add_argument("--device", help="Specify the device to use. Options: 'cpu' or 'cuda'", choices=['cpu', 'cuda'], default="cuda")
 parser.add_argument("--model_task", help="Specify the model task to use. Options: 'asr' or 's2tt'", choices=['asr', 's2tt'], default="s2tt")
+parser.add_argument("--batch_size", help="Specify the batch size for processing", type=int, default=12)
 args = parser.parse_args()
 
 # Hyperparameters
