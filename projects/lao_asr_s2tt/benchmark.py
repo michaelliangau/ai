@@ -74,7 +74,7 @@ for batch in tqdm(batches):
                 en_translation_words = en_translation_norm.split()
                 bleu = nltk.translate.bleu_score.sentence_bleu(en_translation_words, pred_words, weights=(0.33, 0.33, 0.33), smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
 
-            outputs.append({"prediction": pred, "target": target, "cer": cer, "bleu": bleu})
+            outputs.append({"prediction": pred, "target": target, "en_translation": en_translation, "cer": cer, "bleu": bleu})
 
     except RuntimeError as e:
         print(f"Error: {e}")
