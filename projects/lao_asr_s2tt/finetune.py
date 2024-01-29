@@ -21,7 +21,6 @@ lao_ds = lao_ds.map(lambda row: utils.add_translation(row=row, translations=en_d
 model_name = "facebook/seamless-m4t-v2-large"
 processor = AutoProcessor.from_pretrained(model_name)
 model = SeamlessM4Tv2ForSpeechToText.from_pretrained(model_name).to(device)
-import IPython; IPython.embed()
 
 audio, sr = torchaudio.load("./test_data/test_lao.wav")
 audio_arrays = [audio]
@@ -30,3 +29,5 @@ audio_arrays = [torchaudio.functional.resample(audio_array, orig_freq=sampling_r
 inputs = processor(audios=audio_arrays, return_tensors="pt", sampling_rate=16_000)
 inputs = {k: v.to(device) for k, v in inputs.items()}
 output_tokens = model.generate(**inputs, tgt_lang="eng")
+
+# TODO: Build the rest of the finetuning loop
