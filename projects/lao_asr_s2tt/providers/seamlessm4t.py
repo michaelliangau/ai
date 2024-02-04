@@ -5,6 +5,7 @@ import torch
 import sys
 sys.path.append("..")
 import utils
+import constants
 
 
 class SeamlessM4T:
@@ -56,7 +57,7 @@ class SeamlessM4T:
 
         if self.streaming:
             preprocessed_audio_arrays = [audio_array.unsqueeze(0) for audio_array in preprocessed_audio_arrays]
-            audio_chunks = [utils.chunk_audio(waveform=audio_array, sample_rate=16_000, chunk_size_ms=2500, overlap_ms=0) for audio_array in preprocessed_audio_arrays]
+            audio_chunks = [utils.chunk_audio(waveform=audio_array, sample_rate=16_000, chunk_size_ms=constants.CHUNK_SIZE_MS, overlap_ms=0) for audio_array in preprocessed_audio_arrays]
             for chunk in audio_chunks:
                 out = self.generate_and_decode(chunk)
                 out_text = " ".join(out)

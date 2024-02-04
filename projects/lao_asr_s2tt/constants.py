@@ -1,0 +1,1 @@
+CHUNK_SIZE_MS = 5000

@@ -71,8 +71,8 @@ for batch in tqdm(batches):
                 bleu = None
             elif args.model_task == "s2tt":
                 cer = None                
-                pred_norm = ''.join(e for e in pred if e.isalnum() or e.isspace()).lower().strip()
-                en_translation_norm = ''.join(e for e in en_translation if e.isalnum() or e.isspace()).lower().strip()
+                pred_norm = ''.join(e for e in pred if e.isalnum() or e.isspace()).lower().replace(".", "").strip()
+                en_translation_norm = ''.join(e for e in en_translation if e.isalnum() or e.isspace()).lower().replace(".", "").strip()
                 pred_words = pred_norm.split()
                 en_translation_words = en_translation_norm.split()
                 bleu = nltk.translate.bleu_score.sentence_bleu(en_translation_words, pred_words, weights=(0.33, 0.33, 0.33), smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
