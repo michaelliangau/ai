@@ -1,6 +1,6 @@
 from transformers import AutoProcessor, SeamlessM4Tv2ForSpeechToText
 import torchaudio
-from typing import Any, Dict
+from typing import Any, Dict, List
 import torch
 
 class SeamlessM4T:
@@ -19,6 +19,21 @@ class SeamlessM4T:
         self.model = SeamlessM4Tv2ForSpeechToText.from_pretrained(model_name).to(self.device)
         self.model.eval()
 
+    def preprocess_audio(self, batch: Dict[str, Any]):
+        """
+        Preprocess audio data for the model.
+
+        Args:
+            batch (Dict[str, Any]): A dictionary containing the input data.
+
+        Returns:
+            List[torch.Tensor]: Preprocessed audio arrays.
+        """
+        audio_arrays = [torch.from_numpy(audio["array"]) for audio in batch["audio"]]
+        audio_sampling_rates = [audio["sampling_rate"] for audio in batch["audio"]]
+        preprocessed_audio_arrays = [torchaudio.functional.resample(audio_array, orig_freq=sampling_rate, new_freq=16_000) if sampling_rate != 16_000 else audio_array for audio_array, sampling_rate in zip(audio_arrays, audio_sampling_rates)] # SeamlessM4T only supports 16kHz audio
+        return preprocessed_audio_arrays
+
     def forward(self, batch: Dict[str, Any]):
         """
         Forward pass through the model.
@@ -30,10 +45,8 @@ class SeamlessM4T:
             numpy.ndarray: The output audio array.
         """
         outputs = []
-        audio_arrays = [torch.from_numpy(audio["array"]) for audio in batch["audio"]]
-        audio_sampling_rates = [audio["sampling_rate"] for audio in batch["audio"]]
-        audio_arrays = [torchaudio.functional.resample(audio_array, orig_freq=sampling_rate, new_freq=16_000) if sampling_rate != 16_000 else audio_array for audio_array, sampling_rate in zip(audio_arrays, audio_sampling_rates)] # SeamlessM4T only supports 16kHz audio
-        inputs = self.processor(audios=audio_arrays, return_tensors="pt", sampling_rate=16_000)
+        preprocessed_audio_arrays = self.preprocess_audio(batch)
+        inputs = self.processor(audios=preprocessed_audio_arrays, return_tensors="pt", sampling_rate=16_000)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         output_tokens = self.model.generate(**inputs, tgt_lang=self.target_lang)
         
@@ -44,3 +57,19 @@ class SeamlessM4T:
             })
 
         return outputs
+
+    def generate_and_decode(self, audio_chunks: List[torch.Tensor]) -> List[str]:
+        """
+        Generate and decode the output from preprocessed audio arrays.
+
+        Args:
+            audio_chunks (List[torch.Tensor]): A list of preprocessed audio arrays.
+
+        Returns:
+            List[str]: A list of decoded texts.
+        """
+        inputs = self.processor(audios=audio_chunks, return_tensors="pt", sampling_rate=16_000)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        output_tokens = self.model.generate(**inputs, tgt_lang=self.target_lang)
+        decoded_texts = [self.processor.decode(output_token, skip_special_tokens=True) for output_token in output_tokens]
+        return decoded_texts
