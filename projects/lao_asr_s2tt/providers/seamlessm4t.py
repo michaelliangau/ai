@@ -2,20 +2,27 @@ from transformers import AutoProcessor, SeamlessM4Tv2ForSpeechToText
 import torchaudio
 from typing import Any, Dict, List
 import torch
+import sys
+sys.path.append("..")
+import utils
+
 
 class SeamlessM4T:
-    def __init__(self, device: str = "cuda", target_lang: str = "lao"):
+    def __init__(self, device: str = "cuda", target_lang: str = "lao", streaming=False):
         """
         Initialize the SeamlessM4T class.
 
         Args:
+            device (str, optional): The device to use. Defaults to "cuda".
             target_lang (str, optional): The target language. Defaults to "lao".
                 More found here: https://github.com/facebookresearch/seamless_communication/blob/main/demo/m4tv2/lang_list.py
+            streaming (bool, optional): Whether to use streaming mode. Defaults to False.
         """
         model_name = "facebook/seamless-m4t-v2-large"
         self.device = device
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.target_lang = target_lang
+        self.streaming = streaming
         self.model = SeamlessM4Tv2ForSpeechToText.from_pretrained(model_name).to(self.device)
         self.model.eval()
 
@@ -46,15 +53,26 @@ class SeamlessM4T:
         """
         outputs = []
         preprocessed_audio_arrays = self.preprocess_audio(batch)
-        inputs = self.processor(audios=preprocessed_audio_arrays, return_tensors="pt", sampling_rate=16_000)
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        output_tokens = self.model.generate(**inputs, tgt_lang=self.target_lang)
-        
-        for output_token in output_tokens:
-            source = self.processor.decode(output_token, skip_special_tokens=True)
-            outputs.append({
-                "text": source
-            })
+
+        if self.streaming:
+            preprocessed_audio_arrays = [audio_array.unsqueeze(0) for audio_array in preprocessed_audio_arrays]
+            audio_chunks = [utils.chunk_audio(waveform=audio_array, sample_rate=16_000, chunk_size_ms=2500, overlap_ms=0) for audio_array in preprocessed_audio_arrays]
+            for chunk in audio_chunks:
+                out = self.generate_and_decode(chunk)
+                out_text = " ".join(out)
+                outputs.append({
+                    "text": out_text
+                })
+        else:
+            inputs = self.processor(audios=preprocessed_audio_arrays, return_tensors="pt", sampling_rate=16_000)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            output_tokens = self.model.generate(**inputs, tgt_lang=self.target_lang)
+            
+            for output_token in output_tokens:
+                source = self.processor.decode(output_token, skip_special_tokens=True)
+                outputs.append({
+                    "text": source
+                })
 
         return outputs
 

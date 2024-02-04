@@ -10,11 +10,13 @@ device = torch.device("cuda")
 model = seamlessm4t.SeamlessM4T(device=device, target_lang="eng")
 
 # Chunk audio
-audio_chunks, sample_rate = utils.chunk_audio(
-    file_path="test_data/test_lao.wav",
+waveform, sample_rate = torchaudio.load("test_data/test_lao.wav")
+audio_chunks = utils.chunk_audio(
+    waveform=waveform,
+    sample_rate=sample_rate,
     chunk_size_ms=2500,
     overlap_ms=0,
-    )
+)
 
 # Resample to 16kHz
 resampled_audio_chunks = [torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(chunk) for chunk in audio_chunks]

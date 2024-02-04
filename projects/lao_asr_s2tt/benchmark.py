@@ -16,10 +16,10 @@ if not os.path.exists(f'./benchmark_outputs'):
     os.makedirs(f'./benchmark_outputs')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng'], default="whisper-s2tt-eng")
+parser.add_argument("--provider", help="Specify the ASR provider to use. Options: 'whisper' or 'seamlessm4t'", choices=['whisper-s2t-lao', 'whisper-s2tt-eng', 'seamlessm4t-s2t-lao', 'seamlessm4t-s2tt-eng', 'seamlessm4t-s2tt-eng-streaming'], default="seamlessm4t-s2tt-eng-streaming")
 parser.add_argument("--device", help="Specify the device to use. Options: 'cpu' or 'cuda'", choices=['cpu', 'cuda'], default="cuda")
 parser.add_argument("--model_task", help="Specify the model task to use. Options: 'asr' or 's2tt'", choices=['asr', 's2tt'], default="s2tt")
-parser.add_argument("--batch_size", help="Specify the batch size for processing", type=int, default=12)
+parser.add_argument("--batch_size", help="Specify the batch size for processing", type=int, default=1)
 args = parser.parse_args()
 
 # Hyperparameters
@@ -38,6 +38,9 @@ elif args.provider == "seamlessm4t-s2t-lao":
 elif args.provider == "seamlessm4t-s2tt-eng":
     import providers.seamlessm4t as seamlessm4t
     provider = seamlessm4t.SeamlessM4T(device=device, target_lang="eng")
+elif args.provider == "seamlessm4t-s2tt-eng-streaming":
+    import providers.seamlessm4t as seamlessm4t
+    provider = seamlessm4t.SeamlessM4T(device=device, target_lang="eng", streaming=True)    
 else:
     raise ValueError(f"Unknown provider: {args.provider}")
 

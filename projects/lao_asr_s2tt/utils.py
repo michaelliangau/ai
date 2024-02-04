@@ -19,21 +19,19 @@ def add_translation(row: Dict[str, Any], translations: Dict[str, Any], key: str)
     row[key] = translations.get(row['id'], None)
     return row
 
-def chunk_audio(file_path: str, chunk_size_ms: int = 500, overlap_ms: int = 0) -> Tuple[List[torch.Tensor], int]:
+def chunk_audio(waveform: torch.Tensor, sample_rate: int, chunk_size_ms: int = 500, overlap_ms: int = 0) -> List[torch.Tensor]:
     """
-    Load audio file and split it into chunks of specified millisecond length with
-    optional overlapping.
+    Split audio waveform into chunks of specified millisecond length with optional overlapping.
 
     Args:
-        file_path (str): The path to the audio file.
+        waveform (torch.Tensor): The waveform of the audio file.
+        sample_rate (int): The sample rate of the audio file.
         chunk_size_ms (int): The size of each chunk in milliseconds.
         overlap_ms (int): The size of the overlap between chunks in milliseconds.
 
     Returns:
-        Tuple[List[torch.Tensor], int]: A tuple containing a list of audio chunks and
-            the sample rate.
+        List[torch.Tensor]: A list of audio chunks.
     """
-    waveform, sample_rate = torchaudio.load(file_path)
     chunk_size = int(sample_rate * (chunk_size_ms / 1000))
     overlap_size = int(sample_rate * (overlap_ms / 1000))
     step_size = chunk_size - overlap_size
@@ -43,4 +41,4 @@ def chunk_audio(file_path: str, chunk_size_ms: int = 500, overlap_ms: int = 0) -
         end = min(start + chunk_size, waveform.size(1))
         chunks.append(waveform[:, start:end])
 
-    return chunks, sample_rate
+    return chunks
