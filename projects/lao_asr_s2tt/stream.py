@@ -82,3 +82,6 @@ for i in itertools.count():
     # Here you can process the tensor with your ASR model
     print(f"Chunk {i} processed and converted to tensor with shape {audio_data_tensor.shape}")
 
+# TODO: Give me exactly 5 seconds of audio
+# TODO: give me 16khz
+# TODO: Store all the audio in cache and process it in a different process, it might be slower...
