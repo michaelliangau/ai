@@ -3,17 +3,16 @@
 # """
 import pyaudio
 import wave
-import itertools
-import time
 import numpy as np
 import torch
 
 # Define the stream parameters
 FORMAT = pyaudio.paInt16  # Audio format (16-bit PCM)
 CHANNELS = 1              # Mono audio
-RATE = 44100              # Sample rate
+RATE = 16000              # Sample rate
 CHUNK = 1000              # Number of frames per buffer
-RECORD_SECONDS = 5        # Duration of recording chunk in seconds
+PROCESS_SAMPLES = 80000   # Number of samples to process at a time
+save_audio = False  # Set to True if you want to save audio chunks to files
 
 # Initialize PyAudio
 p = pyaudio.PyAudio()
@@ -45,43 +44,31 @@ stream = p.open(format=FORMAT,
 
 # Start recording
 stream.start_stream()
-save_audio = True  # Set to True if you want to save audio chunks to files
 
-# Record indefinitely and process in chunks
-for i in itertools.count():
-    # Reset the audio_data_chunks list for the new recording chunk
-    audio_data_chunks = []
-    
-    # Record for exactly 5 seconds
-    frames_needed = RATE * RECORD_SECONDS
-    while len(audio_data_chunks) * CHUNK < frames_needed:
-        time.sleep(0.1)  # Sleep briefly to avoid busy waiting
+# Continuously record and process in chunks of 80000 samples
+while True:
+    # Check if we have more than 80000 samples
+    if len(audio_data_chunks) * CHUNK >= PROCESS_SAMPLES:
+        # Calculate the number of chunks to process
+        num_chunks_to_process = PROCESS_SAMPLES // CHUNK
+        # Convert the list of audio data chunks to a numpy array for the current segment
+        audio_data_np = np.concatenate(audio_data_chunks[:num_chunks_to_process])
+        
+        if save_audio:
+            wf, filename = open_new_file(0)  # Open a new file for the chunk if saving is enabled
+            print(f"Recording to {filename}")
+            # Write the numpy array data to the WAV file if saving is enabled
+            wf.writeframes(audio_data_np.tobytes())
+            # Close the current WAV file
+            wf.close()
+            print(f"Chunk saved to {filename}")
 
-    # After recording, truncate the list of audio data chunks to get exactly 44100 * 5 samples
-    samples_collected = len(audio_data_chunks) * CHUNK
-    if samples_collected > frames_needed:
-        excess_samples = samples_collected - frames_needed
-        last_chunk = audio_data_chunks[-1]
-        audio_data_chunks[-1] = last_chunk[:-excess_samples]
+        # Convert the numpy array to a PyTorch tensor
+        audio_data_tensor = torch.from_numpy(audio_data_np).float()
 
-    # Convert the list of audio data chunks to a numpy array
-    audio_data_np = np.concatenate(audio_data_chunks)
-    
-    if save_audio:
-        wf, filename = open_new_file(i)  # Open a new file for each chunk if saving is enabled
-        print(f"Recording to {filename}")
-        # Write the numpy array data to the WAV file if saving is enabled
-        wf.writeframes(audio_data_np.tobytes())
-        # Close the current WAV file
-        wf.close()
-        print(f"Chunk {i} saved to {filename}")
+        # Remove processed chunks from the cache
+        del audio_data_chunks[:num_chunks_to_process]
 
-    # Convert the numpy array to a PyTorch tensor
-    audio_data_tensor = torch.from_numpy(audio_data_np).float()
+        # TODO: Add ASR inference here.
 
-    # Here you can process the tensor with your ASR model
-    print(f"Chunk {i} processed and converted to tensor with shape {audio_data_tensor.shape}")
 
-# TODO: Give me exactly 5 seconds of audio
-# TODO: give me 16khz
-# TODO: Store all the audio in cache and process it in a different process, it might be slower...
