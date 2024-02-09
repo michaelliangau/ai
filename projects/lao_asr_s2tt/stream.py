@@ -5,6 +5,7 @@ import pyaudio
 import wave
 import numpy as np
 import torch
+import providers.seamlessm4t as seamlessm4t
 
 # Define the stream parameters
 FORMAT = pyaudio.paInt16  # Audio format (16-bit PCM)
@@ -12,7 +13,8 @@ CHANNELS = 1              # Mono audio
 RATE = 16000              # Sample rate
 CHUNK = 1000              # Number of frames per buffer
 PROCESS_SAMPLES = 80000   # Number of samples to process at a time
-save_audio = False  # Set to True if you want to save audio chunks to files
+save_audio = True  # Set to True if you want to save audio chunks to files
+device = torch.device("mps")
 
 # Initialize PyAudio
 p = pyaudio.PyAudio()
@@ -45,10 +47,14 @@ stream = p.open(format=FORMAT,
 # Start recording
 stream.start_stream()
 
+# Initialize model
+model = seamlessm4t.SeamlessM4T(device=device, target_lang="eng")
+
 # Continuously record and process in chunks of 80000 samples
 while True:
     # Check if we have more than 80000 samples
     if len(audio_data_chunks) * CHUNK >= PROCESS_SAMPLES:
+
         # Calculate the number of chunks to process
         num_chunks_to_process = PROCESS_SAMPLES // CHUNK
         # Convert the list of audio data chunks to a numpy array for the current segment
@@ -66,9 +72,12 @@ while True:
         # Convert the numpy array to a PyTorch tensor
         audio_data_tensor = torch.from_numpy(audio_data_np).float()
 
-        # Remove processed chunks from the cache
-        del audio_data_chunks[:num_chunks_to_process]
-
         # TODO: Add ASR inference here.
+        outputs = model.generate_and_decode(
+            audio_chunks=[audio_data_tensor]
+        )
+        print(outputs)
 
+        # Remove processed chunks from the cache
+        audio_data_chunks = []
 
