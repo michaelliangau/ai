@@ -24,4 +24,3 @@ outputs = model.generate_and_decode(
 output_text = " ".join(outputs)
 print(output_text)
 
-# TODO: Bro try to finetune on tmp_0.wav to see if we can get something good.
