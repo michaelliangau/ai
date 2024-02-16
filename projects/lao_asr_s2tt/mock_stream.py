@@ -6,15 +6,15 @@ import torch
 import utils
 import torchaudio
 
-device = torch.device("mps")
+device = torch.device("cuda")
 model = seamlessm4t.SeamlessM4T(device=device, target_lang="eng")
 
 # Chunk audio
-waveform, sample_rate = torchaudio.load("tmp_0.wav")
+waveform, sample_rate = torchaudio.load("test_data/test_lao_short.wav")
 audio_chunks = utils.chunk_audio(
     waveform=waveform,
     sample_rate=sample_rate,
-    chunk_size_ms=2500,
+    chunk_size_ms=5000,
     overlap_ms=0,
 )
 

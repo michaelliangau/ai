@@ -1,4 +1,4 @@
-from transformers import AutoProcessor, SeamlessM4Tv2ForSpeechToText
+from transformers import AutoProcessor, SeamlessM4TForSpeechToText
 import torchaudio
 from typing import Any, Dict, List
 import torch
@@ -9,7 +9,7 @@ import constants
 
 
 class SeamlessM4T:
-    def __init__(self, device: str = "cuda", target_lang: str = "lao", streaming=False):
+    def __init__(self, device: str = "cuda", target_lang: str = "lao", chunk_audio=False):
         """
         Initialize the SeamlessM4T class.
 
@@ -17,14 +17,14 @@ class SeamlessM4T:
             device (str, optional): The device to use. Defaults to "cuda".
             target_lang (str, optional): The target language. Defaults to "lao".
                 More found here: https://github.com/facebookresearch/seamless_communication/blob/main/demo/m4tv2/lang_list.py
-            streaming (bool, optional): Whether to use streaming mode. Defaults to False.
+            chunk_audio (bool, optional): Whether to use chunk_audio mode. Defaults to False.
         """
-        model_name = "facebook/seamless-m4t-v2-large"
+        model_name = "facebook/hf-seamless-m4t-large"
         self.device = device
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.target_lang = target_lang
-        self.streaming = streaming
-        self.model = SeamlessM4Tv2ForSpeechToText.from_pretrained(model_name).to(self.device)
+        self.chunk_audio = chunk_audio
+        self.model = SeamlessM4TForSpeechToText.from_pretrained(model_name).to(self.device)
         self.model.eval()
 
     def preprocess_audio(self, batch: Dict[str, Any]):
@@ -55,7 +55,7 @@ class SeamlessM4T:
         outputs = []
         preprocessed_audio_arrays = self.preprocess_audio(batch)
 
-        if self.streaming:
+        if self.chunk_audio:
             preprocessed_audio_arrays = [audio_array.unsqueeze(0) for audio_array in preprocessed_audio_arrays]
             audio_chunks = [utils.chunk_audio(waveform=audio_array, sample_rate=16_000, chunk_size_ms=constants.CHUNK_SIZE_MS, overlap_ms=0) for audio_array in preprocessed_audio_arrays]
             for chunk in audio_chunks:
