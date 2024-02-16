@@ -1,10 +1,12 @@
 import torch
-import torchaudio
-from transformers import AutoProcessor, SeamlessM4Tv2Model
 device = torch.device("cuda:0")
 
-processor = AutoProcessor.from_pretrained("facebook/seamless-m4t-v2-large")
-model = SeamlessM4Tv2Model.from_pretrained("facebook/seamless-m4t-v2-large").to(device)
+import torchaudio
+from transformers import AutoProcessor, SeamlessM4TModel
+processor = AutoProcessor.from_pretrained("facebook/hf-seamless-m4t-large")
+model = SeamlessM4TModel.from_pretrained("facebook/hf-seamless-m4t-large").to(device)
+
+
 
 # Read an audio file and resample to 16kHz:
 audio, orig_freq =  torchaudio.load("/home/ubuntu/ai/projects/lao_asr_s2tt/test_data/test_lao_short.wav")
