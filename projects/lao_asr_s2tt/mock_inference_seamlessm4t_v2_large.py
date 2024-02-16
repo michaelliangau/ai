@@ -1,3 +1,8 @@
+"""
+Inference file for SeamlessM4Tv2Model
+
+It's performance on my single test_lao_short.wav file is actually worse than the v1 model.
+"""
 import torch
 import torchaudio
 from transformers import AutoProcessor, SeamlessM4Tv2Model
