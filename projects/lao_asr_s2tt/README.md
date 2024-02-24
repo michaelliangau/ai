@@ -2,8 +2,8 @@
 
 Improve the SOTA in Lao ASR and S2TT.
 
-TODO:
-- Deploy it somehow accessible via mobile device.
+## Current state
+Testing MVP iPhone app
 
 ## Usage
 
