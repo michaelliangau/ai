@@ -1,5 +1,8 @@
 """
-Use Gentle to force align
+Use Gentle to force align.
+
+Gentle forced aligner has this pain in the ass problem where sometimes it'll fail to align
+a word and will output "not-found-in-audio" in there.
 
 1. Start the Docker container `docker run -P lowerquality/gentle`
 2. Run this file
