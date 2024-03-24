@@ -111,6 +111,8 @@ def create_hf_dataset(textgrid_folder, json_file):
     # Cast the 'path' column to an audio dataset
     dataset = dataset.cast_column("audio", Audio(sampling_rate=16_000))    
     
+    dataset = dataset.remove_columns("path")
+
     return dataset
 
 # Define the paths
