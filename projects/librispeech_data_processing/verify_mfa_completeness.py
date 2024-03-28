@@ -4,7 +4,7 @@ import os
 
 # Load the data from the JSON file
 data_path = "data/librispeech_test_clean_other.json"
-with open(data_path, 'r') as file:
+with open(data_path, "r") as file:
     data = json.load(file)
 
 # Iterate through each element in the data

@@ -3,23 +3,32 @@ import torchaudio
 import math
 import torch
 
-def add_translation(row: Dict[str, Any], translations: Dict[str, Any], key: str) -> Dict:
+
+def add_translation(
+    row: Dict[str, Any], translations: Dict[str, Any], key: str
+) -> Dict:
     """
     Add translation to each item in the dataset
-    
+
     Args:
         row (Dict[str, Any]): A dictionary containing the example data
         translations (Dict[str, Any]): A dictionary containing the translations
         key (str): The key to use for the translation
-    
+
     Returns:
         row: A dictionary containing the data with the translation
             added
     """
-    row[key] = translations.get(row['id'], None)
+    row[key] = translations.get(row["id"], None)
     return row
 
-def chunk_audio(waveform: torch.Tensor, sample_rate: int, chunk_size_ms: int = 500, overlap_ms: int = 0) -> List[torch.Tensor]:
+
+def chunk_audio(
+    waveform: torch.Tensor,
+    sample_rate: int,
+    chunk_size_ms: int = 500,
+    overlap_ms: int = 0,
+) -> List[torch.Tensor]:
     """
     Split audio waveform into chunks of specified millisecond length with optional overlapping.
 

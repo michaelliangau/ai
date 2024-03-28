@@ -19,12 +19,13 @@ audio_chunks = utils.chunk_audio(
 )
 
 # Resample to 16kHz
-resampled_audio_chunks = [torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(chunk) for chunk in audio_chunks]
+resampled_audio_chunks = [
+    torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(chunk)
+    for chunk in audio_chunks
+]
 
 # Run inference on the chunks
-outputs = model.generate_and_decode(
-    audio_chunks=resampled_audio_chunks
-)
+outputs = model.generate_and_decode(audio_chunks=resampled_audio_chunks)
 
 # Concatenate the outputs
 output_text = " ".join(outputs)

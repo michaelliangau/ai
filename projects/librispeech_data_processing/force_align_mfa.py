@@ -13,24 +13,26 @@ import os
 
 # Load the data from the JSON file
 data_path = "data/librispeech_test_clean_other.json"
-with open(data_path, 'r') as file:
+with open(data_path, "r") as file:
     data = json.load(file)
 
 # Iterate through each element in the data
 for idx, item in enumerate(tqdm(data)):
     audio_path = item["path"]
-    audio_path_full = f"/Users/michael/Desktop/librispeech_test_clean_other_raw/{audio_path}"
+    audio_path_full = (
+        f"/Users/michael/Desktop/librispeech_test_clean_other_raw/{audio_path}"
+    )
     file_stem = audio_path.split("/")[-1].split(".")[0]
     transcript_text = item["text"]
 
     mfa_input_folder = "tmp/mfa_input/"
     if not os.path.exists(mfa_input_folder):
         os.makedirs(mfa_input_folder)
-    
+
     # Copy the audio file to the mfa_input folder
     shutil.copy(audio_path_full, os.path.join(mfa_input_folder, f"{file_stem}.flac"))
 
     # Write the label to a txt file in the mfa_input folder
     label_file_path = os.path.join(mfa_input_folder, f"{file_stem}.txt")
-    with open(label_file_path, 'w') as label_file:
+    with open(label_file_path, "w") as label_file:
         label_file.write(transcript_text)
