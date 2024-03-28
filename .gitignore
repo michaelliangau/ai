@@ -312,3 +312,5 @@ projects/asr_finetune_w2v2/outputs/*
 *.DS_store
 *wandb*
 *outputs*
+*tmp*
+*.TextGrid

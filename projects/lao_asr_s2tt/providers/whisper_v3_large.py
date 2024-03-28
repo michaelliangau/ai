@@ -7,13 +7,20 @@ import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from typing import Any, Dict, List
 
+
 class Whisper:
-    def __init__(self, device: str = "cuda", batch_size: int = 16, target_lang: str = "lo", model_task: str = "translate"):
+    def __init__(
+        self,
+        device: str = "cuda",
+        batch_size: int = 16,
+        target_lang: str = "lo",
+        model_task: str = "translate",
+    ):
         """
         Initialize the Whisper class.
 
         Language codes are here: https://github.com/openai/whisper/blob/main/whisper/tokenizer.py#L10
-        
+
         Args:
             device (str, optional): The device to use. Defaults to "cuda".
             batch_size (int, optional): The size of the batch. Defaults to 16.
@@ -25,7 +32,10 @@ class Whisper:
         self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
         self.model_id = "openai/whisper-large-v3"
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            self.model_id, torch_dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+            self.model_id,
+            torch_dtype=self.torch_dtype,
+            low_cpu_mem_usage=True,
+            use_safetensors=True,
         )
         self.model.to(self.device)
         self.processor = AutoProcessor.from_pretrained(self.model_id)
@@ -55,5 +65,11 @@ class Whisper:
             List[Dict[str, str]]: A list of dictionaries containing the predictions.
         """
         audio_arrays = [data["array"] for data in batch["audio"]]
-        output = self.pipe(audio_arrays, generate_kwargs = {"language":f"<|{self.target_lang}|>","task": self.model_task})
+        output = self.pipe(
+            audio_arrays,
+            generate_kwargs={
+                "language": f"<|{self.target_lang}|>",
+                "task": self.model_task,
+            },
+        )
         return output
