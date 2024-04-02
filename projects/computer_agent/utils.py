@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageDraw
 import re
 
 def resize_to_max(image, max_width=1920, max_height=1080):
@@ -33,3 +33,21 @@ def coords_from_response(response):
         return (x1, y1, x2, y2)
     else:
         print("error")
+
+def draw_bbox_and_save(image, coords, output_path):
+    """
+    Draws a bounding box on an image and saves it to the specified path.
+
+    Parameters:
+    - image: PIL.Image object on which to draw the bounding box.
+    - coords: Tuple of coordinates (x1, y1, x2, y2) for the bounding box.
+    - output_path: String specifying the path to save the image with the drawn bounding box.
+    """
+    # Create a drawing context on the image
+    draw = ImageDraw.Draw(image)
+
+    # Draw the bounding box using the coordinates
+    draw.rectangle(coords, outline="red", width=2)
+
+    # Save the image with the drawn bounding box
+    image.save(output_path)
