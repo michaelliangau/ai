@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from transformers import FuyuForCausalLM, AutoProcessor, BitsAndBytesConfig
+from transformers import FuyuForCausalLM, BitsAndBytesConfig, FuyuProcessor
 from PIL import Image, ImageDraw
 import utils
 import torch
@@ -30,8 +30,8 @@ screenshot_path = "data/screenshot.png"
 driver.save_screenshot(screenshot_path)
 
 # Multimodal model
-pretrained_path = "ybelkada/fuyu-8b"
-processor = AutoProcessor.from_pretrained(pretrained_path)
+pretrained_path = "adept/fuyu-8b"
+processor = FuyuProcessor.from_pretrained(pretrained_path)
 quantization_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_compute_dtype=torch.float16
@@ -40,7 +40,7 @@ quantization_config = BitsAndBytesConfig(
 model = FuyuForCausalLM.from_pretrained(pretrained_path, quantization_config=quantization_config)
 model.eval()
 
-bbox_prompt = f"When presented with a box, perform OCR to extract text contained within it. If provided with text, generate the corresponding bounding box.\nName"
+bbox_prompt = f"When presented with a box, perform OCR to extract text contained within it. If provided with text, generate the corresponding bounding box.\nComments"
 bbox_image_pil = Image.open("data/1920_1080.png")
 bbox_image_pil = bbox_image_pil.convert("RGB")
 
