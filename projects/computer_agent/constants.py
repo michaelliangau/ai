@@ -1,0 +1,1 @@
+DEFAULT_STATE_SCREENSHOT_PATH = "tmp/state.png"
