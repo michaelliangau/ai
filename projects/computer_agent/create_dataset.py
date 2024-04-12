@@ -5,7 +5,7 @@ import os
 from datasets import Dataset
 
 def create_images_with_red_dots(num_images=100):
-    dataset_dict = {'path': [], 'label': []}
+    dataset_dict = {'image': [], 'label': [], 'text': []}
     os.makedirs('data/red_dot', exist_ok=True)
     
     for idx in tqdm(range(num_images)):
@@ -24,8 +24,9 @@ def create_images_with_red_dots(num_images=100):
         cv2.imwrite(image_path, image)
 
         # Save the path and the label (the mid point of the red dot)
-        dataset_dict['path'].append(image_path)
-        dataset_dict['label'].append((x, y, x + 50, y + 50))
+        dataset_dict['image'].append(image_path)
+        dataset_dict['text'].append("Click on the red square.")
+        dataset_dict['label'].append((x, y, x + 50, y + 50)) # x, y, x max, y max
 
     # Create a Hugging Face dataset
     dataset = Dataset.from_dict(dataset_dict)
