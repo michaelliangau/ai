@@ -6,6 +6,7 @@ import transformers
 import torch
 import model.mvp_model as mvp_model
 import PIL
+import os
 
 # Load the dataset
 ds = datasets.load_from_disk('data/red_dot_dataset')
@@ -39,8 +40,8 @@ def collate_fn(batch):
 # Define training arguments
 training_args = transformers.TrainingArguments(
     output_dir='./results',
-    num_train_epochs=1000,
-    per_device_train_batch_size=32,
+    num_train_epochs=100,
+    per_device_train_batch_size=256,
     warmup_ratio=0.2,
     weight_decay=0.01,
     logging_dir='./logs',
@@ -50,6 +51,7 @@ training_args = transformers.TrainingArguments(
     evaluation_strategy="epoch",
     save_total_limit=10,
     load_best_model_at_end=True,
+    dataloader_num_workers=os.cpu_count(),  # Set the number of workers to the number of CPUs
 )
 
 # Initialize the Trainer with the collate_fn

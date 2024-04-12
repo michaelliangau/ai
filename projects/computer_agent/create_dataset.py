@@ -4,7 +4,7 @@ from tqdm import tqdm
 import os
 from datasets import Dataset
 
-def create_images_with_red_dots(num_images=100):
+def create_images_with_red_dots(num_images=1000):
     dataset_dict = {'image': [], 'label': [], 'text': []}
     os.makedirs('data/red_dot', exist_ok=True)
     
