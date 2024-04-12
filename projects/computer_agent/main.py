@@ -40,23 +40,25 @@ def collate_fn(batch):
 training_args = transformers.TrainingArguments(
     output_dir='./results',
     num_train_epochs=100,
-    per_device_train_batch_size=16,
+    per_device_train_batch_size=64,
     warmup_steps=500,
     weight_decay=0.01,
     logging_dir='./logs',
     logging_steps=10,
     learning_rate=4e-3,
     save_strategy="epoch",
+    evaluation_strategy="epoch",
     save_total_limit=10,
     load_best_model_at_end=True,
 )
 
 # Initialize the Trainer with the collate_fn
 trainer = transformers.Trainer(
-    model=model,                         # the instantiated 🤗 Transformers model to be trained
-    args=training_args,                  # training arguments, defined above
-    train_dataset=train_ds,              # training dataset
-    data_collator=collate_fn,            # custom collate function
+    model=model,
+    args=training_args,
+    train_dataset=train_ds,
+    eval_dataset=test_ds,
+    data_collator=collate_fn,
 )
 
 # Start training
