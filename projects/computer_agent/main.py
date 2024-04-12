@@ -41,9 +41,9 @@ def collate_fn(batch):
 training_args = transformers.TrainingArguments(
     output_dir='./results',
     num_train_epochs=100,
-    per_device_train_batch_size=256,
-    warmup_ratio=0.2,
-    weight_decay=0.01,
+    per_device_train_batch_size=64,
+    warmup_ratio=0.1,
+    weight_decay=0.005,
     logging_dir='./logs',
     logging_steps=10,
     learning_rate=4e-3,
