@@ -15,9 +15,9 @@ train_ds = train_test_split['train']
 test_ds = train_test_split['test']
 
 # Assuming you have a model, tokenizer, and dataset ready
-model = mvp_model.CLIPBERTModel()
+model = mvp_model.ImageTextModel()
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
-image_processor = transformers.CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+image_processor = transformers.AutoImageProcessor.from_pretrained("hustvl/yolos-small")
 
 def collate_fn(batch):
     images, texts, attention_masks, labels = [], [], [], []
@@ -25,7 +25,7 @@ def collate_fn(batch):
     for item in batch:
         image = PIL.Image.open(item['image'])
         image_t = image_processor(images=image, return_tensors="pt")
-        images.append(image_t.pixel_values.squeeze())
+        images.append(image_t["pixel_values"].squeeze())
         text = item['text']
         encoded_text = tokenizer(text, return_tensors='pt')
         texts.append(encoded_text['input_ids'].squeeze())
@@ -51,7 +51,8 @@ training_args = transformers.TrainingArguments(
     evaluation_strategy="epoch",
     save_total_limit=10,
     load_best_model_at_end=True,
-    dataloader_num_workers=os.cpu_count(),  # Set the number of workers to the number of CPUs
+    use_cpu=True,  # Force training to use CPU
+    dataloader_num_workers=0,  # Set the number of workers to the number of CPUs
 )
 
 # Initialize the Trainer with the collate_fn
