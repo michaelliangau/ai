@@ -1,24 +1,26 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel, CLIPModel
+from transformers import BertModel, YolosModel
 
-class CLIPBERTModel(nn.Module):
+class ImageTextModel(nn.Module):
     def __init__(self):
-        super(CLIPBERTModel, self).__init__()
-        self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.bert_model = BertModel.from_pretrained("google-bert/bert-base-uncased")
+        super(ImageTextModel, self).__init__()
+        self.image_model = YolosModel.from_pretrained("hustvl/yolos-small")
+        self.text_model = BertModel.from_pretrained("google-bert/bert-base-uncased")
         self.bert_downsample_layer = nn.Linear(768, 512)
         self.activation = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         self.fc1 = nn.Linear(512, 256)
         self.fc2 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, 2)
+
     def forward(self, image, text, attention_mask, label):
+        import IPython; IPython.embed()
         # Process Image
-        image_embed = self.activation(self.clip_model.get_image_features(image))
+        image_embed = self.activation(self.image_model(image))
 
         # Process Text
-        text_outputs = self.bert_model(input_ids=text, attention_mask=attention_mask)
+        text_outputs = self.text_model(input_ids=text, attention_mask=attention_mask)
         text_embed = self.activation(text_outputs.last_hidden_state[:, 0, :])
         text_embed = self.activation(self.bert_downsample_layer(text_embed))
 

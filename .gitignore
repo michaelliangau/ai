@@ -314,3 +314,5 @@ projects/asr_finetune_w2v2/outputs/*
 *outputs*
 *tmp*
 *.TextGrid
+*.arrow
+*.png
