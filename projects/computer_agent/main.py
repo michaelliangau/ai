@@ -41,7 +41,7 @@ def collate_fn(batch):
 training_args = transformers.TrainingArguments(
     output_dir='./results',
     num_train_epochs=100,
-    per_device_train_batch_size=64,
+    per_device_train_batch_size=2,
     warmup_ratio=0.1,
     weight_decay=0.005,
     logging_dir='./logs',
@@ -51,7 +51,6 @@ training_args = transformers.TrainingArguments(
     evaluation_strategy="epoch",
     save_total_limit=10,
     load_best_model_at_end=True,
-    use_cpu=True,  # Force training to use CPU
     dataloader_num_workers=0,  # Set the number of workers to the number of CPUs
 )
 

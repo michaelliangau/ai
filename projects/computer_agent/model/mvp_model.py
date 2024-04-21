@@ -18,6 +18,7 @@ class ImageTextModel(nn.Module):
         import IPython; IPython.embed()
         # Process Image
         image_embed = self.activation(self.image_model(image))
+        # TODO: Should I use the pooler_output or last_hidden_state? Need to better understand the architecture.
 
         # Process Text
         text_outputs = self.text_model(input_ids=text, attention_mask=attention_mask)
