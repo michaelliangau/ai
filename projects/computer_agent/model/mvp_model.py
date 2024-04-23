@@ -8,17 +8,36 @@ class ImageTextModel(nn.Module):
         self.image_model = YolosModel.from_pretrained("hustvl/yolos-small")
         self.text_model = BertModel.from_pretrained("google-bert/bert-base-uncased")
         self.bert_downsample_layer = nn.Linear(768, 512)
+        self.max_pool_2d_layers = nn.Sequential(
+            nn.AdaptiveMaxPool2d((2048, 256)),
+            nn.AdaptiveMaxPool2d((1024, 128)),
+            nn.AdaptiveMaxPool2d((512, 64)),
+            nn.AdaptiveMaxPool2d((256, 32)),
+            nn.AdaptiveMaxPool2d((128, 16)),
+            nn.AdaptiveMaxPool2d((64, 8)),
+        )
         self.activation = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        self.fc1 = nn.Linear(512, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 2)
+        self.fc_layers = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, 2),
+        )
 
     def forward(self, image, text, attention_mask, label):
-        import IPython; IPython.embed()
+
         # Process Image
-        image_embed = self.activation(self.image_model(image))
-        # TODO: Should I use the pooler_output or last_hidden_state? Need to better understand the architecture.
+        # Use the last hidden state. Pooler output is the output of the CLS token which is used to classify objects.
+        image_out = self.image_model(image)
+        image_embed = self.activation(image_out.last_hidden_state)
 
         # Process Text
         text_outputs = self.text_model(input_ids=text, attention_mask=attention_mask)
@@ -26,12 +45,13 @@ class ImageTextModel(nn.Module):
         text_embed = self.activation(self.bert_downsample_layer(text_embed))
 
         # Combine features
-        combined_features = image_embed + text_embed
+        pooled_image_embed = self.max_pool_2d_layers(image_embed)
+        flattened_image_embed = torch.flatten(pooled_image_embed, start_dim=1)
+        combined_features = flattened_image_embed + text_embed
         
         # Final linear layer
-        x = self.activation(self.fc1(combined_features))
-        x = self.activation(self.fc2(x))
-        logits = self.sigmoid(self.fc3(x))
+        x = self.fc_layers(combined_features)
+        logits = self.sigmoid(x)
         outputs = {'logits': logits}
         if label is not None:
             scaled_logits = torch.stack((logits[:,0] * 1920, logits[:,1] * 1080), dim=1)
