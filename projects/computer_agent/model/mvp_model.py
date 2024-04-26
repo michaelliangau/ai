@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel, YolosModel
+from transformers import BertModel, YolosModel, PreTrainedModel
 
-class ImageTextModel(nn.Module):
-    def __init__(self):
-        super(ImageTextModel, self).__init__()
+class ImageTextModel(PreTrainedModel):
+    def __init__(self, config):
+        super(ImageTextModel, self).__init__(config)
         self.image_model = YolosModel.from_pretrained("hustvl/yolos-small")
         self.text_model = BertModel.from_pretrained("google-bert/bert-base-uncased")
         self.bert_downsample_layer = nn.Linear(768, 512)

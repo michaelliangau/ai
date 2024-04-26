@@ -15,7 +15,8 @@ train_ds = train_test_split['train']
 test_ds = train_test_split['test']
 
 # Assuming you have a model, tokenizer, and dataset ready
-model = mvp_model.ImageTextModel()
+config = transformers.PretrainedConfig()
+model = mvp_model.ImageTextModel(config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
 image_processor = transformers.AutoImageProcessor.from_pretrained("hustvl/yolos-small")
 
@@ -46,7 +47,7 @@ training_args = transformers.TrainingArguments(
     weight_decay=0.005,
     logging_dir='./logs',
     logging_steps=10,
-    learning_rate=3e-4,
+    learning_rate=4e-3,
     save_strategy="epoch",
     evaluation_strategy="epoch",
     save_total_limit=10,
