@@ -32,7 +32,7 @@ class ImageTextModel(PreTrainedModel):
             nn.Linear(16, 2),
         )
 
-    def forward(self, image, text, attention_mask, label):
+    def forward(self, image, text, attention_mask, label=None):
 
         # Process Image
         # Use the last hidden state. Pooler output is the output of the CLS token which is used to classify objects.
