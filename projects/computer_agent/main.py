@@ -7,6 +7,7 @@ import torch
 import model.mvp_model as mvp_model
 import PIL
 import os
+import torchvision.transforms as transforms
 
 # Load the dataset
 ds = datasets.load_from_disk('data/red_dot_dataset')
@@ -18,32 +19,43 @@ test_ds = train_test_split['test']
 config = transformers.PretrainedConfig()
 model = mvp_model.ImageTextModel(config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
-image_processor = transformers.AutoImageProcessor.from_pretrained("hustvl/yolos-small")
+# image_processor = transformers.AutoImageProcessor.from_pretrained("hustvl/yolos-small")
+# Define the image transformations for ResNet50
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),  # Resize to the input size expected by ResNet50
+    transforms.ToTensor(),  # Convert the image to a tensor
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize for ResNet50
+])
 
 def collate_fn(batch):
     images, texts, attention_masks, labels = [], [], [], []
 
     for item in batch:
-        image = PIL.Image.open(item['image'])
-        image_t = image_processor(images=image, return_tensors="pt")
-        images.append(image_t["pixel_values"].squeeze())
+        image = PIL.Image.open(item['image']).convert('RGB')  # Ensure image is in RGB
+        image = transform(image)  # Apply the transformation
+        images.append(image)
+        
         text = item['text']
         encoded_text = tokenizer(text, return_tensors='pt')
         texts.append(encoded_text['input_ids'].squeeze())
         attention_masks.append(encoded_text['attention_mask'].squeeze())
         labels.append(item['label'])
+
+    # Stack all lists to create batches
     images = torch.stack(images)
     texts = torch.stack(texts)
     attention_masks = torch.stack(attention_masks)
     labels = torch.tensor(labels)
+
     return {"image": images, "text": texts, "attention_mask": attention_masks, "label": labels}
+
 
 # Define training arguments
 training_args = transformers.TrainingArguments(
     output_dir='./results',
     num_train_epochs=100,
-    per_device_train_batch_size=2,
-    warmup_ratio=0.1,
+    per_device_train_batch_size=4,
+    warmup_ratio=0.0,
     weight_decay=0.005,
     logging_dir='./logs',
     logging_steps=10,
@@ -54,7 +66,7 @@ training_args = transformers.TrainingArguments(
     load_best_model_at_end=True,
     dataloader_num_workers=os.cpu_count(),  # Set the number of workers to the number of CPUs
     gradient_accumulation_steps=4,
-    fp16=True,
+    fp16=False,
 )
 
 # Initialize the Trainer with the collate_fn
