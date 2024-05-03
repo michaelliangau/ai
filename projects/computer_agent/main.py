@@ -37,6 +37,7 @@ def collate_fn(batch):
         encoded_text = tokenizer(text, return_tensors='pt')
         texts.append(encoded_text['input_ids'].squeeze())
         attention_masks.append(encoded_text['attention_mask'].squeeze())
+        
         label = [item["label"][0] / 1920, item["label"][1] / 1080]
         label = torch.tensor(label)
         labels.append(label)
