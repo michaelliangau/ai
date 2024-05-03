@@ -28,6 +28,8 @@ Ask a model to click on a red square in a 1920 x 1080 image using just a simple 
 
 [WNB run](https://wandb.ai/michaelliangaus/huggingface/runs/6562wtuh)
 
+This worked well and is listed under `model/mvp_model`.
+
 Next: Incorporate text encodings and distinguish between a red square and a yellow square.
 
 
