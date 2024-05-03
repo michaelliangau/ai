@@ -19,8 +19,6 @@ test_ds = train_test_split['test']
 config = transformers.PretrainedConfig()
 model = mvp_model.ImageTextModel(config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
-# image_processor = transformers.AutoImageProcessor.from_pretrained("hustvl/yolos-small")
-# Define the image transformations for ResNet50
 transform = transforms.Compose([
     transforms.Resize((224, 224)),  # Resize to the input size expected by ResNet50
     transforms.ToTensor(),  # Convert the image to a tensor
