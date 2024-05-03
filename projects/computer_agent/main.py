@@ -39,13 +39,15 @@ def collate_fn(batch):
         encoded_text = tokenizer(text, return_tensors='pt')
         texts.append(encoded_text['input_ids'].squeeze())
         attention_masks.append(encoded_text['attention_mask'].squeeze())
-        labels.append(item['label'])
+        label = [item["label"][0] / 1920, item["label"][1] / 1080]
+        label = torch.tensor(label)
+        labels.append(label)
 
     # Stack all lists to create batches
     images = torch.stack(images)
     texts = torch.stack(texts)
     attention_masks = torch.stack(attention_masks)
-    labels = torch.tensor(labels)
+    labels = torch.stack(labels)
 
     return {"image": images, "text": texts, "attention_mask": attention_masks, "label": labels}
 
@@ -54,8 +56,8 @@ def collate_fn(batch):
 training_args = transformers.TrainingArguments(
     output_dir='./results',
     num_train_epochs=100,
-    per_device_train_batch_size=4,
-    warmup_ratio=0.0,
+    per_device_train_batch_size=32,
+    warmup_ratio=0.1,
     weight_decay=0.005,
     logging_dir='./logs',
     logging_steps=10,
@@ -65,8 +67,8 @@ training_args = transformers.TrainingArguments(
     save_total_limit=10,
     load_best_model_at_end=True,
     dataloader_num_workers=os.cpu_count(),  # Set the number of workers to the number of CPUs
-    gradient_accumulation_steps=4,
-    fp16=False,
+    gradient_accumulation_steps=1,
+    fp16=True,
 )
 
 # Initialize the Trainer with the collate_fn

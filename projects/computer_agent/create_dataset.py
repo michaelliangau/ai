@@ -26,8 +26,7 @@ def create_images_with_red_dots(num_images=1000):
         # Save the path and the label (the mid point of the red dot)
         dataset_dict['image'].append(image_path)
         dataset_dict['text'].append("Click on the red square.")
-        dataset_dict['label'].append((x, y, min(x + 50, 1920), min(y + 50, 1080))) # x, y, x max, y max
-
+        dataset_dict['label'].append((x + 25, y + 25)) # Center of the square
     # Create a Hugging Face dataset
     dataset = Dataset.from_dict(dataset_dict)
     dataset.save_to_disk('data/red_dot_dataset')
