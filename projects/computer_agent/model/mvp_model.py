@@ -17,20 +17,21 @@ class ImageTextModel(PreTrainedModel):
             nn.ReLU(),
             nn.Linear(512, 2)
         )
+        self.text_upsampling_layer = nn.Linear(768, 2048)
 
     def forward(self, image, text, attention_mask, label=None):
         # Image Encoder
         image_features = self.resnet50(image)
-        x = torch.flatten(image_features, 1)
+        image_features = torch.flatten(image_features, 1)
 
         # Text Encoder
-        # TODO: Figuring out how to merge the text encoder text with the image embeddings
-        # I think we use the pooler output/CLS token output
         text_outputs = self.bert(input_ids=text, attention_mask=attention_mask)
-        text_embed = self.activation(text_outputs.last_hidden_state)
+        text_features = self.activation(self.text_upsampling_layer(text_outputs.pooler_output))
 
+        # Combine feature vectors
+        combined_features = text_features + image_features
 
-        x = self.fc(x)
+        x = self.fc(combined_features)
         logits = self.sigmoid(x)
         outputs = {'logits': logits}
         if label is not None:
