@@ -4,7 +4,7 @@ from tqdm import tqdm
 import os
 from datasets import Dataset
 
-NUM_IMAGES=1000
+NUM_IMAGES=10000
 DATASET_NAME="2_dot"
 
 def create_images_with_red_dots(dataset_name: str, num_images: int = 1000):

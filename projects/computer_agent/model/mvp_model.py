@@ -13,20 +13,34 @@ class ImageTextModel(PreTrainedModel):
         self.activation = nn.ReLU()
         self.loss = nn.MSELoss()
         self.fc = nn.Sequential(
-            nn.Linear(2048, 512),
+            nn.Linear(2048, 4096),
             nn.ReLU(),
-            nn.Linear(512, 2)
+            nn.Dropout(0.1),
+            nn.Linear(4096, 4096),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(4096, 2048),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(1024, 2)
         )
         self.text_upsampling_layer = nn.Linear(768, 2048)
+        self.layer_norm_text = nn.LayerNorm(2048)
+        self.layer_norm_image = nn.LayerNorm(2048)
+
 
     def forward(self, image, text, attention_mask, label=None):
         # Image Encoder
         image_features = self.resnet50(image)
         image_features = torch.flatten(image_features, 1)
+        image_features = self.activation(self.layer_norm_image(image_features))
 
         # Text Encoder
         text_outputs = self.bert(input_ids=text, attention_mask=attention_mask)
-        text_features = self.activation(self.text_upsampling_layer(text_outputs.pooler_output))
+        text_features = self.activation(self.layer_norm_text(self.text_upsampling_layer(text_outputs.pooler_output)))
 
         # Combine feature vectors
         combined_features = text_features + image_features
