@@ -13,19 +13,11 @@ class ImageTextModel(PreTrainedModel):
         self.activation = nn.ReLU()
         self.loss = nn.MSELoss()
         self.fc = nn.Sequential(
-            nn.Linear(2048, 4096),
+            nn.Linear(2048, 2048),
             nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(4096, 4096),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(4096, 2048),
-            nn.ReLU(),
-            nn.Dropout(0.1),
             nn.Linear(2048, 1024),
             nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(1024, 2)
+            nn.Linear(1024, 2),
         )
         self.text_upsampling_layer = nn.Linear(768, 2048)
         self.layer_norm_text = nn.LayerNorm(2048)
