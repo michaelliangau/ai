@@ -5,16 +5,21 @@ import PIL
 from PIL import ImageDraw
 import torchvision.transforms as transforms
 
+
+PATH_TO_IMAGE = "data/tmp/random_2_dot.png"
 # Load checkpoint
-checkpoint_path = "results/saved_checkpoints/resnet50"
+checkpoint_path = "results/saved_checkpoints/bert-resnet50"
 config = transformers.PretrainedConfig()
 model = mvp_model.ImageTextModel.from_pretrained(checkpoint_path, config=config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
 model.eval()
 
 # Dummy image
-utils.create_white_canvas_with_red_dot(
-    path="data/tmp/random_red_dot.png"
+# utils.create_white_canvas_with_red_dot(
+#     path="data/tmp/random_red_dot.png"
+# )
+utils.create_white_canvas_with_2_dot(
+    path=PATH_TO_IMAGE
 )
 transform = transforms.Compose([
     transforms.Resize((224, 224)),  # Resize to the input size expected by ResNet50
@@ -24,11 +29,11 @@ transform = transforms.Compose([
 
 
 # Run inference over it
-image = PIL.Image.open("data/tmp/random_red_dot.png")
+image = PIL.Image.open(PATH_TO_IMAGE).convert('RGB')
 image_t = transform(image)  # Apply the transformation
-# text = "Click on the red square."
-# encoded_text = tokenizer(text, return_tensors='pt')
-outputs = model(image=image_t.unsqueeze(0),text=None, attention_mask=None, label=None)
+text = "Click on the red square."
+encoded_text = tokenizer(text, return_tensors='pt')
+outputs = model(image=image_t.unsqueeze(0),text=encoded_text["input_ids"], attention_mask=encoded_text['attention_mask'], label=None)
 click_x_y = outputs['logits'].squeeze()
 
 # Draw the outputs onto the image and save it
@@ -39,5 +44,5 @@ scaled_y = int(click_x_y[1].item() * 1080)
 print(f"Click at x: {scaled_x}, y: {scaled_y}")
 draw = ImageDraw.Draw(image)
 draw.ellipse([(scaled_x - 5, scaled_y - 5), (scaled_x + 5, scaled_y + 5)], fill='blue', outline='blue')
-image.save("data/tmp/random_red_dot_predicted.png")
+image.save("data/tmp/random_2_dot_predicted.png")
 
