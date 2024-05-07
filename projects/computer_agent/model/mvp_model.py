@@ -37,6 +37,8 @@ class ImageTextModel(PreTrainedModel):
         # Combine feature vectors
         combined_features = text_features + image_features
 
+        # TODO: Figure out a more sophisticated way to combine features
+
         x = self.fc(combined_features)
         logits = self.sigmoid(x)
         outputs = {'logits': logits}
