@@ -10,7 +10,7 @@ import os
 import torchvision.transforms as transforms
 
 # Load the dataset
-ds = datasets.load_from_disk('data/red_dot_dataset')
+ds = datasets.load_from_disk('data/2_dot_dataset')
 train_test_split = ds.train_test_split(test_size=0.1)
 train_ds = train_test_split['train']
 test_ds = train_test_split['test']
@@ -60,7 +60,7 @@ training_args = transformers.TrainingArguments(
     weight_decay=0.005,
     logging_dir='./logs',
     logging_steps=10,
-    learning_rate=4e-3,
+    learning_rate=4e-4,
     save_strategy="epoch",
     evaluation_strategy="epoch",
     save_total_limit=10,
