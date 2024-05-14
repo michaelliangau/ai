@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel, YolosModel, PreTrainedModel
+from transformers import BertModel, PreTrainedModel
 from torchvision.models import resnet50
 
 class TransformerBlock(nn.Module):
@@ -64,9 +64,10 @@ class ImageTextModel(PreTrainedModel):
             nn.Linear(2048, 2048),
             nn.ReLU()
         )
-        self.cross_attn_blocks = CrossAttentionBlocks(num_blocks=8, embed_dim=128, num_heads=4, dropout_rate=0.1)
+        self.cross_attn_blocks = CrossAttentionBlocks(num_blocks=16, embed_dim=256, num_heads=4, dropout_rate=0.1)
 
     def forward(self, image, text, attention_mask, label=None):
+        import IPython; IPython.embed()
         # Image Encoder
         image_features = self.resnet50(image)
         image_features = torch.flatten(image_features, 1)
@@ -77,8 +78,8 @@ class ImageTextModel(PreTrainedModel):
         text_features = self.fc_text(text_outputs.pooler_output)
 
         # Split tokens into sequences
-        image_features = image_features.view(-1, 16, 128)
-        text_features = text_features.view(-1, 16, 128)
+        image_features = image_features.view(-1, 8, 256)
+        text_features = text_features.view(-1, 8, 256)
 
         # Combine feature vectors
         combined_features = self.cross_attn_blocks(

@@ -1,6 +1,7 @@
 # Input: 1920 x 1080 screen with a red dot inside 10 x 10 side, randomly sampled. Text = Tap the red dot.
 # Output: Action (click), location x y within the red dot.
 # Goal: Eval loss below 0.01 is pretty good.
+# Best: 0.06
 
 import datasets
 import transformers
@@ -9,6 +10,7 @@ import model.mvp_model as mvp_model
 import PIL
 import os
 import torchvision.transforms as transforms
+import uuid
 
 # Load the dataset
 ds = datasets.load_from_disk('data/2_dot_dataset')
@@ -51,17 +53,21 @@ def collate_fn(batch):
 
     return {"image": images, "text": texts, "attention_mask": attention_masks, "label": labels}
 
+output_dir = f'./results/{uuid.uuid4()}'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+print(f"Saving model to {output_dir}")
 
 # Define training arguments
 training_args = transformers.TrainingArguments(
-    output_dir='./results',
+    output_dir = output_dir,
     num_train_epochs=10,
     per_device_train_batch_size=64,
     warmup_ratio=0.05,
     weight_decay=0.005,
     logging_dir='./logs',
     logging_steps=10,
-    learning_rate=4e-3,
+    learning_rate=4e-4,
     save_strategy="epoch",
     evaluation_strategy="epoch",
     save_total_limit=10,

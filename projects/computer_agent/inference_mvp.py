@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 
 PATH_TO_IMAGE = "data/tmp/random_2_dot.png"
 # Load checkpoint
-checkpoint_path = "results/saved_checkpoints/bert-resnet50"
+checkpoint_path = "results/checkpoint-1410"
 config = transformers.PretrainedConfig()
 model = mvp_model.ImageTextModel.from_pretrained(checkpoint_path, config=config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
@@ -33,6 +33,7 @@ image = PIL.Image.open(PATH_TO_IMAGE).convert('RGB')
 image_t = transform(image)  # Apply the transformation
 text = "Click on the red square."
 encoded_text = tokenizer(text, return_tensors='pt')
+import IPython; IPython.embed()
 outputs = model(image=image_t.unsqueeze(0),text=encoded_text["input_ids"], attention_mask=encoded_text['attention_mask'], label=None)
 click_x_y = outputs['logits'].squeeze()
 
