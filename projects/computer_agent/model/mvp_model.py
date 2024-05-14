@@ -12,10 +12,31 @@ class TransformerBlock(nn.Module):
 
     def forward(self, query, key, value):
         attn_output, _ = self.mha(query, key, value)
-        x = query + self.dropout(attn_output)  # Apply residual connection and dropout
-        x = self.norm(x)  # Apply normalization
+        x = query + self.dropout(attn_output)
+        x = self.norm(x)
         return x
-    
+
+class CrossAttentionBlocks(nn.Module):
+    def __init__(self, num_blocks, embed_dim, num_heads, dropout_rate):
+        super(CrossAttentionBlocks, self).__init__()
+        self.blocks = nn.ModuleList([
+            TransformerBlock(embed_dim=embed_dim, num_heads=num_heads, dropout_rate=dropout_rate)
+            for _ in range(num_blocks)
+        ])
+        self.linear_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(embed_dim, embed_dim),
+                nn.LayerNorm(embed_dim),
+                nn.ReLU(),
+            ) for _ in range(num_blocks)
+        ])
+
+    def forward(self, query, key, value):
+        for block, linear in zip(self.blocks, self.linear_layers):
+            query = block(query, key, value) + query
+            query = linear(query)
+        return query
+
 class ImageTextModel(PreTrainedModel):
     def __init__(self, config):
         super(ImageTextModel, self).__init__(config)
@@ -24,7 +45,7 @@ class ImageTextModel(PreTrainedModel):
         self.bert = BertModel.from_pretrained("google-bert/bert-base-uncased")
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.MSELoss()
-        self.fc = nn.Sequential(
+        self.fc_layers = nn.Sequential(
             nn.Linear(2048, 2048),
             nn.ReLU(),
             nn.Linear(2048, 1024),
@@ -43,7 +64,7 @@ class ImageTextModel(PreTrainedModel):
             nn.Linear(2048, 2048),
             nn.ReLU()
         )
-        self.cross_attn_block = TransformerBlock(embed_dim=1, num_heads=1, dropout_rate=0.1)
+        self.cross_attn_blocks = CrossAttentionBlocks(num_blocks=8, embed_dim=128, num_heads=4, dropout_rate=0.1)
 
     def forward(self, image, text, attention_mask, label=None):
         # Image Encoder
@@ -55,16 +76,20 @@ class ImageTextModel(PreTrainedModel):
         text_outputs = self.bert(input_ids=text, attention_mask=attention_mask)
         text_features = self.fc_text(text_outputs.pooler_output)
 
-        # Combine feature vectors
-        # TODO: Figuring out how to combine the features effectively...
-        combined_features = self.cross_attn_block(
-            query=text_features.unsqueeze(-1),
-            key=image_features.unsqueeze(-1),
-            value=image_features.unsqueeze(-1),
-        )
-        combined_features = combined_features.squeeze(-1)
+        # Split tokens into sequences
+        image_features = image_features.view(-1, 16, 128)
+        text_features = text_features.view(-1, 16, 128)
 
-        x = self.fc(combined_features)
+        # Combine feature vectors
+        combined_features = self.cross_attn_blocks(
+            query=image_features,
+            key=text_features,
+            value=text_features,
+        )
+
+        # Feed forward layers
+        combined_features = combined_features.view(combined_features.size(0), -1)
+        x = self.fc_layers(combined_features)
         logits = self.sigmoid(x)
         outputs = {'logits': logits}
         if label is not None:

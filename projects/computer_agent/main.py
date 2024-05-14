@@ -1,5 +1,6 @@
 # Input: 1920 x 1080 screen with a red dot inside 10 x 10 side, randomly sampled. Text = Tap the red dot.
 # Output: Action (click), location x y within the red dot.
+# Goal: Eval loss below 0.01 is pretty good.
 
 import datasets
 import transformers
