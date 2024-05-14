@@ -67,7 +67,7 @@ class ImageTextModel(PreTrainedModel):
         self.cross_attn_blocks = CrossAttentionBlocks(num_blocks=16, embed_dim=256, num_heads=4, dropout_rate=0.1)
 
     def forward(self, image, text, attention_mask, label=None):
-        import IPython; IPython.embed()
+
         # Image Encoder
         image_features = self.resnet50(image)
         image_features = torch.flatten(image_features, 1)
