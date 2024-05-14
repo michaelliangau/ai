@@ -1,7 +1,7 @@
 # Input: 1920 x 1080 screen with a red dot inside 10 x 10 side, randomly sampled. Text = Tap the red dot.
 # Output: Action (click), location x y within the red dot.
 # Goal: Eval loss below 0.01 is pretty good.
-# Best: 0.06
+# Best: 0.04
 
 import datasets
 import transformers
@@ -11,6 +11,21 @@ import PIL
 import os
 import torchvision.transforms as transforms
 import uuid
+
+from transformers.trainer_callback import TrainerCallback
+
+class UnfreezeCallback(TrainerCallback):
+    def __init__(self, model, unfreeze_step):
+        self.model = model
+        self.unfreeze_step = unfreeze_step
+
+    def on_step_begin(self, args, state, control, **kwargs):
+        if state.global_step == self.unfreeze_step:
+            # Step 1: Unfreeze the pretrained models
+            self.model.unfreeze_pretrained_models()
+            # Step 2: Print a message indicating the models have been unfrozen
+            print(f"Unfroze pretrained models at step {self.unfreeze_step}")
+
 
 # Load the dataset
 ds = datasets.load_from_disk('data/2_dot_dataset')
@@ -84,6 +99,7 @@ trainer = transformers.Trainer(
     train_dataset=train_ds,
     eval_dataset=test_ds,
     data_collator=collate_fn,
+    callbacks=[UnfreezeCallback(model, unfreeze_step=200)]
 )
 
 # Start training
