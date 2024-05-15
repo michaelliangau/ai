@@ -31,7 +31,8 @@ class CrossAttentionBlocks(nn.Module):
             ) for _ in range(num_blocks)
         ])
 
-    def forward(self, query, key, value):
+    def forward(self, text_embed, image_embed):
+        query, key, value = image_embed, text_embed, text_embed
         for block, linear in zip(self.blocks, self.linear_layers):
             query = block(query, key, value) + query
             query = linear(query)
@@ -46,7 +47,7 @@ class ImageTextModel(PreTrainedModel):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.MSELoss()
         self.fc_layers = nn.Sequential(
-            nn.Linear(2048, 2048),
+            nn.Linear(4096, 2048),
             nn.ReLU(),
             nn.Linear(2048, 1024),
             nn.ReLU(),
@@ -55,16 +56,17 @@ class ImageTextModel(PreTrainedModel):
         self.fc_text = nn.Sequential(
             nn.Linear(768, 2048),
             nn.ReLU(),
-            nn.Linear(2048, 2048),
+            nn.Linear(2048, 4096),
             nn.ReLU(),
         )
         self.fc_image = nn.Sequential(
-            nn.Linear(2048, 2048),
+            nn.Linear(768, 2048),
             nn.ReLU(),
-            nn.Linear(2048, 2048),
+            nn.Linear(2048, 4096),
             nn.ReLU()
         )
-        self.cross_attn_blocks = CrossAttentionBlocks(num_blocks=16, embed_dim=256, num_heads=4, dropout_rate=0.1)
+        self.cross_attn_hidden_dim = 256
+        self.cross_attn_blocks = CrossAttentionBlocks(num_blocks=8, embed_dim=self.cross_attn_hidden_dim, num_heads=4, dropout_rate=0.1)
 
     def forward(self, image, text, attention_mask, label=None):
 
@@ -78,15 +80,16 @@ class ImageTextModel(PreTrainedModel):
         text_features = self.fc_text(text_outputs.pooler_output)
 
         # Split tokens into sequences
-        image_features = image_features.view(-1, 8, 256)
-        text_features = text_features.view(-1, 8, 256)
+        image_embed = image_embed.view(-1, 4096 // self.cross_attn_hidden_dim, self.cross_attn_hidden_dim)
+        text_embed = text_features.view(-1, 4096 // self.cross_attn_hidden_dim, self.cross_attn_hidden_dim)
 
         # Combine feature vectors
         combined_features = self.cross_attn_blocks(
-            query=image_features,
-            key=text_features,
-            value=text_features,
+            image_embed=image_embed,
+            text_embed=text_embed,
         )
+
+        # TODO: Figure out what is bottlenecking the model's learning?
 
         # Feed forward layers
         combined_features = combined_features.view(combined_features.size(0), -1)

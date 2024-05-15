@@ -12,21 +12,6 @@ import os
 import torchvision.transforms as transforms
 import uuid
 
-from transformers.trainer_callback import TrainerCallback
-
-class UnfreezeCallback(TrainerCallback):
-    def __init__(self, model, unfreeze_step):
-        self.model = model
-        self.unfreeze_step = unfreeze_step
-
-    def on_step_begin(self, args, state, control, **kwargs):
-        if state.global_step == self.unfreeze_step:
-            # Step 1: Unfreeze the pretrained models
-            self.model.unfreeze_pretrained_models()
-            # Step 2: Print a message indicating the models have been unfrozen
-            print(f"Unfroze pretrained models at step {self.unfreeze_step}")
-
-
 # Load the dataset
 ds = datasets.load_from_disk('data/2_dot_dataset')
 train_test_split = ds.train_test_split(test_size=0.1)
@@ -99,7 +84,6 @@ trainer = transformers.Trainer(
     train_dataset=train_ds,
     eval_dataset=test_ds,
     data_collator=collate_fn,
-    callbacks=[UnfreezeCallback(model, unfreeze_step=200)]
 )
 
 # Start training
