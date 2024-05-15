@@ -6,7 +6,7 @@
 import datasets
 import transformers
 import torch
-import model.mvp_model as mvp_model
+import ai.projects.computer_agent.model.resnet_bert_model as resnet_bert_model
 import PIL
 import os
 import torchvision.transforms as transforms
@@ -20,7 +20,7 @@ test_ds = train_test_split['test']
 
 # Assuming you have a model, tokenizer, and dataset ready
 config = transformers.PretrainedConfig()
-model = mvp_model.ImageTextModel(config)
+model = resnet_bert_model.ImageTextModel(config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
 transform = transforms.Compose([
     transforms.Resize((224, 224)),  # Resize to the input size expected by ResNet50

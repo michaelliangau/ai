@@ -1,4 +1,4 @@
-import model.mvp_model as mvp_model
+import ai.projects.computer_agent.model.resnet_bert_model as resnet_bert_model
 import transformers
 import utils
 import PIL
@@ -10,7 +10,7 @@ PATH_TO_IMAGE = "data/tmp/random_2_dot.png"
 # Load checkpoint
 checkpoint_path = "results/checkpoint-1410"
 config = transformers.PretrainedConfig()
-model = mvp_model.ImageTextModel.from_pretrained(checkpoint_path, config=config)
+model = resnet_bert_model.ImageTextModel.from_pretrained(checkpoint_path, config=config)
 tokenizer = transformers.BertTokenizer.from_pretrained("google-bert/bert-base-uncased")
 model.eval()
 
