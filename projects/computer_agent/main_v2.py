@@ -21,36 +21,34 @@ test_ds = train_test_split['test']
 # Assuming you have a model, tokenizer, and dataset ready
 config = transformers.PretrainedConfig()
 model = fuyu_model.ImageTextModel(config)
-processor = FuyuProcessor.from_pretrained("ybelkada/fuyu-8b-sharded")
+# processor = FuyuProcessor.from_pretrained("ybelkada/fuyu-8b-sharded")
+processor = FuyuProcessor.from_pretrained("adept/fuyu-8b")
+
 
 
 def collate_fn(batch):
-    images, images_patches_indices, texts, attention_masks, labels = [], [], [], [], []
+    # images, images_patches_indices, texts, attention_masks, labels = [], [], [], [], []
 
-    for item in batch:
-        image = PIL.Image.open(item['image']).convert("RGB")
-        # padded_image = utils.resize_to_max(image)
-        # padded_image = utils.pad_to_size(padded_image)
-
-
-        text = item['text']
-        inputs = processor(text=text, images=image)
-        images.append(inputs["image_patches"][0])
-        images_patches_indices.append(inputs["image_patches_indices"])
-        texts.append(inputs["input_ids"])
-        attention_masks.append(inputs["attention_mask"])
+    # for item in batch:
+    #     image = PIL.Image.open(item['image'])
+    #     text = item['text']
+    #     inputs = processor(text=text, images=image)
+    #     images.append(inputs["image_patches"][0])
+    #     images_patches_indices.append(inputs["image_patches_indices"])
+    #     texts.append(inputs["input_ids"])
+    #     attention_masks.append(inputs["attention_mask"])
         
-        label = [item["label"][0] / 1920, item["label"][1] / 1080]
-        label = torch.tensor(label)
-        labels.append(label)
+    #     label = [item["label"][0] / 1920, item["label"][1] / 1080]
+    #     label = torch.tensor(label)
+    #     labels.append(label)
 
-    # Stack all lists to create batches
-    images = torch.stack(images)
-    images_patches_indices = torch.stack(images_patches_indices)
-    texts = torch.stack(texts)
-    labels = torch.stack(labels)
+    # # Stack all lists to create batches
+    # images = torch.stack(images)
+    # images_patches_indices = torch.stack(images_patches_indices)
+    # texts = torch.stack(texts)
+    # labels = torch.stack(labels)
 
-    return {"image": images, "image_patches_indices": images_patches_indices, "text": texts,"attention_mask": attention_masks, "label": labels}
+    return {"batch": None}
 
 output_dir = f'./results/{uuid.uuid4()}'
 if not os.path.exists(output_dir):
@@ -73,7 +71,7 @@ training_args = transformers.TrainingArguments(
     load_best_model_at_end=True,
     dataloader_num_workers=0,  # Set the number of workers to the number of CPUs
     gradient_accumulation_steps=1,
-    # fp16=True,
+    fp16=True,
     # use_cpu=True,
 )
 

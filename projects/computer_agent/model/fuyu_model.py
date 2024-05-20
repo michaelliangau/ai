@@ -1,25 +1,33 @@
-from transformers import PreTrainedModel, FuyuForCausalLM, BitsAndBytesConfig
+from transformers import PreTrainedModel, FuyuForCausalLM, BitsAndBytesConfig, FuyuProcessor
 import torch
+import PIL
 
 
 class ImageTextModel(PreTrainedModel):
     def __init__(self, config):
         super(ImageTextModel, self).__init__(config)
-        # quantization_config = BitsAndBytesConfig(
-        #     load_in_4bit=True,
-        #     bnb_4bit_compute_dtype=torch.float16
-        # )
-        # self.model = FuyuForCausalLM.from_pretrained("ybelkada/fuyu-8b-sharded", quantization_config=quantization_config)
-
-    def forward(self, image, image_patches_indices, text, attention_mask, label=None):
-        import IPython; IPython.embed()
-        outputs = self.model.generate(
-            input_ids=text[0],
-            image_patches=image[0],
-            image_patches_indices=image_patches_indices[0],
-            attention_mask=attention_mask[0],
-            # output_hidden_states=True,
-            max_new_tokens=7
+        self.processor = FuyuProcessor.from_pretrained("adept/fuyu-8b")
+        self.model = FuyuForCausalLM.from_pretrained(
+            "adept/fuyu-8b", device_map="cuda:0", torch_dtype=torch.float16
         )
+        self.processor = FuyuProcessor.from_pretrained("adept/fuyu-8b")
 
-        pass
+
+    def forward(self, batch, label=None):
+        text = ["Click the green square."]
+        image = PIL.Image.open("/home/michael/ai/projects/computer_agent/data/2_dot/0.png")
+        image = [image]
+
+        processed = self.processor(text=text, images=image, return_tensors="pt")
+        for key, value in processed.items():
+            if key == "image_patches":
+                processed[key] = [patch.to("cuda:0").to(torch.float16) for patch in value]
+            elif key == "input_ids" or key == "image_patches_indices":
+                processed[key] = value.to("cuda:0").long()
+            else:
+                processed[key] = value.to("cuda:0").to(torch.float16)
+
+        outputs = self.model.generate(**processed, max_new_tokens=7)
+
+        # TODO: Can't seem to get things to work with self.model() so have to use self.model.generate. Let's see if we can train a model using generate?
+        # GPU mem requirements are not crazy high with this setting.
