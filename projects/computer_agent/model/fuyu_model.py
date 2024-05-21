@@ -31,3 +31,5 @@ class ImageTextModel(PreTrainedModel):
 
         # TODO: Can't seem to get things to work with self.model() so have to use self.model.generate. Let's see if we can train a model using generate?
         # GPU mem requirements are not crazy high with this setting.
+
+        # TODO: How tf i .generate working, jessusss christ
