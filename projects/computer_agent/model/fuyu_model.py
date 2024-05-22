@@ -14,9 +14,15 @@ class ImageTextModel(PreTrainedModel):
         self.processor = FuyuProcessor.from_pretrained("adept/fuyu-8b")
         self.generation_config = GenerationConfig(output_hidden_states=True, return_dict_in_generate=True)
         self.projection_layer = nn.Sequential(
-            nn.Linear(4096, 4096),
+            nn.Linear(4096, 8192),
             nn.ReLU(),
-            nn.Linear(4096, 2),
+            nn.Linear(8192, 8192),
+            nn.ReLU(),
+            nn.Linear(8192, 4096),
+            nn.ReLU(),
+            nn.Linear(4096, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 2),
         )
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.MSELoss()
@@ -32,8 +38,9 @@ class ImageTextModel(PreTrainedModel):
             generation_config=self.generation_config
         )
 
-        # Take the last logic from the last layer. TODO: Key parameter to change is the first -1
-        x = outputs["hidden_states"][0][20][:, -1, :]
+        # Take the last logic from the last layer
+        # TODO: Trying to figure out how to lower loss, it's not learning...
+        x = outputs["hidden_states"][0][18][:, -1, :]
         logits = self.sigmoid(self.projection_layer(x))
         outputs = {"logits": logits}
         if labels is not None:

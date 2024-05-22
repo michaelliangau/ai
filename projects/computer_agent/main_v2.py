@@ -69,7 +69,7 @@ print(f"Saving model to {output_dir}")
 training_args = transformers.TrainingArguments(
     output_dir = output_dir,
     num_train_epochs=10,
-    per_device_train_batch_size=8,
+    per_device_train_batch_size=4,
     warmup_ratio=0.05,
     weight_decay=0.005,
     logging_dir='./logs',
