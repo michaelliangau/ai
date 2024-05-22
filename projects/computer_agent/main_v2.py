@@ -12,6 +12,9 @@ import uuid
 import utils
 from transformers import FuyuProcessor
 
+os.environ["WANDB_PROJECT"] = "computer_agent_fuyu"  # name your W&B project
+os.environ["WANDB_LOG_MODEL"] = "checkpoint"  # log all model checkpoints
+
 # Load the dataset
 ds = datasets.load_from_disk('data/2_dot_dataset')
 # Rename dataset columns
