@@ -1,6 +1,7 @@
-from transformers import PreTrainedModel, FuyuForCausalLM, BitsAndBytesConfig, FuyuProcessor
+from transformers import PreTrainedModel, FuyuForCausalLM, BitsAndBytesConfig, FuyuProcessor, GenerationConfig
 import torch
 import PIL
+import torch.nn as nn
 
 
 class ImageTextModel(PreTrainedModel):
@@ -11,25 +12,31 @@ class ImageTextModel(PreTrainedModel):
             "adept/fuyu-8b", device_map="cuda:0", torch_dtype=torch.float16
         )
         self.processor = FuyuProcessor.from_pretrained("adept/fuyu-8b")
+        self.generation_config = GenerationConfig(output_hidden_states=True, return_dict_in_generate=True)
+        self.projection_layer = nn.Sequential(
+            nn.Linear(4096, 4096),
+            nn.ReLU(),
+            nn.Linear(4096, 2),
+        )
+        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.MSELoss()
 
 
-    def forward(self, batch, label=None):
-        text = ["Click the green square."]
-        image = PIL.Image.open("/home/michael/ai/projects/computer_agent/data/2_dot/0.png")
-        image = [image]
+    def forward(self, image_patches, input_ids, attention_masks, image_patches_indices, labels=None):
+        outputs = self.model.generate(
+            input_ids=input_ids,
+            attention_mask=attention_masks,
+            image_patches=image_patches,
+            image_patches_indices=image_patches_indices,
+            max_new_tokens=1,
+            generation_config=self.generation_config
+        )
 
-        processed = self.processor(text=text, images=image, return_tensors="pt")
-        for key, value in processed.items():
-            if key == "image_patches":
-                processed[key] = [patch.to("cuda:0").to(torch.float16) for patch in value]
-            elif key == "input_ids" or key == "image_patches_indices":
-                processed[key] = value.to("cuda:0").long()
-            else:
-                processed[key] = value.to("cuda:0").to(torch.float16)
-
-        outputs = self.model.generate(**processed, max_new_tokens=7)
-
-        # TODO: Can't seem to get things to work with self.model() so have to use self.model.generate. Let's see if we can train a model using generate?
-        # GPU mem requirements are not crazy high with this setting.
-
-        # TODO: How tf i .generate working, jessusss christ
+        # Take the last logic from the last layer. TODO: Key parameter to change is the first -1
+        x = outputs["hidden_states"][0][20][:, -1, :]
+        logits = self.sigmoid(self.projection_layer(x))
+        outputs = {"logits": logits}
+        if labels is not None:
+            loss = self.loss(logits, labels)
+            outputs["loss"] = loss
+        return outputs
