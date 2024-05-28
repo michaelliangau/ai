@@ -4,9 +4,9 @@ from tqdm import tqdm
 import os
 import json
 
-NUM_IMAGES = 2
-DATASET_NAME = "qwen_multistep"
-BASE_DIR_PATH = "/Users/michael/Desktop/wip"
+NUM_IMAGES = 100
+DATASET_NAME = "qwen_multistep_eval"
+BASE_DIR_PATH = "/home/michael"
 
 def create_images_with_red_dots(dataset_name: str, num_images: int = 1000):
     data = []
