@@ -1,0 +1,276 @@
+[
+    {
+        "id": "identity_0",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_0.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "scroll:down"
+            },
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_1a.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "scroll:down"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_1.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:1020,1514"
+            }
+        ]
+    },
+    {
+        "id": "identity_1",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_2.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "type:Michael"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_3.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:990,1600"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_4.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "type:Liang"
+            }
+        ]
+    },
+    {
+        "id": "identity_2",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_5.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:999,1694"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_6.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "type:michaelliang15@gmail.com"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_7.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "scroll:down"
+            }
+        ]
+    },
+    {
+        "id": "identity_3",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_8.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:980,190"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_9.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "type:9174637459"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_10.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:980,268"
+            }
+        ]
+    },            
+    {
+        "id": "identity_4",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_11.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:793,734"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_12.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:1050,680"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_13.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:1574,686"
+            }
+        ]
+    },
+    {
+        "id": "identity_5",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_14.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:2130,1317"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_15.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:1230,1060"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_16.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "type:I am enthusiastic about joining Figma because I am passionate about design and believe in the power of collaborative tools to transform creative workflows. Figma's innovative approach to real-time collaboration and its impact on design teams worldwide is truly inspiring. I am excited by the opportunity to contribute to a company that is redefining how designers and teams work together. Additionally, Figma's commitment to a strong, inclusive community aligns with my values, and I am eager to be part of such a dynamic and forward-thinking environment."
+            }
+        ]
+    },
+    {
+        "id": "identity_6",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_17.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "scroll:down"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_18.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:792,507"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_19.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "type:New York, NY."
+            }
+        ]
+    },
+    {
+        "id": "identity_7",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_20.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:876,784"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_21.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:888,888"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_22.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:948,923"
+            }
+        ]
+    },
+    {
+        "id": "identity_8",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_23.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:1000,1030"
+            },            
+            {
+                "from": "user",
+                "value": "Picture 1: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_24.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "scroll:down"
+            },
+            {
+                "from": "user",
+                "value": "Picture 2: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_25.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "scroll:down"
+            }
+        ]
+    },
+    {
+        "id": "identity_9",
+        "conversations": [
+            {
+                "from": "user",
+                "value": "Picture 3: <img>/Users/michael/Desktop/wip/ai/projects/computer_agent/data/form/0_26.png</img>\nFull name: Michael Liang\nEmail: michaelliang15@gmail.com\nPhone: 9174637459\nBackground: NY-based serial entrepreneur who has built 2 companies, 6-figure language learning company Culturestride and recruiting software platform Tribespot which has served over 10K users. I'm also an AI researcher at AssemblyAI where I've worked on building SOTA ASR models."
+            },
+            {
+                "from": "assistant",
+                "value": "click:1616,1412"
+            }
+        ]
+    },        
+]
