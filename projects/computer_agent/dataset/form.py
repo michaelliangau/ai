@@ -18,7 +18,26 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 # Define the HTML content for the form
 form_html = """
 <html>
-<head><title>Simple Form</title></head>
+<head>
+    <title>Simple Form</title>
+    <style>
+        #simpleForm {
+            position: absolute;
+            top: 100px;
+            left: 100px;
+        }
+        #inputField {
+            position: absolute;
+            top: 150px;
+            left: 100px;
+        }
+        button {
+            position: absolute;
+            top: 250px;
+            left: 100px;
+        }
+    </style>
+</head>
 <body>
     <form id="simpleForm">
         <label for="inputField">Enter Text:</label>
@@ -28,7 +47,6 @@ form_html = """
 </body>
 </html>
 """
-
 # Write the HTML to a file
 html_file_path = 'form.html'
 with open(html_file_path, 'w') as file:
@@ -40,8 +58,14 @@ driver.get(f'file:///home/michael/ai/projects/computer_agent/dataset/{html_file_
 try:
     # Wait until the current URL is as expected
     WebDriverWait(driver, 10).until(EC.url_contains("form.html"))
-    WebDriverWait(driver, 10).until(EC.title_is("Simple Form"))
     print("WebDriver loaded the page successfully.")
+
+    # Get bounding boxes of elements
+    elements = ['#simpleForm', '#inputField', 'button']
+    for selector in elements:
+        element = driver.find_element(By.CSS_SELECTOR, selector)
+        rect = element.rect
+        print(f"{selector}: {rect}")
 
     # Take a screenshot
     screenshot_path = 'form_screenshot.png'
