@@ -9,12 +9,10 @@ from selenium.webdriver.support import expected_conditions as EC
 chrome_options = Options()
 chrome_options.add_argument('--headless')  # Run headlessly
 chrome_options.add_argument('--window-size=1440x900')  # Set window size
+chrome_options.binary_location = '/home/michael/chromedriver/extracted/opt/google/chrome/google-chrome'  # Specify Chrome binary location
 
 # Path to the ChromeDriver executable
-# chrome_driver_path = 'path/to/chromedriver'  # Update this path
-
-# Initialize the WebDriver
-service = Service(executable_path="/Users/michael/Downloads/chrome-headless-shell-mac-arm64")
+service = Service(executable_path="/home/michael/chromedriver/chromedriver-linux64/chromedriver")
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # Define the HTML content for the form
@@ -37,13 +35,13 @@ with open(html_file_path, 'w') as file:
     file.write(form_html)
 
 # Load the HTML file
-driver.get(f'file://{html_file_path}')
+driver.get(f'file:///home/michael/ai/projects/computer_agent/dataset/{html_file_path}')
 
 try:
-    # Wait until the form is present
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'simpleForm'))
-    )
+    # Wait until the current URL is as expected
+    WebDriverWait(driver, 10).until(EC.url_contains("form.html"))
+    WebDriverWait(driver, 10).until(EC.title_is("Simple Form"))
+    print("WebDriver loaded the page successfully.")
 
     # Take a screenshot
     screenshot_path = 'form_screenshot.png'
