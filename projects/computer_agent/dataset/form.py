@@ -4,6 +4,15 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+import json
+
+# Import from parent folder
+import sys
+sys.path.append("..")
+import utils
+
+output_path = '/home/michael/ai/projects/computer_agent/data/form_train_raw.json'
 
 # Setup Chrome options
 chrome_options = Options()
@@ -14,35 +23,19 @@ chrome_options.binary_location = '/home/michael/chromedriver/extracted/opt/googl
 # Path to the ChromeDriver executable
 service = Service(executable_path="/home/michael/chromedriver/chromedriver-linux64/chromedriver")
 driver = webdriver.Chrome(service=service, options=chrome_options)
+actions = ActionChains(driver)
 
 # Define the HTML content for the form
 form_html = """
 <html>
 <head>
     <title>Simple Form</title>
-    <style>
-        #simpleForm {
-            position: absolute;
-            top: 100px;
-            left: 100px;
-        }
-        #inputField {
-            position: absolute;
-            top: 150px;
-            left: 100px;
-        }
-        button {
-            position: absolute;
-            top: 250px;
-            left: 100px;
-        }
-    </style>
 </head>
 <body>
     <form id="simpleForm">
-        <label for="inputField">Enter Text:</label>
+        <label for="inputField">First Name:</label>
         <input type="text" id="inputField" name="inputField" required>
-        <button type="submit">Submit</button>
+        <button id="submitBtn" type="submit">Submit</button>
     </form>
 </body>
 </html>
@@ -55,22 +48,93 @@ with open(html_file_path, 'w') as file:
 # Load the HTML file
 driver.get(f'file:///home/michael/ai/projects/computer_agent/dataset/{html_file_path}')
 
+target_actions = {
+    "prompt": None,
+    "actions" : []
+}
 try:
     # Wait until the current URL is as expected
     WebDriverWait(driver, 10).until(EC.url_contains("form.html"))
     print("WebDriver loaded the page successfully.")
 
     # Get bounding boxes of elements
-    elements = ['#simpleForm', '#inputField', 'button']
-    for selector in elements:
-        element = driver.find_element(By.CSS_SELECTOR, selector)
+    elements = {"inputField": {
+        "height": None,
+        "width": None,
+        "middle_x": None,
+        "middle_y": None,
+    },
+    "submitBtn": {
+        "height": None,
+        "width": None,
+        "middle_x": None,
+        "middle_y": None,
+    }
+    }
+    for selector, properties in elements.items():
+        element = driver.find_element(By.CSS_SELECTOR, f"#{selector}")
         rect = element.rect
-        print(f"{selector}: {rect}")
+        properties["height"] = rect["height"]
+        properties["width"] = rect["width"]
+        x, y = utils.get_middle_of_rect(x=rect["x"], y=rect["y"], height=rect["height"], width=rect["width"])
+        properties["middle_x"] = x
+        properties["middle_y"] = y
+        
+
+    target_actions["prompt"] = "Fill out this form. Your first name is Michael."
 
     # Take a screenshot
-    screenshot_path = 'form_screenshot.png'
+    screenshot_path = '/home/michael/ai/projects/computer_agent/data/form/0_0.png'
     driver.save_screenshot(screenshot_path)
     print(f"Screenshot saved to {screenshot_path}")
+
+    # Generate ground truth trajectory
+    # Step 1: Click the middle of the box
+    action = {
+        "image_path": screenshot_path,
+        "target": f"click:{elements['inputField']['middle_x']},{elements['inputField']['middle_y']}"
+    }
+    target_actions["actions"].append(action)
+
+    # Interact and take a new screenshot
+    actions.move_by_offset(elements["inputField"]["middle_x"], elements["inputField"]["middle_y"]).click().perform()
+    screenshot_path = '/home/michael/ai/projects/computer_agent/data/form/0_1.png'
+    driver.save_screenshot(screenshot_path)
+    print(f"Screenshot saved to {screenshot_path}")    
+
+    # Step 2: Type input
+    action = {
+        "image_path": screenshot_path,
+        "target": f"type:Michael"
+    }
+    target_actions["actions"].append(action)
+
+    # Interact and take a new screenshot
+    actions.send_keys("Michael")
+    actions.perform()
+    screenshot_path = '/home/michael/ai/projects/computer_agent/data/form/0_2.png'
+    driver.save_screenshot(screenshot_path)
+    print(f"Screenshot saved to {screenshot_path}")
+
+    # Step 3: Click button
+    action = {
+        "image_path": screenshot_path,
+        "target": f"click:{elements['submitBtn']['middle_x']},{elements['submitBtn']['middle_y']}"
+    }
+    target_actions["actions"].append(action)
+
+    # No need to execute action on the last one
+
+    # Save to json
+    with open(output_path, 'w') as f:
+        json.dump(target_actions, f, indent=4)
+    print(f"Target actions saved to {output_path}")
+
+    # TODO: Make this form generation process entirely dynamic
+
+    
+
+
 
 finally:
     driver.quit()

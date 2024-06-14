@@ -56,3 +56,22 @@ def pad_to_size(image, canvas_width=1920, canvas_height=1080):
     canvas = Image.new("RGB", (canvas_width, canvas_height))
     canvas.paste(image)
     return canvas
+
+def get_middle_of_rect(x: int, y: int, height: int, width: int):
+    """
+    Calculate the middle coordinates of a rectangle given its top-left corner,
+    height, and width.
+
+    Parameters:
+        x (int): The x-coordinate of the top-left corner of the rectangle.
+        y (int): The y-coordinate of the top-left corner of the rectangle.
+        height (int): The height of the rectangle.
+        width (int): The width of the rectangle.
+
+    Returns:
+        tuple: A tuple containing the middle x and y coordinates (middle_x, middle_y).
+    """
+
+    middle_x = x + width // 2
+    middle_y = y + height // 2
+    return middle_x, middle_y
