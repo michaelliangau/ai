@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from selenium.webdriver.common.by import By
 
 def create_white_canvas_with_red_dot(path):
     image = np.ones((1080, 1920, 3), dtype=np.uint8) * 255
@@ -75,3 +76,32 @@ def get_middle_of_rect(x: int, y: int, height: int, width: int):
     middle_x = x + width // 2
     middle_y = y + height // 2
     return middle_x, middle_y
+
+def get_elements_dict(driver, element_ids):
+    """
+    Given a list of element IDs, return a dictionary with their bounding box properties.
+
+    Parameters:
+        driver (webdriver): The Selenium WebDriver instance.
+        element_ids (list): A list of element IDs to get properties for.
+
+    Returns:
+        dict: A dictionary containing the properties of the elements.
+    """
+    elements = {element_id: {
+        "height": None,
+        "width": None,
+        "middle_x": None,
+        "middle_y": None,
+    } for element_id in element_ids}
+
+    for element_id, properties in elements.items():
+        element = driver.find_element(By.CSS_SELECTOR, f"#{element_id}")
+        rect = element.rect
+        properties["height"] = rect["height"]
+        properties["width"] = rect["width"]
+        x, y = get_middle_of_rect(x=rect["x"], y=rect["y"], height=rect["height"], width=rect["width"])
+        properties["middle_x"] = x
+        properties["middle_y"] = y
+
+    return elements

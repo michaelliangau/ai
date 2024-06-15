@@ -1,11 +1,11 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 import json
+import synthetic_form_engine.form_engine as form_engine
 
 # Import from parent folder
 import sys
@@ -26,20 +26,9 @@ driver = webdriver.Chrome(service=service, options=chrome_options)
 actions = ActionChains(driver)
 
 # Define the HTML content for the form
-form_html = """
-<html>
-<head>
-    <title>Simple Form</title>
-</head>
-<body>
-    <form id="simpleForm">
-        <label for="inputField">First Name:</label>
-        <input type="text" id="inputField" name="inputField" required>
-        <button id="submitBtn" type="submit">Submit</button>
-    </form>
-</body>
-</html>
-"""
+form_generator = form_engine.FormEngine()
+form_html = form_generator.generate_form()
+
 # Write the HTML to a file
 html_file_path = 'form.html'
 with open(html_file_path, 'w') as file:
@@ -58,29 +47,8 @@ try:
     print("WebDriver loaded the page successfully.")
 
     # Get bounding boxes of elements
-    elements = {"inputField": {
-        "height": None,
-        "width": None,
-        "middle_x": None,
-        "middle_y": None,
-    },
-    "submitBtn": {
-        "height": None,
-        "width": None,
-        "middle_x": None,
-        "middle_y": None,
-    }
-    }
-    for selector, properties in elements.items():
-        element = driver.find_element(By.CSS_SELECTOR, f"#{selector}")
-        rect = element.rect
-        properties["height"] = rect["height"]
-        properties["width"] = rect["width"]
-        x, y = utils.get_middle_of_rect(x=rect["x"], y=rect["y"], height=rect["height"], width=rect["width"])
-        properties["middle_x"] = x
-        properties["middle_y"] = y
+    elements = utils.get_elements_dict(driver, element_ids=["inputField", "submitBtn"])
         
-
     target_actions["prompt"] = "Fill out this form. Your first name is Michael."
 
     # Take a screenshot
