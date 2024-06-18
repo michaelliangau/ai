@@ -27,8 +27,9 @@ actions = ActionChains(driver)
 
 # Define the HTML content for the form
 form_generator = form_engine.FormEngine()
-form_html = form_generator.generate_form()
-
+form_html, input_field_answer_dicts = form_generator.generate_form()
+import IPython; IPython.embed()
+exit()
 # Write the HTML to a file
 html_file_path = 'form.html'
 with open(html_file_path, 'w') as file:
