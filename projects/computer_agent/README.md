@@ -1,5 +1,7 @@
 # Computer Agent
 
+Build a computer action agent that is able to complete web forms.
+
 ## Usage
 
 Start Chrome in docker container
