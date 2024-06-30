@@ -8,7 +8,7 @@ class Label:
     top_left_y: int
 
 @dataclass
-class InputField:
+class TextField:
     id: str
     height: int
     width: int
