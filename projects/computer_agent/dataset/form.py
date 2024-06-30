@@ -12,29 +12,30 @@ import sys
 sys.path.append("..")
 import utils
 
-output_path = '/home/michael/ai/projects/computer_agent/data/form_train_raw.json'
+# target_actions_output_path = '/home/michael/ai/projects/computer_agent/data/form_train_raw.json'
 
-# Setup Chrome options
-chrome_options = Options()
-chrome_options.add_argument('--headless')  # Run headlessly
-chrome_options.add_argument('--window-size=1440x900')  # Set window size
-chrome_options.binary_location = '/home/michael/chromedriver/extracted/opt/google/chrome/google-chrome'  # Specify Chrome binary location
+# # Setup Chrome options
+# chrome_options = Options()
+# chrome_options.add_argument('--headless')  # Run headlessly
+# chrome_options.add_argument('--window-size=1440x900')  # Set window size
+# chrome_options.binary_location = '/home/michael/chromedriver/extracted/opt/google/chrome/google-chrome'  # Specify Chrome binary location
 
-# Path to the ChromeDriver executable
-service = Service(executable_path="/home/michael/chromedriver/chromedriver-linux64/chromedriver")
-driver = webdriver.Chrome(service=service, options=chrome_options)
-actions = ActionChains(driver)
+# # Path to the ChromeDriver executable
+# service = Service(executable_path="/home/michael/chromedriver/chromedriver-linux64/chromedriver")
+# driver = webdriver.Chrome(service=service, options=chrome_options)
+# actions = ActionChains(driver)
 
 # Define the HTML content for the form
-form_generator = form_engine.FormEngine()
-form_html, input_field_answer_dicts = form_generator.generate_form()
-import IPython; IPython.embed()
-exit()
+generator = form_engine.FormEngine()
+html, elements = generator.generate_form()
+
 # Write the HTML to a file
 html_file_path = 'form.html'
 with open(html_file_path, 'w') as file:
-    file.write(form_html)
+    file.write(html)
 
+# TODO: Generate the target trajectories from this
+exit()
 # Load the HTML file
 driver.get(f'file:///home/michael/ai/projects/computer_agent/dataset/{html_file_path}')
 
@@ -95,9 +96,9 @@ try:
     # No need to execute action on the last one
 
     # Save to json
-    with open(output_path, 'w') as f:
+    with open(target_actions_output_path, 'w') as f:
         json.dump(target_actions, f, indent=4)
-    print(f"Target actions saved to {output_path}")
+    print(f"Target actions saved to {target_actions_output_path}")
 
     # TODO: Make this form generation process entirely dynamic
 
