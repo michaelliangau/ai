@@ -5,8 +5,8 @@ from . import constants
 import datasets
 class FormEngine:
     def __init__(self, min_text_fields: int = constants.MIN_NUM_TEXT_FIELDS, max_text_fields: int =constants.MAX_NUM_TEXT_FIELDS):
-        self.num_fields = random.randint(min_text_fields, max_text_fields)
-        self.form_html_parts = []
+        self.num_text_fields = random.randint(min_text_fields, max_text_fields)
+        self.html = []
         self.text_field_engine = datasets.load_from_disk(
             "/Users/michael/Desktop/wip/ai/projects/computer_agent/dataset/data/squad_v2_qa"
         )
@@ -96,7 +96,7 @@ class FormEngine:
     
     def generate_form(self):
         elements = []
-        self.form_html_parts = [
+        self.html = [
             '<!DOCTYPE html>',
             '<html lang="en">',
             '<head>',
@@ -108,18 +108,18 @@ class FormEngine:
             '<form id="form">'
         ]
         max_element_y = 0
-        for idx in range(self.num_fields):
+        for idx in range(self.num_text_fields):
             text_field, max_element_y = self.generate_text_field_dataclass(index=idx, min_text_field_top_left_y=max_element_y)
-            self.form_html_parts.append(self.generate_text_field_html(text_field))
+            self.html.append(self.generate_text_field_html(text_field))
             elements.append(text_field)
         button = self.generate_button_dataclass(index=0, min_button_top_left_y=max_element_y)
-        self.form_html_parts.append(self.generate_button_html(button))
+        self.html.append(self.generate_button_html(button))
         elements.append(button)
-        self.form_html_parts.extend([
+        self.html.extend([
             '</form>',
             '</body>',
             '</html>'
         ])
-        self.form_html = "\n".join(self.form_html_parts)
+        self.form_html = "\n".join(self.html)
         return self.form_html, elements
 
