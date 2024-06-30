@@ -4,7 +4,7 @@ from . import dataclass
 from . import constants
 import datasets
 class FormEngine:
-    def __init__(self, min_input_fields=1, max_input_fields=5):
+    def __init__(self, min_input_fields: int = 1, max_input_fields: int =3):
         self.num_fields = random.randint(min_input_fields, max_input_fields)
         self.form_html_parts = []
         self.input_field_engine = datasets.load_from_disk(
@@ -28,17 +28,12 @@ class FormEngine:
         # Generate id
         field_id = self.generate_sequential_id("inputField", index)
         
-        # Define required or not
-        required = random.choice([True, False])
-        
         # Define position
-        height = random.randint(constants.MIN_INPUT_FIELD_HEIGHT, constants.MAX_INPUT_FIELD_HEIGHT)
+        height = constants.INPUT_FIELD_HEIGHT
         width = random.randint(constants.MIN_INPUT_FIELD_WIDTH, constants.MAX_INPUT_FIELD_WIDTH)
-        top_left_x = random.randint(0, constants.SCREEN_WIDTH - width)
-        top_left_y = random.randint(min_input_field_top_left_y, min_input_field_top_left_y + constants.MAX_GAP_BETWEEN_INPUT_FIELDS)
+        top_left_x = random.randint(0, constants.SCREEN_WIDTH // 2 - width)
+        top_left_y = random.randint(min_input_field_top_left_y + constants.MIN_GAP_BETWEEN_INPUT_FIELDS, min_input_field_top_left_y + constants.MAX_GAP_BETWEEN_INPUT_FIELDS)
         label_id = self.generate_sequential_id("label", index)
-
-        # TODO: Match the position of the labels with the boxes
 
         # Get a random question and answer
         rand_int = random.randint(0, len(self.input_field_engine) - 1)
@@ -50,13 +45,12 @@ class FormEngine:
             id=label_id,
             text=input_field_text,
             top_left_x=top_left_x,
-            top_left_y=top_left_y - random.randint(10,20)
+            top_left_y=top_left_y - constants.GAP_BETWEEN_INPUT_FIELD_AND_LABEL
         )
         
         # Create input field
         input_field = dataclass.InputField(
             id=field_id,
-            required=required,
             height=height,
             width=width,
             top_left_x=top_left_x,
@@ -76,10 +70,8 @@ class FormEngine:
         return button
 
     def decode_input_field(self, input_field):
-        required = "required" if input_field.required else ""
-        return f'<label for="{input_field.id}">Field {input_field.id}:</label>' \
+        return f'<label for="{input_field.id}" style="position:absolute; left:{input_field.label.top_left_x}px; top:{input_field.label.top_left_y}px;">{input_field.label.text}:</label>' \
                f'<input type="text" id="{input_field.id}" name="{input_field.id}" ' \
-               f'{required} ' \
                f'style="position:absolute; left:{input_field.top_left_x}px; top:{input_field.top_left_y}px; ' \
                f'width:{input_field.width}px; height:{input_field.height}px;"><br>'
 

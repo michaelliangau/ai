@@ -10,7 +10,6 @@ class Label:
 @dataclass
 class InputField:
     id: str
-    required: bool
     height: int
     width: int
     top_left_x: int
