@@ -1,15 +1,6 @@
 from dataclasses import dataclass
 
 @dataclass
-class InputField:
-    id: str
-    required: bool
-    height: int
-    width: int
-    middle_x: int
-    middle_y: int
-
-@dataclass
 class Label:
     id: str
     text: str
@@ -17,10 +8,21 @@ class Label:
     top_left_y: int
 
 @dataclass
+class InputField:
+    id: str
+    required: bool
+    height: int
+    width: int
+    top_left_x: int
+    top_left_y: int
+    label: Label
+    answer: str
+
+@dataclass
 class Button:
     id: str
     text: str
     height: int
     width: int
-    middle_x: int
-    middle_y: int
+    top_left_x: int
+    top_left_y: int
