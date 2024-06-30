@@ -14,12 +14,13 @@ class FormEngine:
     def generate_sequential_id(self, prefix, index):
         return f"{prefix}_{index}"
 
-    def generate_input_field(self, index):
+    def generate_input_field(self, index: int, min_input_field_top_left_y:int=0):
         """
         Generate an input field with a random height, width, and position.
 
         Args:
             index (int): The index of the input field in the form.
+            min_input_field_top_left_y (int): The minimum top left y position of the input field.
         
         Returns:
             dataclass.InputField: The generated input field.
@@ -33,10 +34,11 @@ class FormEngine:
         # Define position
         height = random.randint(constants.MIN_INPUT_FIELD_HEIGHT, constants.MAX_INPUT_FIELD_HEIGHT)
         width = random.randint(constants.MIN_INPUT_FIELD_WIDTH, constants.MAX_INPUT_FIELD_WIDTH)
-        max_middle_y = constants.SCREEN_HEIGHT - (self.num_fields - index) * constants.MIN_INPUT_FIELD_HEIGHT
-        top_left_x = random.randint(0, constants.SCREEN_WIDTH - constants.MIN_INPUT_FIELD_WIDTH)
-        top_left_y = random.randint(0, max_middle_y - constants.MIN_INPUT_FIELD_HEIGHT)
+        top_left_x = random.randint(0, constants.SCREEN_WIDTH - width)
+        top_left_y = random.randint(min_input_field_top_left_y, min_input_field_top_left_y + constants.MAX_GAP_BETWEEN_INPUT_FIELDS)
         label_id = self.generate_sequential_id("label", index)
+
+        # TODO: Match the position of the labels with the boxes
 
         # Get a random question and answer
         rand_int = random.randint(0, len(self.input_field_engine) - 1)
@@ -62,7 +64,7 @@ class FormEngine:
             label=label,
             answer=input_field_answer
         )
-        return input_field
+        return input_field, top_left_y + height
 
     def generate_button(self, index):
         button_id = self.generate_sequential_id("button", index)
@@ -97,8 +99,9 @@ class FormEngine:
             '<body>',
             '<form id="form">'
         ]
-        for i in range(self.num_fields):
-            input_field = self.generate_input_field(i)
+        min_input_field_top_left_y = 0
+        for idx in range(self.num_fields):
+            input_field, min_input_field_top_left_y = self.generate_input_field(idx, min_input_field_top_left_y=min_input_field_top_left_y)
             self.form_html_parts.append(self.decode_input_field(input_field))
             input_fields.append(input_field)
         # button = self.generate_button(0)
